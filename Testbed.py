@@ -4,7 +4,7 @@ import random
 import cvxpy as cvx
 
 
-def simulate_data(N_c, N_t, mu, sigma, l, u, eta):
+def SimulateData(N_c, N_t, mu, sigma, l, u, eta):
 
 	"""
 	Function that generates random control and treated units.
@@ -50,7 +50,7 @@ def simulate_data(N_c, N_t, mu, sigma, l, u, eta):
 	return X_c, X_t, W
 
 
-def estimate_weights(X_c, X_t):
+def EstimateWeights(X_c, X_t):
 
 	"""
 	Function that estimates synthetic control weights for each treated unit.
@@ -85,11 +85,11 @@ def estimate_weights(X_c, X_t):
 
 def main():
 
-	N_c, N_t = 500, 300  # set parameters
+	N_c, N_t = 5, 3  # set parameters
 	mu, sigma, l, u, eta = 0, 1, 2, N_t, 1
 	
-	X_c, X_t, W = simulate_data(N_c, N_t, mu, sigma, l, u, eta)
-	W_hat = estimate_weights(X_c, X_t)
+	X_c, X_t, W = SimulateData(N_c, N_t, mu, sigma, l, u, eta)
+	W_hat = EstimateWeights(X_c, X_t)
 
 	print 'Actual weights:'
 	print W
@@ -97,7 +97,7 @@ def main():
 	print W_hat
 
 	# estimate weights using mean of X_t as the lone treated unit
-	w = estimate_weights(X_c, [X_t.mean()])
+	w = EstimateWeights(X_c, [X_t.mean()])
 
 	print 'Averaged weights:'
 	print W_hat.mean(axis=0)
