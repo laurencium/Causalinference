@@ -2,6 +2,7 @@
 import numpy as np
 import random
 import cvxpy as cvx
+import pandas as pd
 
 
 def SimulateData(N_c, N_t, mu, Sigma, l, u, Gamma):
@@ -45,7 +46,8 @@ def SimulateData(N_c, N_t, mu, Sigma, l, u, Gamma):
 		W[i, random_index] = non_standardized / non_standardized.sum()
 
 	k = len(mu)  # generate X_t below
-	X_t = np.dot(W, X_c) + np.random.multivariate_normal(mean=np.zeros(k), cov=Gamma, size=N_t)
+	X_t = np.dot(W, X_c) + np.random.multivariate_normal(mean=np.zeros(k), cov=Gamma,
+		                                                 size=N_t)
 
 	return X_c, X_t, W
 
@@ -78,16 +80,55 @@ def EstimateWeights(X_c, X_t):
 		# for each treated unit, call CVX to solve optimization problem
 		w = cvx.Variable(N_c)
 		objective = cvx.Minimize(cvx.sum_squares(X_c.T * w - X_t[i, ]))
-		constraints = [0 <= w, w <= 1, cvx.sum_entries(w) == 1]  # convex weights
+		constraints = [cvx.sum_entries(w) == 1]
 		prob = cvx.Problem(objective, constraints)
 		min_value = prob.solve()
+
+		# constraints = [0 <= w, w <= 1, cvx.sum_entries(w) == 1]
+		# note: with Lalonde data, restricting 0 <= w <= 1 yields no
+		#       solutions for some treated units
 
 		W_hat[i, ] = w.value.getA1()  # convert to flattened array and store
 
 	return W_hat
 
 
-def main():
+def TreatmentEffects(Y_c, Y_t, W):  # need better name, documentation
+
+	N_c = len(Y_c)
+	N_t = len(Y_t)
+
+	IndividualTE = Y_t - np.dot(W, Y_c)
+	ATE = IndividualTE.mean()
+
+	return IndividualTE, ATE
+
+
+def EstimateLalondeData():  # need better name, documentation
+
+	url = 'http://www.stanford.edu/~lwong1/data.csv'
+	lalonde = pd.read_csv(url)  # read CSV data from url
+
+	covariate_list = ['age', 'education', 'black', 'hispanic', 'married',
+	                  'nodegree', 're74', 're75', 'u74', 'u75']
+	treated = lalonde['treat'] == 1  # index of treated units
+	control = lalonde['treat'] == 0  # index of control units
+
+	# don't know how to not convert to array first
+	X_t = np.array(lalonde[treated][covariate_list])
+	X_c = np.array(lalonde[control][covariate_list])
+	W_hat = EstimateWeights(X_c, X_t)
+
+	Y_t = np.array(lalonde[treated]['re78'])
+	Y_c = np.array(lalonde[control]['re78'])
+	ITE_hat, ATE_hat = TreatmentEffects(Y_c, Y_t, W_hat)
+
+	print "Using Lalonde's National Supported Work (NSW) experimental data"
+	print 'Mean difference:', Y_t.mean() - Y_c.mean()
+	print 'Estimated average treatment effect:', ATE_hat
+
+
+def main():  # need to turn this to 'estimate with simulated data' function
 
 	N_c, N_t, k = 5, 3, 2  # set parameters
 	mu, Sigma, l, u, Gamma = np.zeros(k), np.identity(k), 2, N_t, np.identity(k)
