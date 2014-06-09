@@ -70,7 +70,7 @@ def SimulateData2(delta, beta, theta, mu, Sigma, Gamma, N):
 
 	Y = (1 - D) * Y_0 + D * Y_1
 
-	print 'Actual average treatment effect:', (Y_1-Y_0).mean()
+	print 'Actual average treatment effect on the treated:', (Y_1[D==1]-Y_0[D==1]).mean()
 
 	return Y, D, X
 
@@ -95,7 +95,7 @@ def UseSimulatedData2():
 
 	ITE_hat, ATE_hat = TreatmentEffects(Y[control], Y[treated], W_hat)
 
-	print 'Estimated average treatment effect:', ATE_hat
+	print 'Estimated average treatment effect on the treated:', ATE_hat
 
 
 def EstimateWeights(X_c, X_t):
