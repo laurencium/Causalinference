@@ -47,7 +47,7 @@ def SimulateData(N_c, N_t, mu, Sigma, l, u, Gamma):
 
 	k = len(mu)  # generate X_t below
 	X_t = np.dot(W, X_c) + np.random.multivariate_normal(mean=np.zeros(k), cov=Gamma,
-		                                                 size=N_t)
+	                                                     size=N_t)
 
 	return X_c, X_t, W
 
@@ -93,10 +93,19 @@ def EstimateWeights(X_c, X_t):
 	return W_hat
 
 
-def TreatmentEffects(Y_c, Y_t, W):  # need better name, documentation
+def TreatmentEffects(Y_c, Y_t, W):
 
-	N_c = len(Y_c)
-	N_t = len(Y_t)
+	"""
+	Function that estimates individual and average treatment effects
+	via synthetic control method, using provided synthetic control weights.
+	Args:
+		Y_c = N_c-dimensional array of control unit outcomes
+		Y_t = N_t-dimensional array of treated unit outcomes
+		W = N_t-by-N_c matrix of synthetic control weights
+	Returns:
+		IndividualTE = N_t-dimensional array of estimated individual treatment effects
+		ATE = scalar value of estaimted average treatment effect
+	"""
 
 	IndividualTE = Y_t - np.dot(W, Y_c)
 	ATE = IndividualTE.mean()
@@ -104,7 +113,21 @@ def TreatmentEffects(Y_c, Y_t, W):  # need better name, documentation
 	return IndividualTE, ATE
 
 
-def EstimateLalondeData():  # need better name, documentation
+"""
+Need to write a wrapper function here that looks like this.
+This is what the user would actually call.
+
+def SyntheticControl(data, some way to specify Y, X, and D variables):
+	# data probably should be in Data.Frame format
+
+	1) Define X_t, X_c, Y_t, Y_c based on given specification
+	2) Call W_hat = EstimateWeights(X_c, X_t)
+	3) Call ITE_hat, ATE_hat = TreatmentEffects(Y_c, Y_t, W_hat)
+	4) Report results
+"""
+
+
+def UseLalondeData():  # need better name, documentation
 
 	url = 'http://www.stanford.edu/~lwong1/data.csv'
 	lalonde = pd.read_csv(url)  # read CSV data from url
@@ -128,7 +151,7 @@ def EstimateLalondeData():  # need better name, documentation
 	print 'Estimated average treatment effect:', ATE_hat
 
 
-def main():  # need to turn this to 'estimate with simulated data' function
+def UseSimulatedData():
 
 	N_c, N_t, k = 5, 3, 2  # set parameters
 	mu, Sigma, l, u, Gamma = np.zeros(k), np.identity(k), 2, N_t, np.identity(k)
@@ -148,6 +171,11 @@ def main():  # need to turn this to 'estimate with simulated data' function
 	print W_hat.mean(axis=0)
 	print 'Estimated weights using averaged X_t:'
 	print w.flatten()
+
+
+def main():
+
+	UseSimulatedData()
 
 
 if __name__ == '__main__':
