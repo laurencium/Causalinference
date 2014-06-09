@@ -3,6 +3,7 @@ import numpy as np
 import random
 import cvxpy as cvx
 import pandas as pd
+from scipy.stats import norm
 
 
 def SimulateData(N_c, N_t, mu, Sigma, l, u, Gamma):
@@ -50,6 +51,51 @@ def SimulateData(N_c, N_t, mu, Sigma, l, u, Gamma):
 	                                                     size=N_t)
 
 	return X_c, X_t, W
+
+
+def SimulateData2(delta, beta, theta, mu, Sigma, Gamma, N):
+
+	k = len(mu)
+
+	X = np.random.multivariate_normal(mean=mu, cov=Sigma, size=N)
+	epsilon = np.random.multivariate_normal(mean=np.zeros(2), cov=Gamma, size=N)
+
+	Xbeta = np.dot(X, beta)
+
+	Y_0 = Xbeta + epsilon[:, 0]
+	Y_1 = delta + np.dot(X, beta+theta) + epsilon[:, 1]
+
+	pscore = norm.cdf(Xbeta)
+	D = np.array([np.random.binomial(1, p, size=1) for p in pscore]).flatten()
+
+	Y = (1 - D) * Y_0 + D * Y_1
+
+	print 'Actual average treatment effect:', (Y_1-Y_0).mean()
+
+	return Y, D, X
+
+
+def UseSimulatedData2():
+
+	k = 3
+	delta = 3
+	beta = np.ones(k)
+	theta = np.ones(k)
+	mu = np.zeros(k)
+	Sigma = np.identity(k)
+	Gamma = np.identity(2)
+	N = 500
+
+	Y, D, X = SimulateData2(delta, beta, theta, mu, Sigma, Gamma, N)
+
+	control = (D == 0)
+	treated = (D == 1)
+
+	W_hat = EstimateWeights(X[control], X[treated])
+
+	ITE_hat, ATE_hat = TreatmentEffects(Y[control], Y[treated], W_hat)
+
+	print 'Estimated average treatment effect:', ATE_hat
 
 
 def EstimateWeights(X_c, X_t):
