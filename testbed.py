@@ -91,6 +91,22 @@ def SyntheticControl(data, some way to specify Y, X, and D variables):
 """
 
 
+def OLSEstimates(Y, D, X):
+
+	k = X.shape[1]
+	D = D.reshape((D.size, 1))
+	dX = X - X.mean(0)
+	DdX = D * dX
+	W = np.column_stack((D, dX, DdX))
+
+	reg = linear_model.LinearRegression()
+	reg.fit(W, Y)
+
+	ATT = reg.coef_[0] + np.dot((DdX.sum(0) / D.sum()), reg.coef_[-k:])
+
+	return ATT
+
+
 def SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, return_counterfactual=False):
 
 	"""
@@ -146,6 +162,32 @@ def SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, return_counterfactual=
 		return Y, D, X
 
 
+def MonteCarlo(delta, beta, theta, mu, Sigma, Gamma, N, B):
+
+	"""
+
+	"""
+
+	ATT_true = np.zeros(B)
+	ATT_hat = np.zeros(B)
+	ATT_ols = np.zeros(B)
+
+	for i in xrange(B):
+
+		Y, D, X, Y_0, Y_1 = SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, True)
+
+		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
+
+		control = (D == 0)
+		treated = (D == 1)
+		W_hat = EstimateWeights(X[control], X[treated])
+		ATT_hat[i] = TreatmentEffects(Y[control], Y[treated], W_hat)
+
+		ATT_ols[i] = OLSEstimates(Y, D, X)
+
+	return ATT_true, ATT_hat, ATT_ols
+
+
 def UseSimulatedData():
 
 	"""
@@ -162,6 +204,8 @@ def UseSimulatedData():
 	Sigma = np.identity(k)
 	Gamma = np.identity(2)
 	N = 500
+
+	print 'Using simulated data...'
 
 	Y, D, X, Y_0, Y_1 = SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, True)
 	print 'Actual average treatment effect on the treated:', (Y_1[D==1]-Y_0[D==1]).mean()
@@ -203,15 +247,15 @@ def UseLalondeData():
 	Y_c = np.array(lalonde[control]['re78'])
 	ATT_hat = TreatmentEffects(Y_c, Y_t, W_hat)
 
-	print "Using Lalonde's National Supported Work (NSW) experimental data"
+	print "Using Lalonde's National Supported Work (NSW) experimental data..."
 	print 'Mean difference:', Y_t.mean() - Y_c.mean()
-	print 'Estimated average treatment effect:', ATT_hat
+	print 'Estimated average treatment effect on the treated:', ATT_hat
 
 
 def main():
 
-	UseLalondeData()
 	UseSimulatedData()
+	UseLalondeData()
 
 
 if __name__ == '__main__':
