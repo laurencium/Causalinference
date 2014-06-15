@@ -224,7 +224,7 @@ def MonteCarlo(B=500, para=parameters(), print_progress=True):
 		ATT_syn[i] = SyntheticEstimates(Y, D, X)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
-		if (i+1) % 10 == 0:
+		if print_progress and (i+1) % 10 == 0:
 			print i+1, 'out of', B, 'simulations completed.'
 
 	return ATT_true, ATT_syn, ATT_ols
