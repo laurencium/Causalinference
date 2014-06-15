@@ -230,6 +230,28 @@ def MonteCarlo(B=500, para=parameters(), print_progress=True):
 	return ATT_true, ATT_syn, ATT_ols
 
 
+def CalculateMSE(B=500, para=parameters()):
+
+	"""
+	Function that calcuates MSE after performing Monte Carlo simulations.
+
+	Args:
+		B = Number of Monte Carlo simulations to perform
+		para = Model parameter values supplied by parameter class object
+
+	Returns:
+		MSE_syn = Estimated MSE using synthetic control estimates
+		MSE_ols = Estimated MSE using OLS estimates
+	"""
+
+	ATT_true, ATT_syn, ATT_ols = MonteCarlo(B)
+
+	MSE_syn = ((ATT_syn - ATT_true)**2).mean()
+	MSE_ols = ((ATT_ols - ATT_true)**2).mean()
+
+	return MSE_syn, MSE_ols
+
+
 def UseLalondeData():
 
 	"""
@@ -262,33 +284,11 @@ def UseLalondeData():
 	print 'Estimated average treatment effect on the treated:', ATT_hat
 
 
-def CalculateMSE(B=500, para=parameters()):
-
-	"""
-	Function that calcuates MSE after performing Monte Carlo simulations.
-
-	Args:
-		B = Number of Monte Carlo simulations to perform
-		para = Model parameter values supplied by parameter class object
-
-	Returns:
-		MSE_syn = Estimated MSE using synthetic control estimates
-		MSE_ols = Estimated MSE using OLS estimates
-	"""
-
-	ATT_true, ATT_syn, ATT_ols = MonteCarlo(B)
-
-	MSE_syn = ((ATT_syn - ATT_true)**2).mean()
-	MSE_ols = ((ATT_ols - ATT_true)**2).mean()
-
-	return MSE_syn, MSE_ols
-
-
 def main():
 
 	UseLalondeData()
 
-	B = 500
+	B = 5000
 	print '\n' + 'Performing Monte Carlo simulations with B =', B
 	MSE_syn, MSE_ols = CalculateMSE(B)
 	print 'Estimated Mean Squared Error for synthetic control estimator:', MSE_syn
