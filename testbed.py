@@ -4,6 +4,7 @@ import random
 import cvxpy as cvx
 import pandas as pd
 from scipy.stats import norm
+from sklearn import linear_model
 
 
 def EstimateWeights(X_c, X_t):
@@ -77,37 +78,72 @@ def TreatmentEffects(Y_c, Y_t, W, return_individual=False):
 		return ATT
 
 
-"""
-Need to write a wrapper function here that looks like this.
-This is what the user would actually call.
+def SyntheticEstimates(Y, D, X):
 
-def SyntheticControl(data, some way to specify Y, X, and D variables):
-	# data probably should be in Data.Frame format
+	"""
+	Function that computes ATT estimates from observerd data using
+	synthetic control method.
+	"""
 
-	1) Define X_t, X_c, Y_t, Y_c based on given specification
-	2) Call W_hat = EstimateWeights(X_c, X_t)
-	3) Call ITE_hat, ATE_hat = TreatmentEffects(Y_c, Y_t, W_hat)
-	4) Report results
-"""
+	control = (D == 0)  # Boolean index of control units
+	treated = (D == 1)  # Boolean index of treated units
+	W_hat = EstimateWeights(X[control], X[treated])  # synthetic control weights
+
+	return TreatmentEffects(Y[control], Y[treated], W_hat)
 
 
 def OLSEstimates(Y, D, X):
 
+	"""
+	Function that estimates ATT using OLS, which is consistent
+	when the true model is linear.
+
+	Args:
+		Y = N-dimensional array of observed outcomes
+		D = N-dimensional array of treatment indicator; 1=treated, 0=control
+		X = N-by-k matrix of covariates
+	"""
+
 	k = X.shape[1]
-	D = D.reshape((D.size, 1))
-	dX = X - X.mean(0)
+	D = D.reshape((D.size, 1))  # convert D into N-by-1 vector
+	dX = X - X.mean(0)  # demean covariates
 	DdX = D * dX
+	# construct design matrix; no constant term as it will be added by sklearn
 	W = np.column_stack((D, dX, DdX))
 
+	# use sklearn to run regression
 	reg = linear_model.LinearRegression()
 	reg.fit(W, Y)
 
-	ATT = reg.coef_[0] + np.dot((DdX.sum(0) / D.sum()), reg.coef_[-k:])
+	# for derivation of this estimator, see my notes on Treatment Effects
+	return reg.coef_[0] + np.dot((DdX.sum(0) / D.sum()), reg.coef_[-k:])
 
-	return ATT
+
+class parameters:
+
+	"""
+	Class object that stores the parameter values for use in the baseline model.
+	
+	See SimulateData function for model description.
+
+	Args:
+		N = Sample size (control + treated units) to generate
+		k = Number of covariates
+	"""
+
+	def __init__(self, N=500, k=3):  # set initial parameter values
+		self.N = N  # sample size (control + treated units)
+		self.k = k  # number of covariates
+
+		self.delta = 3
+		self.beta = np.ones(k)
+		self.theta = np.ones(k)
+		self.mu = np.zeros(k)
+		self.Sigma = np.identity(k)
+		self.Gamma = np.identity(2)
 
 
-def SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, return_counterfactual=False):
+def SimulateData(para=parameters(), return_counterfactual=False):
 
 	"""
 	Function that generates data according to a simple linear model that
@@ -124,11 +160,7 @@ def SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, return_counterfactual=
 	where Phi is the standard normal CDF.
 
 	Args:
-		delta = Scalar. Constant treatment effect common to all units
-		beta, theta, mu = k-dimensional parameter vectors
-		Sigma = k-by-k covariance matrix for the covariates
-		Gamma = 2-by-2 covariance matrix for the error terms
-		N = Total sample size (control + treated units) to generate
+		para = Model parameter values supplied by parameter class object
 		return_counterfactual = Boolean indicating whether to return vectors of
 		                        counterfactual outcomes
 
@@ -142,13 +174,15 @@ def SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, return_counterfactual=
 
 	k = len(mu)
 
-	X = np.random.multivariate_normal(mean=mu, cov=Sigma, size=N)
-	epsilon = np.random.multivariate_normal(mean=np.zeros(2), cov=Gamma, size=N)
+	X = np.random.multivariate_normal(mean=para.mu, cov=para.Sigma,
+	                                  size=N)
+	epsilon = np.random.multivariate_normal(mean=np.zeros(2), cov=para.Gamma,
+	                                        size=N)
 
-	Xbeta = np.dot(X, beta)
+	Xbeta = np.dot(X, para.beta)
 
 	Y_0 = Xbeta + epsilon[:, 0]
-	Y_1 = delta + np.dot(X, beta+theta) + epsilon[:, 1]
+	Y_1 = para.delta + np.dot(X, para.beta+para.theta) + epsilon[:, 1]
 
 	pscore = norm.cdf(Xbeta)
 	# for each p in pscore, generate Bernoulli rv with success probability p
@@ -162,10 +196,20 @@ def SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, return_counterfactual=
 		return Y, D, X
 
 
-def MonteCarlo(delta, beta, theta, mu, Sigma, Gamma, N, B):
+def MonteCarlo(B, para=parameters()):
 
 	"""
+	Function that returns ATT estimates using synthetic control and
+	OLS computed over B repetitions.
 
+	Args:
+		B = Number of Monte Carlo simulations to perform
+		para = Model parameter values supplied by parameter class object
+
+	Returns:
+		ATT_true = Actual average treatment effect for the treated
+		ATT_hat = Estimated ATT using synthetic controls
+		ATT_ols = Estimated ATT using OLS
 	"""
 
 	ATT_true = np.zeros(B)
@@ -174,15 +218,10 @@ def MonteCarlo(delta, beta, theta, mu, Sigma, Gamma, N, B):
 
 	for i in xrange(B):
 
-		Y, D, X, Y_0, Y_1 = SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, True)
+		Y, D, X, Y_0, Y_1 = SimulateData(para, True)
 
 		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
-
-		control = (D == 0)
-		treated = (D == 1)
-		W_hat = EstimateWeights(X[control], X[treated])
-		ATT_hat[i] = TreatmentEffects(Y[control], Y[treated], W_hat)
-
+		ATT_hat[i] = SyntheticEstimates(Y, D, X)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
 	return ATT_true, ATT_hat, ATT_ols
@@ -195,19 +234,9 @@ def UseSimulatedData():
 	and estimate treatment effects.
 	"""	
 
-	# For what these parameters mean, see the function SimulateData
-	k = 3
-	delta = 3
-	beta = np.ones(k)
-	theta = np.ones(k)
-	mu = np.zeros(k)
-	Sigma = np.identity(k)
-	Gamma = np.identity(2)
-	N = 500
-
 	print 'Using simulated data...'
 
-	Y, D, X, Y_0, Y_1 = SimulateData(delta, beta, theta, mu, Sigma, Gamma, N, True)
+	Y, D, X, Y_0, Y_1 = SimulateData(return_counterfactual=True)
 	print 'Actual average treatment effect on the treated:', (Y_1[D==1]-Y_0[D==1]).mean()
 
 	control = (D == 0)
