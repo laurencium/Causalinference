@@ -172,12 +172,12 @@ def SimulateData(para=parameters(), return_counterfactual=False):
 		Y_1 = N-dimensional array of treated outcomes
 	"""
 
-	k = len(mu)
+	k = len(para.mu)
 
 	X = np.random.multivariate_normal(mean=para.mu, cov=para.Sigma,
-	                                  size=N)
+	                                  size=para.N)
 	epsilon = np.random.multivariate_normal(mean=np.zeros(2), cov=para.Gamma,
-	                                        size=N)
+	                                        size=para.N)
 
 	Xbeta = np.dot(X, para.beta)
 
@@ -196,7 +196,7 @@ def SimulateData(para=parameters(), return_counterfactual=False):
 		return Y, D, X
 
 
-def MonteCarlo(B, para=parameters()):
+def MonteCarlo(B=500, para=parameters(), print_progress=True):
 
 	"""
 	Function that returns ATT estimates using synthetic control and
@@ -208,12 +208,12 @@ def MonteCarlo(B, para=parameters()):
 
 	Returns:
 		ATT_true = Actual average treatment effect for the treated
-		ATT_hat = Estimated ATT using synthetic controls
+		ATT_syn = Estimated ATT using synthetic controls
 		ATT_ols = Estimated ATT using OLS
 	"""
 
 	ATT_true = np.zeros(B)
-	ATT_hat = np.zeros(B)
+	ATT_syn = np.zeros(B)
 	ATT_ols = np.zeros(B)
 
 	for i in xrange(B):
@@ -221,32 +221,13 @@ def MonteCarlo(B, para=parameters()):
 		Y, D, X, Y_0, Y_1 = SimulateData(para, True)
 
 		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
-		ATT_hat[i] = SyntheticEstimates(Y, D, X)
+		ATT_syn[i] = SyntheticEstimates(Y, D, X)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
-	return ATT_true, ATT_hat, ATT_ols
+		if (i+1) % 10 == 0:
+			print i+1, 'out of', B, 'simulations completed.'
 
-
-def UseSimulatedData():
-
-	"""
-	Utility function that sets parameters and calls functions to simulate data
-	and estimate treatment effects.
-	"""	
-
-	print 'Using simulated data...'
-
-	Y, D, X, Y_0, Y_1 = SimulateData(return_counterfactual=True)
-	print 'Actual average treatment effect on the treated:', (Y_1[D==1]-Y_0[D==1]).mean()
-
-	control = (D == 0)
-	treated = (D == 1)
-
-	W_hat = EstimateWeights(X[control], X[treated])
-
-	ATT_hat = TreatmentEffects(Y[control], Y[treated], W_hat)
-
-	print 'Estimated average treatment effect on the treated:', ATT_hat
+	return ATT_true, ATT_syn, ATT_ols
 
 
 def UseLalondeData():
@@ -281,10 +262,37 @@ def UseLalondeData():
 	print 'Estimated average treatment effect on the treated:', ATT_hat
 
 
+def CalculateMSE(B=500, para=parameters()):
+
+	"""
+	Function that calcuates MSE after performing Monte Carlo simulations.
+
+	Args:
+		B = Number of Monte Carlo simulations to perform
+		para = Model parameter values supplied by parameter class object
+
+	Returns:
+		MSE_syn = Estimated MSE using synthetic control estimates
+		MSE_ols = Estimated MSE using OLS estimates
+	"""
+
+	ATT_true, ATT_syn, ATT_ols = MonteCarlo(B)
+
+	MSE_syn = ((ATT_syn - ATT_true)**2).mean()
+	MSE_ols = ((ATT_ols - ATT_true)**2).mean()
+
+	return MSE_syn, MSE_ols
+
+
 def main():
 
-	UseSimulatedData()
 	UseLalondeData()
+
+	B = 500
+	print '\n' + 'Performing Monte Carlo simulations with B =', B
+	MSE_syn, MSE_ols = CalculateMSE(B)
+	print 'Estimated Mean Squared Error for synthetic control estimator:', MSE_syn
+	print 'Estimated Mean Squared Error for OLS estimator:', MSE_ols
 
 
 if __name__ == '__main__':
