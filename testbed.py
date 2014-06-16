@@ -297,3 +297,20 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+
+def Matching(Y_c, Y_t, X_c, X_t):  # matching with replacement
+
+	N_c = len(X_c)
+	if len(X_t.shape) == 1:  # check if input is 1D-array
+		N_t = 1
+	else:
+		N_t = len(X_t)  # there has to be a more elegant way of doing this
+
+	ITT = np.zeros(N_c)
+
+	for i in xrange(N_c):
+		match_index = ((X_t - X_c[i])**2).sum(1).argmin()
+		ITT[i] = Y_t[match_index] - Y_c[i]
+
+	return ITT.mean()
