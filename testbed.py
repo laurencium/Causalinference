@@ -92,11 +92,65 @@ def SyntheticEstimates(Y, D, X):
 	return TreatmentEffects(Y[control], Y[treated], W_hat)
 
 
+def MatchWithReplacement(Y_c, Y_t, X_c, X_t):
+
+	"""
+	Function that estimates the average treatment effect for the treated (ATT)
+	using matching done with replacement.
+
+	Args:
+		Y_c = N_c-dimensional array of control unit outcomes
+		Y_t = N_t-dimensional array of treated unit outcomes
+		X_c = N_c-by-k matrix of control units
+		X_t = N_t-by-k matrix of treated units
+
+	Returns:
+		ATT estimates; matching done with replacement
+	"""
+
+	N_c = len(X_c)
+	N_t = len(X_t)
+
+	ITT = np.zeros(N_c)
+
+	for i in xrange(N_c):
+		# find control unit that minimizes L_2-norm between X_c and X_t
+		# min search should be at most linear time
+		match_index = ((X_t - X_c[i])**2).sum(1).argmin()
+		ITT[i] = Y_t[match_index] - Y_c[i]  # estimated individual treatment effect
+
+	return ITT.mean()
+
+
+def MatchingEstimates(Y, D, X, with_replacement=True):
+
+	"""
+	Function that estimates the average treatment effect for the treated (ATT)
+	using matching.
+
+	Can specify whether matching is done with or without replacement (not yet).
+
+	Args:
+		Y = N-dimensional array of observed outcomes
+		D = N-dimensional array of treatment indicator; 1=treated, 0=control
+		X = N-by-k matrix of covariates
+
+	Returns:
+		ATT estimates; matching done with or without replacement as specified
+	"""
+
+	control = (D == 0)  # Boolean index of control units
+	treated = (D == 1)  # Boolean index of treated units
+
+	# put replacement conditional here later
+	return MatchWithReplacement(Y[control], Y[treated], X[control], X[treated])
+
+
 def OLSEstimates(Y, D, X):
 
 	"""
-	Function that estimates ATT using OLS, which is consistent
-	when the true model is linear.
+	Function that estimates average treatment effect for the treated (ATT)
+	using OLS, which is consistent when the true model is linear.
 
 	Args:
 		Y = N-dimensional array of observed outcomes
@@ -199,8 +253,8 @@ def SimulateData(para=parameters(), return_counterfactual=False):
 def MonteCarlo(B=500, para=parameters(), print_progress=True):
 
 	"""
-	Function that returns ATT estimates using synthetic control and
-	OLS computed over B repetitions.
+	Function that returns ATT estimates using synthetic control, matching,
+	and OLS computed over B repetitions.
 
 	Args:
 		B = Number of Monte Carlo simulations to perform
@@ -209,11 +263,13 @@ def MonteCarlo(B=500, para=parameters(), print_progress=True):
 	Returns:
 		ATT_true = Actual average treatment effect for the treated
 		ATT_syn = Estimated ATT using synthetic controls
+		ATT_match = Estimated ATT using matching
 		ATT_ols = Estimated ATT using OLS
 	"""
 
 	ATT_true = np.zeros(B)
 	ATT_syn = np.zeros(B)
+	ATT_match = np.zeros(B)
 	ATT_ols = np.zeros(B)
 
 	for i in xrange(B):
@@ -222,12 +278,13 @@ def MonteCarlo(B=500, para=parameters(), print_progress=True):
 
 		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
 		ATT_syn[i] = SyntheticEstimates(Y, D, X)
+		ATT_match[i] = MatchingEstimates(Y, D, X)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
 		if print_progress and (i+1) % 10 == 0:
 			print i+1, 'out of', B, 'simulations completed.'
 
-	return ATT_true, ATT_syn, ATT_ols
+	return ATT_true, ATT_syn, ATT_match, ATT_ols
 
 
 def CalculateMSE(B=500, para=parameters()):
@@ -241,15 +298,17 @@ def CalculateMSE(B=500, para=parameters()):
 
 	Returns:
 		MSE_syn = Estimated MSE using synthetic control estimates
+		MSE_match = Estimated MSE using matching estimates
 		MSE_ols = Estimated MSE using OLS estimates
 	"""
 
-	ATT_true, ATT_syn, ATT_ols = MonteCarlo(B)
+	ATT_true, ATT_syn, ATT_match, ATT_ols = MonteCarlo(B)
 
 	MSE_syn = ((ATT_syn - ATT_true)**2).mean()
+	MSE_match = ((ATT_match - ATT_true)**2).mean()
 	MSE_ols = ((ATT_ols - ATT_true)**2).mean()
 
-	return MSE_syn, MSE_ols
+	return MSE_syn, MSE_match, MSE_ols
 
 
 def UseLalondeData():
@@ -290,27 +349,11 @@ def main():
 
 	B = 5000
 	print '\n' + 'Performing Monte Carlo simulations with B =', B
-	MSE_syn, MSE_ols = CalculateMSE(B)
+	MSE_syn, MSE_match, MSE_ols = CalculateMSE(B)
 	print 'Estimated Mean Squared Error for synthetic control estimator:', MSE_syn
+	print 'Estimated Mean Squared Error for matching estimator:', MSE_match
 	print 'Estimated Mean Squared Error for OLS estimator:', MSE_ols
 
 
 if __name__ == '__main__':
 	main()
-
-
-def Matching(Y_c, Y_t, X_c, X_t):  # matching with replacement
-
-	N_c = len(X_c)
-	if len(X_t.shape) == 1:  # check if input is 1D-array
-		N_t = 1
-	else:
-		N_t = len(X_t)  # there has to be a more elegant way of doing this
-
-	ITT = np.zeros(N_c)
-
-	for i in xrange(N_c):
-		match_index = ((X_t - X_c[i])**2).sum(1).argmin()
-		ITT[i] = Y_t[match_index] - Y_c[i]
-
-	return ITT.mean()
