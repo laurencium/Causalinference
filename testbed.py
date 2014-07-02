@@ -346,20 +346,15 @@ def UseLalondeData():
 
 	covariate_list = ['age', 'education', 'black', 'hispanic', 'married',
 	                  'nodegree', 're74', 're75', 'u74', 'u75']
-	treated = (lalonde['treat'] == 1)  # index of treated units
-	control = (lalonde['treat'] == 0)  # index of control units
 
 	# don't know how to not convert to array first
-	X_t = np.array(lalonde[treated][covariate_list])
-	X_c = np.array(lalonde[control][covariate_list])
-	W_hat = EstimateWeights(X_c, X_t)
-
-	Y_t = np.array(lalonde[treated]['re78'])
-	Y_c = np.array(lalonde[control]['re78'])
-	ATT_hat = TreatmentEffects(Y_c, Y_t, W_hat)
+	Y = np.array(lalonde['re78'])
+	D = np.array(lalonde['treat'])
+	X = np.array(lalonde[covariate_list])
+	ATT_hat = SyntheticEstimates(Y, D, X)
 
 	print "Using Lalonde's National Supported Work (NSW) experimental data..."
-	print 'Mean difference:', Y_t.mean() - Y_c.mean()
+	print 'Mean difference:', Y[D==1].mean() - Y[D==0].mean()
 	print 'Estimated average treatment effect on the treated:', ATT_hat
 
 
