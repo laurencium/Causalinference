@@ -351,11 +351,16 @@ def UseLalondeData():
 	Y = np.array(lalonde['re78'])
 	D = np.array(lalonde['treat'])
 	X = np.array(lalonde[covariate_list])
-	ATT_hat = SyntheticEstimates(Y, D, X)
+	
+	ATT_syn = SyntheticEstimates(Y, D, X)
+	ATT_match = MatchingEstimates(Y, D, X)
+	ATT_ols = OLSEstimates(Y, D, X)
 
 	print "Using Lalonde's National Supported Work (NSW) experimental data..."
+	print 'Estimated ATT using synthetic control estimator:', ATT_syn
+	print 'Estimated ATT using matching (with replacement) estimator:', ATT_match
+	print 'Estimated ATT using OLS estimator:', ATT_ols
 	print 'Mean difference:', Y[D==1].mean() - Y[D==0].mean()
-	print 'Estimated average treatment effect on the treated:', ATT_hat
 
 
 def main():
@@ -365,8 +370,8 @@ def main():
 	B = 50
 	print '\n' + 'Performing Monte Carlo simulations with B =', B
 	MSE_syn, MSE_match, MSE_ols = CalculateMSE(B, nonlinear=True)
-	print 'Estimated Mean Squared Error for synthetic control estimator:', MSE_syn
 	print 'Estimated Mean Squared Error for matching estimator:', MSE_match
+	print 'Estimated Mean Squared Error for synthetic control estimator:', MSE_syn
 	print 'Estimated Mean Squared Error for OLS estimator:', MSE_ols
 
 
