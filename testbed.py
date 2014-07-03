@@ -113,13 +113,13 @@ def MatchWithReplacement(Y_c, Y_t, X_c, X_t):
 	N_c = len(X_c)
 	N_t = len(X_t)
 
-	ITT = np.zeros(N_c)
+	ITT = np.zeros(N_t)
 
-	for i in xrange(N_c):
+	for i in xrange(N_t):
 		# find control unit that minimizes L_2-norm between X_c and X_t
 		# min search should be at most linear time
-		match_index = ((X_t - X_c[i])**2).sum(1).argmin()
-		ITT[i] = Y_t[match_index] - Y_c[i]  # estimated individual treatment effect
+		match_index = ((X_c - X_t[i])**2).sum(1).argmin()
+		ITT[i] = Y_t[i] - Y_c[match_index]  # estimated individual treatment effect
 
 	return ITT.mean()
 
