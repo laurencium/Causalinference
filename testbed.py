@@ -124,7 +124,7 @@ def MatchWithReplacement(Y_c, Y_t, X_c, X_t):
 	return ITT.mean()
 
 
-def MatchingEstimates(Y, D, X, with_replacement=True):
+def MatchingEstimates(Y, D, X, with_replacement=False):
 
 	"""
 	Function that estimates the average treatment effect for the treated (ATT)
@@ -141,11 +141,38 @@ def MatchingEstimates(Y, D, X, with_replacement=True):
 		ATT estimates; matching done with or without replacement as specified
 	"""
 
-	control = (D == 0)  # Boolean index of control units
-	treated = (D == 1)  # Boolean index of treated units
+	X_c = X[D==0]
+	X_t = X[D==1]
+	Y_c = Y[D==0]
+	Y_t = Y[D==1]
+
+	N_t = int(sum(D))
+	N_c = len(D) - N_t
+
+	ITT = np.zeros(N_t)
+
+	if with_replacement == False:
+		if N_t > N_c:
+			print 'Not enough control units, matching with replacement instead.'
+			with_replacement = True
+		else:
+			for i in xrange(N_t):
+				match_index = ((X_c - X_t[i])**2).sum(1).argmin()
+				ITT[i] = Y_t[i] - Y_c[match_index]
+				X_c = np.delete(X_c, match_index, axis=0)
+				Y_c = np.delete(Y_c, match_index, axis=0)
+
+	if with_replacement:
+		for i in xrange(N_t):
+			# find control unit that minimizes L_2-norm between X_c and X_t
+			# min search should be at most linear time
+			match_index = ((X_c - X_t[i])**2).sum(1).argmin()
+			ITT[i] = Y_t[i] - Y_c[match_index]  # estimated individual treatment effect
+
+	return ITT.mean()
 
 	# put replacement conditional here later
-	return MatchWithReplacement(Y[control], Y[treated], X[control], X[treated])
+	#return MatchWithReplacement(Y[control], Y[treated], X[control], X[treated])
 
 
 def OLSEstimates(Y, D, X):
