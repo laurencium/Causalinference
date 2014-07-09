@@ -26,8 +26,7 @@ def EstimateWeights(X_c, X_t):
 		W_hat = N_t-by-N_c matrix of estimated weights
 	"""
 
-	N_c = len(X_c)
-	N_t = len(X_t)
+	N_c, N_t = len(X_c), len(X_t)
 
 	W_hat = np.zeros(shape=(N_t, N_c))  # matrix of weight estimates
 
@@ -94,43 +93,15 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	return TreatmentEffects(Y[control], Y[treated], W_hat)
 
 
-def MatchWithReplacement(Y_c, Y_t, X_c, X_t):
-
-	"""
-	Function that estimates the average treatment effect for the treated (ATT)
-	using matching done with replacement.
-
-	Args:
-		Y_c = N_c-dimensional array of control unit outcomes
-		Y_t = N_t-dimensional array of treated unit outcomes
-		X_c = N_c-by-k matrix of control units
-		X_t = N_t-by-k matrix of treated units
-
-	Returns:
-		ATT estimates; matching done with replacement
-	"""
-
-	N_c = len(X_c)
-	N_t = len(X_t)
-
-	ITT = np.zeros(N_t)
-
-	for i in xrange(N_t):
-		# find control unit that minimizes L_2-norm between X_c and X_t
-		# min search should be at most linear time
-		match_index = ((X_c - X_t[i])**2).sum(1).argmin()
-		ITT[i] = Y_t[i] - Y_c[match_index]  # estimated individual treatment effect
-
-	return ITT.mean()
-
-
-def MatchingEstimates(Y, D, X, with_replacement=False):
+def MatchingEstimates(Y, D, X, with_replacement=True):
 
 	"""
 	Function that estimates the average treatment effect for the treated (ATT)
 	using matching.
 
-	Can specify whether matching is done with or without replacement (not yet).
+	Can specify whether matching is done with or without replacement. Swtiches
+	to matching with replacement if number of control units is less than
+	number of treated units.
 
 	Args:
 		Y = N-dimensional array of observed outcomes
@@ -138,16 +109,12 @@ def MatchingEstimates(Y, D, X, with_replacement=False):
 		X = N-by-k matrix of covariates
 
 	Returns:
-		ATT estimates; matching done with or without replacement as specified
+		ATT estimate; matching done with or without replacement as specified
 	"""
 
-	X_c = X[D==0]
-	X_t = X[D==1]
-	Y_c = Y[D==0]
-	Y_t = Y[D==1]
+	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
 
-	N_t = int(sum(D))
-	N_c = len(D) - N_t
+	N_c, N_t = len(X_c), len(X_t)
 
 	ITT = np.zeros(N_t)
 
@@ -157,6 +124,8 @@ def MatchingEstimates(Y, D, X, with_replacement=False):
 			with_replacement = True
 		else:
 			for i in xrange(N_t):
+				# find control unit that minimizes L_2-norm between X_c and X_t
+				# min search should be at most linear time
 				match_index = ((X_c - X_t[i])**2).sum(1).argmin()
 				ITT[i] = Y_t[i] - Y_c[match_index]
 				X_c = np.delete(X_c, match_index, axis=0)
@@ -164,15 +133,10 @@ def MatchingEstimates(Y, D, X, with_replacement=False):
 
 	if with_replacement:
 		for i in xrange(N_t):
-			# find control unit that minimizes L_2-norm between X_c and X_t
-			# min search should be at most linear time
 			match_index = ((X_c - X_t[i])**2).sum(1).argmin()
-			ITT[i] = Y_t[i] - Y_c[match_index]  # estimated individual treatment effect
+			ITT[i] = Y_t[i] - Y_c[match_index]
 
 	return ITT.mean()
-
-	# put replacement conditional here later
-	#return MatchWithReplacement(Y[control], Y[treated], X[control], X[treated])
 
 
 def OLSEstimates(Y, D, X):
