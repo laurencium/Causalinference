@@ -13,10 +13,11 @@ def EstimateWeights(X_c, X_t):
 	Function that estimates synthetic control weights for each treated unit.
 
 	For each treated unit, we find w that minimizes:
-		|| w' X_c - X_t ||_2,
-	subject to the weights being between 0 and 1, and that they sum to 1.
+		|| w' X_c - X_t ||^2,
 
-	Convex optimization problem solved by calling CVX.
+	Since the number of controls should always be greater than the number of
+	covariates, the linear system is underdetermined, and least squares	is
+	used to obtain a solution w.
 
 	Args:
 		X_c = N_c-by-k matrix of control units
@@ -31,19 +32,7 @@ def EstimateWeights(X_c, X_t):
 	W_hat = np.zeros(shape=(N_t, N_c))  # matrix of weight estimates
 
 	for i in xrange(N_t):
-
-		# for each treated unit, call CVX to solve optimization problem
-		w = cvx.Variable(N_c)
-		objective = cvx.Minimize(cvx.sum_squares(X_c.T * w - X_t[i, ]))
-		constraints = [cvx.sum_entries(w) == 1]
-		prob = cvx.Problem(objective, constraints)
-		min_value = prob.solve()
-
-		# constraints = [0 <= w, w <= 1, cvx.sum_entries(w) == 1]
-		# note: with Lalonde data, restricting 0 <= w <= 1 yields no
-		#       solutions for some treated units
-
-		W_hat[i, ] = w.value.getA1()  # convert to flattened array and store
+		W_hat[i, ] = np.linalg.lstsq(X_c.T, X_t[i, ])[0]
 
 	return W_hat
 
@@ -79,6 +68,10 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	"""
 	Function that computes ATT estimates from observerd data using
 	synthetic control method.
+
+	If higher_moments is true, then matching with be done on higher
+	moments of X as well. For now this only includes absolute first
+	moments, and second moments.
 	"""
 
 	control = (D == 0)  # Boolean index of control units
