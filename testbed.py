@@ -358,7 +358,7 @@ def main():
 
 	UseLalondeData()
 
-	B = 50
+	B = 500
 	print '\n' + 'Performing Monte Carlo simulations with B =', B
 	MSE_syn, MSE_match, MSE_ols = CalculateMSE(B, nonlinear=True)
 	print 'Estimated Mean Squared Error for matching estimator:', MSE_match
