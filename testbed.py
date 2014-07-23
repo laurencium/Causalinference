@@ -1,7 +1,6 @@
 
 import numpy as np
 import random
-import cvxpy as cvx
 import pandas as pd
 from scipy.stats import norm
 from sklearn import linear_model
@@ -86,6 +85,46 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	return TreatmentEffects(Y[control], Y[treated], W_hat)
 
 
+def MatchingWithReplacement(Y, D, X):
+
+	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
+
+	N_t = len(X_t)
+
+	ITT = np.zeros(N_t)
+
+	for i in xrange(N_t):
+		match_index = ((X_c - X_t[i])**2).sum(1).argmin()
+		ITT[i] = Y_t[i] - Y_c[match_index]
+
+	return ITT.mean()
+
+
+def MatchingWithoutReplacement(Y, D, X):
+
+	if 2*sum(D) > len(D):  # if N_t > N_c
+		print 'Not enough control units, matching with replacement instead.'
+		return MatchingWithReplacement(Y, D, X)
+
+	pscore = sm.Logit(D, X).fit(disp=False).predict()  # estimate pscore with logit
+	order = np.argsort(pscore)[::-1]  # sort pscore in descending order, get index
+	Y, D, X = Y[order], D[order], X[order]  # any way to do it more elegantly?
+
+	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
+
+	N_c, N_t = len(X_c), len(X_t)
+
+	ITT = np.zeros(N_t)
+
+	for i in xrange(N_t):
+		match_index = ((X_c - X_t[i])**2).sum(1).argmin()
+		ITT[i] = Y_t[i] - Y_c[match_index]
+		X_c = np.delete(X_c, match_index, axis=0)
+		Y_c = np.delete(Y_c, match_index, axis=0)
+
+	return ITT.mean()
+
+
 def MatchingEstimates(Y, D, X, with_replacement=True):
 
 	"""
@@ -105,31 +144,10 @@ def MatchingEstimates(Y, D, X, with_replacement=True):
 		ATT estimate; matching done with or without replacement as specified
 	"""
 
-	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
-
-	N_c, N_t = len(X_c), len(X_t)
-
-	ITT = np.zeros(N_t)
-
-	if with_replacement == False:
-		if N_t > N_c:
-			print 'Not enough control units, matching with replacement instead.'
-			with_replacement = True
-		else:
-			for i in xrange(N_t):
-				# find control unit that minimizes L_2-norm between X_c and X_t
-				# min search should be at most linear time
-				match_index = ((X_c - X_t[i])**2).sum(1).argmin()
-				ITT[i] = Y_t[i] - Y_c[match_index]
-				X_c = np.delete(X_c, match_index, axis=0)
-				Y_c = np.delete(Y_c, match_index, axis=0)
-
 	if with_replacement:
-		for i in xrange(N_t):
-			match_index = ((X_c - X_t[i])**2).sum(1).argmin()
-			ITT[i] = Y_t[i] - Y_c[match_index]
-
-	return ITT.mean()
+		return MatchingWithReplacement(Y, D, X)
+	else:
+		return MatchingWithoutReplacement(Y, D, X)
 
 
 def OLSEstimates(Y, D, X):
@@ -280,7 +298,7 @@ def MonteCarlo(B=500, para=parameters(), nonlinear=False, print_progress=True):
 
 		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
 		ATT_syn[i] = SyntheticEstimates(Y, D, X, higher_moments=nonlinear)
-		ATT_match[i] = MatchingEstimates(Y, D, X)
+		ATT_match[i] = MatchingEstimates(Y, D, X, with_replacement=False)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
 		if print_progress and (i+1) % 10 == 0:
@@ -349,7 +367,7 @@ def UseLalondeData():
 
 def main():
 
-	UseLalondeData()
+	#UseLalondeData()
 
 	B = 500
 	print '\n' + 'Performing Monte Carlo simulations with B =', B
