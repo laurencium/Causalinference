@@ -85,7 +85,7 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	return TreatmentEffects(Y[control], Y[treated], W_hat)
 
 
-def MatchingWithReplacement(Y, D, X):
+def MatchingWithReplacement(Y, D, X, mahalanobis=True):
 
 	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
 
@@ -94,17 +94,22 @@ def MatchingWithReplacement(Y, D, X):
 	ITT = np.zeros(N_t)
 
 	for i in xrange(N_t):
-		match_index = ((X_c - X_t[i])**2).sum(1).argmin()
+		x = X_c - X_t[i]
+		if mahalanobis:
+			V = np.cov(X, rowvar=0)
+			match_index = (x.dot(np.linalg.inv(V))*x).sum(axis=1).argmin()
+		else:
+			match_index = (x**2).sum(axis=1).argmin()
 		ITT[i] = Y_t[i] - Y_c[match_index]
 
-	return ITT.mean()
+	return ITT.mean()  # return ITT.std() as well for standard errors
 
 
-def MatchingWithoutReplacement(Y, D, X):
+def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
 
 	if 2*sum(D) > len(D):  # if N_t > N_c
 		print 'Not enough control units, matching with replacement instead.'
-		return MatchingWithReplacement(Y, D, X)
+		return MatchingWithReplacement(Y, D, X, mahalanobis)
 
 	pscore = sm.Logit(D, X).fit(disp=False).predict()  # estimate pscore with logit
 	order = np.argsort(pscore)[::-1]  # sort pscore in descending order, get index
@@ -117,12 +122,17 @@ def MatchingWithoutReplacement(Y, D, X):
 	ITT = np.zeros(N_t)
 
 	for i in xrange(N_t):
-		match_index = ((X_c - X_t[i])**2).sum(1).argmin()
+		x = X_c - X_t[i]
+		if mahalanobis:
+			V = np.cov(X, rowvar=0)
+			match_index = (x.dot(np.linalg.inv(V))*x).sum(axis=1).argmin()
+		else:
+			match_index = (x**2).sum(axis=1).argmin()
 		ITT[i] = Y_t[i] - Y_c[match_index]
 		X_c = np.delete(X_c, match_index, axis=0)
 		Y_c = np.delete(Y_c, match_index, axis=0)
 
-	return ITT.mean()
+	return ITT.mean()  # return ITT.std() as well for standard errors
 
 
 def MatchingEstimates(Y, D, X, with_replacement=True):
