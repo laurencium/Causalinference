@@ -4,7 +4,6 @@ import random
 import pandas as pd
 import statsmodels.api as sm
 from scipy.stats import norm
-from sklearn import linear_model
 
 
 def EstimateWeights(X_c, X_t):
@@ -267,15 +266,13 @@ def OLSEstimates(Y, D, X):
 	D = D.reshape((D.size, 1))  # convert D into N-by-1 vector
 	dX = X - X.mean(0)  # demean covariates
 	DdX = D * dX
-	# construct design matrix; no constant term as it will be added by sklearn
+	# construct design matrix
 	W = np.column_stack((D, dX, DdX))
 
-	# use sklearn to run regression
-	reg = linear_model.LinearRegression()
-	reg.fit(W, Y)
+	reg = sm.OLS(Y, sm.add_constant(W)).fit()
 
 	# for derivation of this estimator, see my notes on Treatment Effects
-	return reg.coef_[0] + np.dot((DdX.sum(0) / D.sum()), reg.coef_[-k:])
+	return reg.params[1] + np.dot((DdX.sum(0) / D.sum()), reg.params[-k:])
 
 
 class parameters:
@@ -367,7 +364,7 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 
 def MonteCarlo(B=500, para=parameters(), nonlinear=False, print_progress=True):
 
-	"""
+	"""	
 	Function that returns ATT estimates using synthetic control, matching,
 	and OLS computed over B repetitions on simulated data.
 
