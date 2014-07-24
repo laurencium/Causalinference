@@ -2,6 +2,7 @@
 import numpy as np
 import random
 import pandas as pd
+import statsmodels.api as sm
 from scipy.stats import norm
 from sklearn import linear_model
 
@@ -48,9 +49,9 @@ def TreatmentEffects(Y_c, Y_t, W, return_individual=False):
 		W = N_t-by-N_c matrix of synthetic control weights
 
 	Returns:
+		ATT = Scalar value of estaimted average treatment effect on the treated
 		ITT = N_t-dimensional array of estimated individual treatment effects
 		      for the treated sample
-		ATT = Scalar value of estaimted average treatment effect on the treated
 	"""
 
 	ITT = Y_t - np.dot(W, Y_c)
@@ -71,6 +72,16 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	If higher_moments is true, then matching with be done on higher
 	moments of X as well. For now this only includes absolute first
 	moments, and second moments.
+
+	Args:
+		Y = N-dimensional array of observed outcomes
+		D = N-dimensional array of treatment indicator; 1=treated, 0=control
+		X = N-by-k matrix of covariates
+		higher_moments = Boolean indicating whether to match on higher
+		                 moments of X as well
+
+	Returns:
+		ATT estimate
 	"""
 
 	control = (D == 0)  # Boolean index of control units
@@ -78,14 +89,29 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	if higher_moments:
 		X_control = np.hstack((X[control], abs(X[control]), X[control]**2))
 		X_treated = np.hstack((X[treated], abs(X[treated]), X[treated]**2))
-		W_hat = EstimateWeights(X_control, X_treated)
+		W_hat = EstimateWeights(X_control, X_treated)  # synthetic control weights
 	else:
-		W_hat = EstimateWeights(X[control], X[treated])  # synthetic control weights
+		W_hat = EstimateWeights(X[control], X[treated])
 
 	return TreatmentEffects(Y[control], Y[treated], W_hat)
 
 
 def MatchingWithReplacement(Y, D, X, mahalanobis=True):
+
+	"""
+	Function that estimates the average treatment effect for the treated (ATT)
+	using matching with replacement.
+
+	Args:
+		Y = N-dimensional array of observed outcomes
+		D = N-dimensional array of treatment indicator; 1=treated, 0=control
+		X = N-by-k matrix of covariates
+		mahalanobis = Boolean indicating whether to use Mahalanobis metric
+		              to measure covariate difference or not
+
+	Returns:
+		ATT estimate
+	"""
 
 	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
 
@@ -93,19 +119,41 @@ def MatchingWithReplacement(Y, D, X, mahalanobis=True):
 
 	ITT = np.zeros(N_t)
 
-	for i in xrange(N_t):
-		x = X_c - X_t[i]
-		if mahalanobis:
-			V = np.cov(X, rowvar=0)
-			match_index = (x.dot(np.linalg.inv(V))*x).sum(axis=1).argmin()
-		else:
-			match_index = (x**2).sum(axis=1).argmin()
-		ITT[i] = Y_t[i] - Y_c[match_index]
+	if mahalanobis:
+		V = np.cov(X, rowvar=0)  # rowvar=0 since each column of X is a variable
+		for i in xrange(N_t):
+			dX = X_c - X_t[i]  # N_c-by-k matrix of covariate differences
+			# calculate quadratic form dX_i' V dX_i for each i, then find min
+			match_index = (dX.dot(np.linalg.inv(V))*dX).sum(axis=1).argmin()
+			ITT[i] = Y_t[i] - Y_c[match_index]
+	else:
+		for i in xrange(N_t):
+			dX = X_c - X_t[i]  # N_c-by-k matrix of covariate differences
+			match_index = (dX**2).sum(axis=1).argmin()  # Euclidean norm
+			ITT[i] = Y_t[i] - Y_c[match_index]
 
 	return ITT.mean()  # return ITT.std() as well for standard errors
 
 
 def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
+
+	"""
+	Function that estimates the average treatment effect for the treated (ATT)
+	using matching without replacement.
+
+	Swtiches to matching with replacement if number of control units is less
+	than number of treated units.
+
+	Args:
+		Y = N-dimensional array of observed outcomes
+		D = N-dimensional array of treatment indicator; 1=treated, 0=control
+		X = N-by-k matrix of covariates
+		mahalanobis = Boolean indicating whether to use Mahalanobis metric
+		              to measure covariate difference or not
+
+	Returns:
+		ATT estimate
+	"""
 
 	if 2*sum(D) > len(D):  # if N_t > N_c
 		print 'Not enough control units, matching with replacement instead.'
@@ -113,7 +161,7 @@ def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
 
 	pscore = sm.Logit(D, X).fit(disp=False).predict()  # estimate pscore with logit
 	order = np.argsort(pscore)[::-1]  # sort pscore in descending order, get index
-	Y, D, X = Y[order], D[order], X[order]  # any way to do it more elegantly?
+	Y, D, X = Y[order], D[order], X[order]  # sort data in order of pscore
 
 	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
 
@@ -121,21 +169,27 @@ def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
 
 	ITT = np.zeros(N_t)
 
-	for i in xrange(N_t):
-		x = X_c - X_t[i]
-		if mahalanobis:
-			V = np.cov(X, rowvar=0)
-			match_index = (x.dot(np.linalg.inv(V))*x).sum(axis=1).argmin()
-		else:
-			match_index = (x**2).sum(axis=1).argmin()
-		ITT[i] = Y_t[i] - Y_c[match_index]
-		X_c = np.delete(X_c, match_index, axis=0)
-		Y_c = np.delete(Y_c, match_index, axis=0)
+	if mahalanobis:
+		V = np.cov(X, rowvar=0)  # rowvar=0 since each column of X is a variable
+		for i in xrange(N_t):
+			dX = X_c - X_t[i]  # N_c-by-k matrix of covariate differences
+			# calculate quadratic form dX_i' V dX_i for each i, then find min
+			match_index = (dX.dot(np.linalg.inv(V))*dX).sum(axis=1).argmin()
+			ITT[i] = Y_t[i] - Y_c[match_index]
+			X_c = np.delete(X_c, match_index, axis=0)  # remove matched unit
+			Y_c = np.delete(Y_c, match_index, axis=0)
+	else:
+		for i in xrange(N_t):  # same as above, just different metric used
+			dX = X_c - X_t[i]
+			match_index = (dX**2).sum(axis=1).argmin()  # Euclidean norm
+			ITT[i] = Y_t[i] - Y_c[match_index]
+			X_c = np.delete(X_c, match_index, axis=0)
+			Y_c = np.delete(Y_c, match_index, axis=0)
 
 	return ITT.mean()  # return ITT.std() as well for standard errors
 
 
-def MatchingEstimates(Y, D, X, with_replacement=True):
+def MatchingEstimates(Y, D, X, with_replacement=True, mahalanobis=True):
 
 	"""
 	Function that estimates the average treatment effect for the treated (ATT)
@@ -155,9 +209,9 @@ def MatchingEstimates(Y, D, X, with_replacement=True):
 	"""
 
 	if with_replacement:
-		return MatchingWithReplacement(Y, D, X)
+		return MatchingWithReplacement(Y, D, X, mahalanobis)
 	else:
-		return MatchingWithoutReplacement(Y, D, X)
+		return MatchingWithoutReplacement(Y, D, X, mahalanobis)
 
 
 def OLSEstimates(Y, D, X):
@@ -170,6 +224,9 @@ def OLSEstimates(Y, D, X):
 		Y = N-dimensional array of observed outcomes
 		D = N-dimensional array of treatment indicator; 1=treated, 0=control
 		X = N-by-k matrix of covariates
+
+	Returns:
+		ATT estimate
 	"""
 
 	k = X.shape[1]
@@ -255,7 +312,7 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 
 	Xbeta = np.dot(X, para.beta)
 
-	pscore = norm.cdf(Xbeta)
+	pscore = 0.2 * norm.cdf(Xbeta)
 	# for each p in pscore, generate Bernoulli rv with success probability p
 	D = np.array([np.random.binomial(1, p, size=1) for p in pscore]).flatten()
 
@@ -308,7 +365,7 @@ def MonteCarlo(B=500, para=parameters(), nonlinear=False, print_progress=True):
 
 		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
 		ATT_syn[i] = SyntheticEstimates(Y, D, X, higher_moments=nonlinear)
-		ATT_match[i] = MatchingEstimates(Y, D, X, with_replacement=False)
+		ATT_match[i] = MatchingEstimates(Y, D, X, with_replacement=True)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
 		if print_progress and (i+1) % 10 == 0:
