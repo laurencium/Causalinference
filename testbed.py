@@ -141,6 +141,13 @@ def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
 	Function that estimates the average treatment effect for the treated (ATT)
 	using matching without replacement.
 
+	Since finding best matches for all treated units simultaneously in one go
+	is combinatorial computationally, function uses a greedy algorithm where
+	the best match is found (and then removed from the pool) for each treated
+	unit, thus taking only linear time each time. The order in which the
+	matching is done is based on estimated propensity score - see Imbens-Rubin
+	for details.
+
 	Swtiches to matching with replacement if number of control units is less
 	than number of treated units.
 
@@ -312,7 +319,7 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 
 	Xbeta = np.dot(X, para.beta)
 
-	pscore = 0.2 * norm.cdf(Xbeta)
+	pscore = norm.cdf(Xbeta)
 	# for each p in pscore, generate Bernoulli rv with success probability p
 	D = np.array([np.random.binomial(1, p, size=1) for p in pscore]).flatten()
 
