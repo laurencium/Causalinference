@@ -96,11 +96,17 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	return TreatmentEffects(Y[control], Y[treated], W_hat)
 
 
-def MatchingWithReplacement(Y, D, X, mahalanobis=True):
+def MatchingWithReplacement(Y, D, X, mahalanobis=True, bias_correction=True):
 
 	"""
 	Function that estimates the average treatment effect for the treated (ATT)
 	using matching with replacement.
+
+	To perform bias correction, we estimate the bias term by
+		B = beta_c * (X_t - X_c[matched]),
+	where beta_c is the slope coefficient from the regression
+		Y_c[matched] = alpha_c + beta_c * X_c[matched] + epsilon.
+	For details, see Imbens-Rubin.
 
 	Args:
 		Y = N-dimensional array of observed outcomes
@@ -108,6 +114,8 @@ def MatchingWithReplacement(Y, D, X, mahalanobis=True):
 		X = N-by-k matrix of covariates
 		mahalanobis = Boolean indicating whether to use Mahalanobis metric
 		              to measure covariate difference or not
+		bias_correction = Boolean indicating whether to perform bias correction
+		                  based on separate regressions on levels of covariates
 
 	Returns:
 		ATT estimate
@@ -117,20 +125,25 @@ def MatchingWithReplacement(Y, D, X, mahalanobis=True):
 
 	N_t = len(X_t)
 
-	ITT = np.zeros(N_t)
+	match_index = np.zeros(N_t, dtype=np.int)
 
 	if mahalanobis:
 		V = np.cov(X, rowvar=0)  # rowvar=0 since each column of X is a variable
 		for i in xrange(N_t):
 			dX = X_c - X_t[i]  # N_c-by-k matrix of covariate differences
 			# calculate quadratic form dX_i' V dX_i for each i, then find min
-			match_index = (dX.dot(np.linalg.inv(V))*dX).sum(axis=1).argmin()
-			ITT[i] = Y_t[i] - Y_c[match_index]
+			match_index[i] = (dX.dot(np.linalg.inv(V))*dX).sum(axis=1).argmin()
 	else:
 		for i in xrange(N_t):
 			dX = X_c - X_t[i]  # N_c-by-k matrix of covariate differences
-			match_index = (dX**2).sum(axis=1).argmin()  # Euclidean norm
-			ITT[i] = Y_t[i] - Y_c[match_index]
+			match_index[i] = (dX**2).sum(axis=1).argmin()  # Euclidean norm
+
+	if bias_correction:
+		reg = sm.OLS(Y_c[match_index], sm.add_constant(X_c[match_index])).fit()
+		ITT = Y_t - Y_c[match_index] - np.dot((X_t - X_c[match_index]),
+		                                      reg.params[1:])
+	else:
+		ITT = Y_t - Y_c[match_index]
 
 	return ITT.mean()  # return ITT.std() as well for standard errors
 
@@ -333,7 +346,7 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 
 	Xbeta = np.dot(X, para.beta)
 
-	pscore = 0.5 * norm.cdf(Xbeta)
+	pscore = norm.cdf(Xbeta)
 	# for each p in pscore, generate Bernoulli rv with success probability p
 	D = np.array([np.random.binomial(1, p, size=1) for p in pscore]).flatten()
 
@@ -386,7 +399,7 @@ def MonteCarlo(B=500, para=parameters(), nonlinear=False, print_progress=True):
 
 		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
 		ATT_syn[i] = SyntheticEstimates(Y, D, X, higher_moments=nonlinear)
-		ATT_match[i] = MatchingEstimates(Y, D, X, with_replacement=False)
+		ATT_match[i] = MatchingEstimates(Y, D, X, with_replacement=True)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
 		if print_progress and (i+1) % 10 == 0:
