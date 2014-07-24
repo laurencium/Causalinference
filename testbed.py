@@ -135,7 +135,7 @@ def MatchingWithReplacement(Y, D, X, mahalanobis=True):
 	return ITT.mean()  # return ITT.std() as well for standard errors
 
 
-def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
+def MatchingWithoutReplacement(Y, D, X, mahalanobis=True, bias_correction=True):
 
 	"""
 	Function that estimates the average treatment effect for the treated (ATT)
@@ -148,8 +148,14 @@ def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
 	matching is done is based on estimated propensity score - see Imbens-Rubin
 	for details.
 
-	Swtiches to matching with replacement if number of control units is less
-	than number of treated units.
+	To perform bias correction, we estimate the bias term by
+		B = beta_c * (X_t - X_c[matched]),
+	where beta_c is the slope coefficient from the regression
+		Y_c[matched] = alpha_c + beta_c * X_c[matched] + epsilon.
+	For details, see Imbens-Rubin.
+
+	Function swtiches to matching with replacement if number of control units
+	is less than number of treated units.
 
 	Args:
 		Y = N-dimensional array of observed outcomes
@@ -157,6 +163,8 @@ def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
 		X = N-by-k matrix of covariates
 		mahalanobis = Boolean indicating whether to use Mahalanobis metric
 		              to measure covariate difference or not
+		bias_correction = Boolean indicating whether to perform bias correction
+		                  based on separate regressions on levels of covariates
 
 	Returns:
 		ATT estimate
@@ -174,24 +182,30 @@ def MatchingWithoutReplacement(Y, D, X, mahalanobis=True):
 
 	N_c, N_t = len(X_c), len(X_t)
 
-	ITT = np.zeros(N_t)
+	match_index = np.zeros(N_t, dtype=np.int)  # index of matched control units
 
 	if mahalanobis:
 		V = np.cov(X, rowvar=0)  # rowvar=0 since each column of X is a variable
 		for i in xrange(N_t):
 			dX = X_c - X_t[i]  # N_c-by-k matrix of covariate differences
-			# calculate quadratic form dX_i' V dX_i for each i, then find min
-			match_index = (dX.dot(np.linalg.inv(V))*dX).sum(axis=1).argmin()
-			ITT[i] = Y_t[i] - Y_c[match_index]
-			X_c = np.delete(X_c, match_index, axis=0)  # remove matched unit
-			Y_c = np.delete(Y_c, match_index, axis=0)
-	else:
-		for i in xrange(N_t):  # same as above, just different metric used
+			# calculate quadratic form dX_i' V dX_i for each treated i, then find min
+			match_index[i] = np.nanargmin((dX.dot(np.linalg.inv(V))*dX).sum(axis=1))
+			X_c[match_index[i]] = np.nan  # remove matched control unit with nan
+			# don't want to actually remove matched unit from X_c since that
+			# would mess up the indices and future computations involving X_c
+	else:  # do same thing as above, just use different metric
+		for i in xrange(N_t):
 			dX = X_c - X_t[i]
-			match_index = (dX**2).sum(axis=1).argmin()  # Euclidean norm
-			ITT[i] = Y_t[i] - Y_c[match_index]
-			X_c = np.delete(X_c, match_index, axis=0)
-			Y_c = np.delete(Y_c, match_index, axis=0)
+			match_index[i] = np.nanargmin((dX**2).sum(axis=1))  # Euclidean norm
+			X_c[match_index[i]] = np.nan
+
+	if bias_correction:
+		X_c = X[D==0]  # redefine X_c to replace nan values created earlier
+		reg = sm.OLS(Y_c[match_index], sm.add_constant(X_c[match_index])).fit()
+		ITT = Y_t - Y_c[match_index] - np.dot((X_t - X_c[match_index]),
+		                                      reg.params[1:])
+	else:
+		ITT = Y_t - Y_c[match_index]
 
 	return ITT.mean()  # return ITT.std() as well for standard errors
 
@@ -319,7 +333,7 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 
 	Xbeta = np.dot(X, para.beta)
 
-	pscore = norm.cdf(Xbeta)
+	pscore = 0.5 * norm.cdf(Xbeta)
 	# for each p in pscore, generate Bernoulli rv with success probability p
 	D = np.array([np.random.binomial(1, p, size=1) for p in pscore]).flatten()
 
@@ -372,7 +386,7 @@ def MonteCarlo(B=500, para=parameters(), nonlinear=False, print_progress=True):
 
 		ATT_true[i] = (Y_1[D==1]-Y_0[D==1]).mean()
 		ATT_syn[i] = SyntheticEstimates(Y, D, X, higher_moments=nonlinear)
-		ATT_match[i] = MatchingEstimates(Y, D, X, with_replacement=True)
+		ATT_match[i] = MatchingEstimates(Y, D, X, with_replacement=False)
 		ATT_ols[i] = OLSEstimates(Y, D, X)
 
 		if print_progress and (i+1) % 10 == 0:
