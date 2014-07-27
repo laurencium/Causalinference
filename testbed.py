@@ -6,46 +6,26 @@ import statsmodels.api as sm
 from scipy.stats import norm
 
 
-def EstimateWeights(X_c, X_t):
+def Synthetic(Y_c, Y_t, X_c, X_t, return_individual=False):
 
 	"""
-	Function that estimates synthetic control weights for each treated unit.
+	Function that performs synthetic control estimates of individual
+	treatment effect for each treated unit.
 
 	For each treated unit, we find w that minimizes:
-		|| w' X_c - X_t ||^2,
+		|| w' X_c - X_t ||^2.
 
 	Since the number of controls should always be greater than the number of
 	covariates, the linear system is underdetermined, and least squares	is
 	used to obtain a solution w.
 
 	Args:
-		X_c = N_c-by-k matrix of control units
-		X_t = N_t-by-k matrix of treated units
-
-	Returns:
-		W_hat = N_t-by-N_c matrix of estimated weights
-	"""
-
-	N_c, N_t = len(X_c), len(X_t)
-
-	W_hat = np.zeros(shape=(N_t, N_c))  # matrix of weight estimates
-
-	for i in xrange(N_t):
-		W_hat[i, ] = np.linalg.lstsq(X_c.T, X_t[i, ])[0]
-
-	return W_hat
-
-
-def TreatmentEffects(Y_c, Y_t, W, return_individual=False):
-
-	"""
-	Function that estimates individual and average treatment effects
-	via synthetic control method, using provided synthetic control weights.
-
-	Args:
 		Y_c = N_c-dimensional array of control unit outcomes
 		Y_t = N_t-dimensional array of treated unit outcomes
-		W = N_t-by-N_c matrix of synthetic control weights
+		X_c = N_c-by-k matrix of control units
+		X_t = N_t-by-k matrix of treated units
+		return_individual = Boolean indicating whether vector of individual
+		                    treatment effects should be returned
 
 	Returns:
 		ATT = Scalar value of estaimted average treatment effect on the treated
@@ -53,13 +33,18 @@ def TreatmentEffects(Y_c, Y_t, W, return_individual=False):
 		      for the treated sample
 	"""
 
-	ITT = Y_t - np.dot(W, Y_c)
-	ATT = ITT.mean()
+	N_c, N_t = len(Y_c), len(Y_t)
+
+	ITT = np.zeros(N_t)
+
+	for i in xrange(N_t):
+		w = np.linalg.lstsq(X_c.T, X_t[i, ])[0]  # regress X_t[i] on X_c matrix
+		ITT[i] = Y_t[i] - np.dot(w, Y_c)
 
 	if return_individual:
-		return ATT, ITT
+		return ITT.mean(), ITT
 	else:
-		return ATT
+		return ITT.mean()
 
 
 def SyntheticEstimates(Y, D, X, higher_moments=False):
@@ -88,11 +73,9 @@ def SyntheticEstimates(Y, D, X, higher_moments=False):
 	if higher_moments:
 		X_control = np.hstack((X[control], abs(X[control]), X[control]**2))
 		X_treated = np.hstack((X[treated], abs(X[treated]), X[treated]**2))
-		W_hat = EstimateWeights(X_control, X_treated)  # synthetic control weights
+		return Synthetic(Y[control], Y[treated], X_control, X_treated)
 	else:
-		W_hat = EstimateWeights(X[control], X[treated])
-
-	return TreatmentEffects(Y[control], Y[treated], W_hat)
+		return Synthetic(Y[control], Y[treated], X[control], X[treated])
 
 
 def MatchingWithReplacement(Y, D, X, mahalanobis=True, bias_correction=True):
@@ -120,9 +103,9 @@ def MatchingWithReplacement(Y, D, X, mahalanobis=True, bias_correction=True):
 		ATT estimate
 	"""
 
-	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
+	Y_c, Y_t, X_c, X_t = Y[D==0], Y[D==1], X[D==0], X[D==1]
 
-	N_t = len(X_t)
+	N_t = len(Y_t)
 
 	match_index = np.zeros(N_t, dtype=np.int)
 
@@ -190,9 +173,9 @@ def MatchingWithoutReplacement(Y, D, X, mahalanobis=True, bias_correction=True):
 	order = np.argsort(pscore)[::-1]  # sort pscore in descending order, get index
 	Y, D, X = Y[order], D[order], X[order]  # sort data in order of pscore
 
-	X_c, X_t, Y_c, Y_t = X[D==0], X[D==1], Y[D==0], Y[D==1]
+	Y_c, Y_t, X_c, X_t = Y[D==0], Y[D==1], X[D==0], X[D==1]
 
-	N_c, N_t = len(X_c), len(X_t)
+	N_c, N_t = len(Y_c), len(Y_t)
 
 	match_index = np.zeros(N_t, dtype=np.int)  # index of matched control units
 
