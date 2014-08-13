@@ -32,20 +32,22 @@ class CausalModel(object):
 
 		return Results(self, ITT.mean(), ITT)
 
+	def matching(self):
+
+		unmatched = range(self.N_c)
+		match_index = np.zeros(self.N_t, dtype=np.int)
+
+		for i in xrange(self.N_t):
+			dX = self.X_c[unmatched] - self.X_t[i]
+			j = np.argmin((dX**2).sum(axis=1))
+			match_index[i] = unmatched[j]
+			unmatched = np.delete(unmatched, j)
+
+		ITT = self.Y_t - self.Y_c[match_index]
+
+		return Results(self, ITT.mean(), ITT)
+
 	def ols(self):
-
-		"""
-		Function that estimates average treatment effect for the treated (ATT)
-		using OLS, which is consistent when the true model is linear.
-
-		Args:
-			Y = N-dimensional array of observed outcomes
-			D = N-dimensional array of treatment indicator; 1=treated, 0=control
-			X = N-by-k matrix of covariates
-
-		Returns:
-			ATT estimate
-		"""
 
 		D = self.D.reshape((self.N, 1))  # convert D into N-by-1 vector
 		dX = self.X - self.X.mean(0)  # demean covariates
