@@ -11,6 +11,7 @@ class CausalModel(object):
 		self.D = D
 		self.X = X
 		self.N = self.X.shape[0]
+		self.k = self.X.shape[1]
 		control = (self.D==0)
 		treated = (self.D==1)
 		self.Y_c = self.Y[control]
@@ -29,7 +30,35 @@ class CausalModel(object):
 			w = np.linalg.lstsq(self.X_c.T, self.X_t[i, ])[0]
 			ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
 
-		return Results(self, ITT2.mean(), ITT2)
+		return Results(self, ITT.mean(), ITT)
+
+	def ols(self):
+
+		"""
+		Function that estimates average treatment effect for the treated (ATT)
+		using OLS, which is consistent when the true model is linear.
+
+		Args:
+			Y = N-dimensional array of observed outcomes
+			D = N-dimensional array of treatment indicator; 1=treated, 0=control
+			X = N-by-k matrix of covariates
+
+		Returns:
+			ATT estimate
+		"""
+
+		D = self.D.reshape((self.N, 1))  # convert D into N-by-1 vector
+		dX = self.X - self.X.mean(0)  # demean covariates
+		DdX = D * dX
+		# construct design matrix
+		Z = np.column_stack((D, dX, DdX))
+
+		reg = sm.OLS(self.Y, sm.add_constant(Z)).fit()
+
+		# for derivation of this estimator, see my notes on Treatment Effects
+		ITT = reg.params[1] + np.dot(dX[self.D==1], reg.params[-self.k:])
+
+		return Results(self, ITT.mean(), ITT)
 
 
 class Results(object):
