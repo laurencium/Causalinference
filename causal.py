@@ -7,19 +7,12 @@ from scipy.stats import norm
 class CausalModel(object):
 
 	def __init__(self, Y, D, X):
-		self.Y = Y
-		self.D = D
-		self.X = X
-		self.N = self.X.shape[0]
-		self.k = self.X.shape[1]
-		control = (self.D==0)
-		treated = (self.D==1)
-		self.Y_c = self.Y[control]
-		self.Y_t = self.Y[treated]
-		self.X_c = self.X[control]
-		self.X_t = self.X[treated]
-		self.N_c = self.X_c.shape[0]
-		self.N_t = self.X_t.shape[0]
+		self.Y, self.D, self.X = Y, D, X
+		self.N, self.k = self.X.shape
+		control, treated = (self.D==0), (self.D==1)
+		self.Y_c, self.Y_t = self.Y[control], self.Y[treated]
+		self.X_c, self.X_t = self.X[control], self.X[treated]
+		self.N_c, self.N_t = self.X_c.shape[0], self.X_t.shape[0]
 
 	def synthetic(self):
 
@@ -32,18 +25,27 @@ class CausalModel(object):
 
 		return Results(self, ITT.mean(), ITT)
 
-	def matching(self):
+	def matching(self, replace=False, correct_bias=False):
 
-		unmatched = range(self.N_c)
 		match_index = np.zeros(self.N_t, dtype=np.int)
 
-		for i in xrange(self.N_t):
-			dX = self.X_c[unmatched] - self.X_t[i]
-			j = np.argmin((dX**2).sum(axis=1))
-			match_index[i] = unmatched[j]
-			unmatched = np.delete(unmatched, j)
+		if replace:
+			for i in xrange(self.N_t):
+				dX = self.X_c - self.X_t[i]
+				match_index[i] = np.argmin((dX**2).sum(axis=1))
+		else:
+			unmatched = range(self.N_c)
+			for i in xrange(self.N_t):
+				dX = self.X_c[unmatched] - self.X_t[i]
+				match_index[i] = unmatched.pop(np.argmin((dX**2).sum(axis=1)))
 
-		ITT = self.Y_t - self.Y_c[match_index]
+		if correct_bias:
+			reg = sm.OLS(self.Y_c[match_index],
+			             sm.add_constant(self.X_c[match_index])).fit()
+			ITT = (self.Y_t - self.Y_c[match_index] - 
+			       np.dot((self.X_t - self.X_c[match_index]), reg.params[1:]))
+		else:
+			ITT = self.Y_t - self.Y_c[match_index]
 
 		return Results(self, ITT.mean(), ITT)
 
