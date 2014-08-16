@@ -1,8 +1,10 @@
 
 import numpy as np
 import random
+import itertools
 import statsmodels.api as sm
 from scipy.stats import norm
+
 
 class CausalModel(object):
 
@@ -14,14 +16,33 @@ class CausalModel(object):
 		self.X_c, self.X_t = self.X[control], self.X[treated]
 		self.N_c, self.N_t = self.X_c.shape[0], self.X_t.shape[0]
 
-	def synthetic(self):
+	def synthetic(self, poly=0):
 
 		ITT = np.zeros(self.N_t)
 
-		# avoids storing the potentially massive N_t-by-N_c weights matrix
-		for i in xrange(self.N_t):
-			w = np.linalg.lstsq(self.X_c.T, self.X_t[i, ])[0]
-			ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
+		if poly > 1:
+
+			terms = []
+			for power in xrange(2, poly+1):
+				terms.extend(list(itertools.combinations_with_replacement(range(self.k), power)))
+			num_of_terms = len(terms)
+
+			X_poly = np.ones((self.N, num_of_terms))
+			for i in xrange(num_of_terms):
+				for j in terms[i]:
+					X_poly[:, i] = X_poly[:, i] * X[:, j]
+			X_control = np.hstack((self.X_c, X_poly[D==0]))
+			X_treated = np.hstack((self.X_t, X_poly[D==1]))
+
+			for i in xrange(self.N_t):
+				w = np.linalg.lstsq(X_control.T, X_treated[i, ])[0]
+				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
+
+		else:
+			# avoids storing the potentially massive N_t-by-N_c weights matrix
+			for i in xrange(self.N_t):
+				w = np.linalg.lstsq(self.X_c.T, self.X_t[i, ])[0]
+				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
 
 		return Results(self, ITT.mean(), ITT)
 
