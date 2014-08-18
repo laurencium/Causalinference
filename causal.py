@@ -16,6 +16,15 @@ class CausalModel(object):
 		self.X_c, self.X_t = self.X[control], self.X[treated]
 		self.N_c, self.N_t = self.X_c.shape[0], self.X_t.shape[0]
 
+	def __polymatrix(self, X, terms):
+
+		num_of_terms = len(terms)
+		X_poly = np.ones((X.shape[0], num_of_terms))
+		for i in xrange(num_of_terms):
+			for j in terms[i]:
+				X_poly[:, i] = X_poly[:, i] * X[:, j]
+		return np.hstack((X, X_poly))
+
 	def synthetic(self, poly=0):
 
 		ITT = np.zeros(self.N_t)
@@ -24,18 +33,15 @@ class CausalModel(object):
 
 			terms = []
 			for power in xrange(2, poly+1):
-				terms.extend(list(itertools.combinations_with_replacement(range(self.k), power)))
+				terms.extend(list(itertools.combinations_with_replacement(range(self.k),
+				                                                          power)))
 			num_of_terms = len(terms)
 
-			X_poly = np.ones((self.N, num_of_terms))
-			for i in xrange(num_of_terms):
-				for j in terms[i]:
-					X_poly[:, i] = X_poly[:, i] * X[:, j]
-			X_control = np.hstack((self.X_c, X_poly[D==0]))
-			X_treated = np.hstack((self.X_t, X_poly[D==1]))
-
+			X_control = self.__polymatrix(self.X_c, terms)
+			
 			for i in xrange(self.N_t):
-				w = np.linalg.lstsq(X_control.T, X_treated[i, ])[0]
+				X_treated = self.__polymatrix(self.X_t[i, :].reshape((1, self.k)), terms)
+				w = np.linalg.lstsq(X_control.T, X_treated.flatten())[0]
 				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
 
 		else:
