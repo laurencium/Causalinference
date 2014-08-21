@@ -52,7 +52,7 @@ class CausalModel(object):
 
 		return Results(self, ITT.mean(), ITT)
 
-	def matching(self, replace=False, correct_bias=False):
+	def matching(self, replace=False, correct_bias=False, order_by_pscore=False):
 
 		match_index = np.zeros(self.N_t, dtype=np.int)
 
@@ -62,7 +62,12 @@ class CausalModel(object):
 				match_index[i] = np.argmin((dX**2).sum(axis=1))
 		else:
 			unmatched = range(self.N_c)
-			for i in xrange(self.N_t):
+			if order_by_pscore:
+				pscore = sm.Logit(D, X).fit(disp=False).predict()
+				order = np.argsort(pscore[D==1])[::-1]
+			else:
+				order = xrange(self.N_t)
+			for i in order:
 				dX = self.X_c[unmatched] - self.X_t[i]
 				match_index[i] = unmatched.pop(np.argmin((dX**2).sum(axis=1)))
 
