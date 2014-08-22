@@ -9,6 +9,7 @@ from scipy.stats import norm
 class CausalModel(object):
 
 	def __init__(self, Y, D, X):
+
 		self.Y, self.D, self.X = Y, D, X
 		self.N, self.k = self.X.shape
 		control, treated = (self.D==0), (self.D==1)
@@ -18,6 +19,22 @@ class CausalModel(object):
 
 	def __polymatrix(self, X, terms):
 
+		"""
+		Constructs matrix of polynomial terms to be used in synthetic control matching.
+
+		Arguments
+		---------
+			X: matrix with k columns
+				Covariate values/vectors from which higher order polynomial terms are
+				to be constructed.
+			terms: list
+				List of specific combinations of covariates to multiply together.
+
+		Returns
+		-------
+			Original covariates matrix appended with higher polynomial terms.
+		"""
+
 		num_of_terms = len(terms)
 		X_poly = np.ones((X.shape[0], num_of_terms))
 		for i in xrange(num_of_terms):
@@ -26,6 +43,24 @@ class CausalModel(object):
 		return np.hstack((X, X_poly))
 
 	def synthetic(self, poly=0):
+
+		"""
+		Estimates the average treatment effect for the treated (ATT) via synthetic
+		controls.
+
+		Terms of higher order polynomials of the covariates can be used in constructing
+		synthetic controls.
+
+		Arguments
+		---------
+			poly: integer
+				Highest polynomial degree to match up to in constructing synthetic
+				controls.
+
+		Returns
+		-------
+			A Results class instance.
+		"""
 
 		ITT = np.zeros(self.N_t)
 
@@ -52,19 +87,51 @@ class CausalModel(object):
 
 		return Results(self, ITT.mean(), ITT)
 
-	def matching(self, replace=False, correct_bias=False, order_by_pscore=False):
+	def matching(self, replace=False, correct_bias=False, *order_by_pscore):
+
+		"""
+		Estimates the average treatment effect for the treated (ATT) using matching.
+
+		Can specify whether matching is done with or without replacement.
+
+		Bias correction can optionally be done. Bias resulting from imperfect
+		matches is estimated by
+			(X_t - X_c[matched])' * b,
+		where b is the estimated coefficient from regressiong Y_c[matched] on
+		X_c[matched]. For details, see Imbens and Rubin.
+
+		Matching without replacement is computed via a greedy algorithm, where
+		the best match for a treated unit is chosen without regard to the rest of
+		the sample. By default, treated units are matched in the order that they
+		come in in the data. An option to match in the order of descending estimated
+		propensity score is provided.
+
+		Arguments
+		---------
+			replace: Boolean
+				Match with replacement or not; defaults to without.
+			correct_bias: Boolean
+				Correct bias resulting from imperfect matches or not; defaults to
+				no correction.
+			order_by_pscore: Boolean, optional
+				Determines order of match-making when matching without replacement.
+
+		Returns
+		-------
+			A Results class instance.
+		"""
 
 		match_index = np.zeros(self.N_t, dtype=np.int)
 
 		if replace:
 			for i in xrange(self.N_t):
-				dX = self.X_c - self.X_t[i]
+				dX = self.X_c - self.X_t[i]  # N_c-by-k matrix of covariate differences
 				match_index[i] = np.argmin((dX**2).sum(axis=1))
 		else:
 			unmatched = range(self.N_c)
 			if order_by_pscore:
-				pscore = sm.Logit(D, X).fit(disp=False).predict()
-				order = np.argsort(pscore[D==1])[::-1]
+				pscore = sm.Logit(D, X).fit(disp=False).predict()  # estimate by logit
+				order = np.argsort(pscore[D==1])[::-1]  # descending pscore order
 			else:
 				order = xrange(self.N_t)
 			for i in order:
@@ -83,15 +150,20 @@ class CausalModel(object):
 
 	def ols(self):
 
-		D = self.D.reshape((self.N, 1))  # convert D into N-by-1 vector
-		dX = self.X - self.X.mean(0)  # demean covariates
+		"""
+		Estimates the average treatment effect for the treated (ATT) using least squares.
+
+		Returns
+		-------
+			A Results class instance.
+		"""
+
+		D = self.D.reshape((self.N, 1))
+		dX = self.X - self.X.mean(0)
 		DdX = D * dX
-		# construct design matrix
 		Z = np.column_stack((D, dX, DdX))
 
 		reg = sm.OLS(self.Y, sm.add_constant(Z)).fit()
-
-		# for derivation of this estimator, see my notes on Treatment Effects
 		ITT = reg.params[1] + np.dot(dX[self.D==1], reg.params[-self.k:])
 
 		return Results(self, ITT.mean(), ITT)
