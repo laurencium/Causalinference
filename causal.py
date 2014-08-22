@@ -17,6 +17,7 @@ class CausalModel(object):
 		self.X_c, self.X_t = self.X[control], self.X[treated]
 		self.N_c, self.N_t = self.X_c.shape[0], self.X_t.shape[0]
 
+
 	def __polymatrix(self, X, terms):
 
 		"""
@@ -24,8 +25,8 @@ class CausalModel(object):
 
 		Arguments
 		---------
-			X: matrix with k columns
-				Covariate values/vectors from which higher order polynomial terms are
+			X: array-like
+				k Covariate values/vectors from which higher order polynomial terms are
 				to be constructed.
 			terms: list
 				List of specific combinations of covariates to multiply together.
@@ -41,6 +42,7 @@ class CausalModel(object):
 			for j in terms[i]:
 				X_poly[:, i] = X_poly[:, i] * X[:, j]
 		return np.hstack((X, X_poly))
+
 
 	def synthetic(self, poly=0):
 
@@ -74,25 +76,50 @@ class CausalModel(object):
 
 			X_control = self.__polymatrix(self.X_c, terms)
 			
-			for i in xrange(self.N_t):
+			for i in xrange(self.N_t):  # can vectorize, but higher space requirement
 				X_treated = self.__polymatrix(self.X_t[i, :].reshape((1, self.k)), terms)
 				w = np.linalg.lstsq(X_control.T, X_treated.flatten())[0]
 				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
 
 		else:
-			# avoids storing the potentially massive N_t-by-N_c weights matrix
 			for i in xrange(self.N_t):
 				w = np.linalg.lstsq(self.X_c.T, self.X_t[i, ])[0]
 				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
 
 		return Results(self, ITT.mean(), ITT)
 
-	def matching(self, replace=False, correct_bias=False, *order_by_pscore):
+
+	def __norm(self, dX, W):
+
+		"""
+		Calculates a vector of norms given weighting matrix W.
+
+		Arguments
+		---------
+			dX: array-like
+				Matrix of covariate differences.
+			W: array-like
+				k-by-k weighting matrix or None for Eucliean norm.
+
+		"""
+
+		if W is None:
+			return (dX**2).sum(axis=1)
+		else:
+			return (dX.dot(W)*dX).sum(axis=1)
+
+
+	def matching(self, replace=False, wmatrix=None, correct_bias=False,
+	             order_by_pscore=False):
 
 		"""
 		Estimates the average treatment effect for the treated (ATT) using matching.
 
 		Can specify whether matching is done with or without replacement.
+
+		By default, the distance metric used for measuring covariate differences
+		is the Euclidean metric. The Mahalanobis metric or other arbitrary weighting
+		matrices can also be used instead.
 
 		Bias correction can optionally be done. Bias resulting from imperfect
 		matches is estimated by
@@ -110,6 +137,9 @@ class CausalModel(object):
 		---------
 			replace: Boolean
 				Match with replacement or not; defaults to without.
+			wmatrix: string, array-like
+				Distance measure to be used; acceptable values are None (Euclidean norm),
+				string 'maha' for Mahalanobis metric, or any arbitrary k-by-k matrix
 			correct_bias: Boolean
 				Correct bias resulting from imperfect matches or not; defaults to
 				no correction.
@@ -123,10 +153,13 @@ class CausalModel(object):
 
 		match_index = np.zeros(self.N_t, dtype=np.int)
 
+		if wmatrix == 'maha':
+			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+
 		if replace:
 			for i in xrange(self.N_t):
 				dX = self.X_c - self.X_t[i]  # N_c-by-k matrix of covariate differences
-				match_index[i] = np.argmin((dX**2).sum(axis=1))
+				match_index[i] = np.argmin(self.__norm(dX, wmatrix))
 		else:
 			unmatched = range(self.N_c)
 			if order_by_pscore:
@@ -136,7 +169,7 @@ class CausalModel(object):
 				order = xrange(self.N_t)
 			for i in order:
 				dX = self.X_c[unmatched] - self.X_t[i]
-				match_index[i] = unmatched.pop(np.argmin((dX**2).sum(axis=1)))
+				match_index[i] = unmatched.pop(np.argmin(self.__norm(dX, wmatrix)))
 
 		if correct_bias:
 			reg = sm.OLS(self.Y_c[match_index],
@@ -147,6 +180,7 @@ class CausalModel(object):
 			ITT = self.Y_t - self.Y_c[match_index]
 
 		return Results(self, ITT.mean(), ITT)
+
 
 	def ols(self):
 
