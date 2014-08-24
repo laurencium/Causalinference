@@ -78,7 +78,7 @@ class CausalModel(object):
 			
 			for i in xrange(self.N_t):  # can vectorize, but higher space requirement
 				X_treated = self.__polymatrix(self.X_t[i, :].reshape((1, self.k)), terms)
-				w = np.linalg.lstsq(X_control.T, X_treated.flatten())[0]
+				w = np.linalg.lstsq(X_control.T, X_treated.ravel())[0]
 				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
 
 		else:
@@ -181,6 +181,19 @@ class CausalModel(object):
 
 		return Results(self, ITT.mean(), ITT)
 
+	def multi_match(self, k):
+
+		match_indices = np.zeros((self.N, k), dtype=int)
+
+		for i in xrange(self.N):
+			dX = self.X[self.D != self.D[i]] - self.X[i]
+			match_indices[i] = np.argpartition(self.__norm(dX, None), k)[:k]
+
+		ITT = np.zeros(self.N)
+		ITT[D==0] = self.Y[self.D==1][match_indices[self.D==0]].mean(axis=1) - self.Y[self.D==0]
+		ITT[D==1] = self.Y[self.D==1] - self.Y[self.D==0][match_indices[self.D==1]].mean(axis=1)
+
+		return Results(self, ITT.mean(), ITT)
 
 	def ols(self):
 
