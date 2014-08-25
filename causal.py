@@ -12,10 +12,10 @@ class CausalModel(object):
 
 		self.Y, self.D, self.X = Y, D, X
 		self.N, self.k = self.X.shape
-		control, treated = (self.D==0), (self.D==1)
-		self.Y_c, self.Y_t = self.Y[control], self.Y[treated]
-		self.X_c, self.X_t = self.X[control], self.X[treated]
-		self.N_c, self.N_t = self.X_c.shape[0], self.X_t.shape[0]
+		self.treated = np.nonzero(D)
+		self.controls = np.nonzero(D==0)
+		self.N_t = np.count_nonzero(D)
+		self.N_c = self.N - self.N_t
 
 
 	def __polymatrix(self, X, terms):
@@ -41,7 +41,7 @@ class CausalModel(object):
 		for i in xrange(num_of_terms):
 			for j in terms[i]:
 				X_poly[:, i] = X_poly[:, i] * X[:, j]
-		return np.hstack((X, X_poly))
+		return np.column_stack((X, X_poly))
 
 
 	def synthetic(self, poly=0):
@@ -74,43 +74,23 @@ class CausalModel(object):
 				                                                          power)))
 			num_of_terms = len(terms)
 
-			X_control = self.__polymatrix(self.X_c, terms)
+			X_control = self.__polymatrix(self.X[self.controls], terms)
 			
 			for i in xrange(self.N_t):  # can vectorize, but higher space requirement
-				X_treated = self.__polymatrix(self.X_t[i, :].reshape((1, self.k)), terms)
+				X_treated = self.__polymatrix(self.X[self.treated][i, :].reshape((1, self.k)), terms)
 				w = np.linalg.lstsq(X_control.T, X_treated.ravel())[0]
-				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
+				ITT[i] = self.Y[self.treated][i] - np.dot(w, self.Y[self.controls])
 
 		else:
 			for i in xrange(self.N_t):
-				w = np.linalg.lstsq(self.X_c.T, self.X_t[i, ])[0]
-				ITT[i] = self.Y_t[i] - np.dot(w, self.Y_c)
+				w = np.linalg.lstsq(self.X[self.controls].T, self.X[self.treated][i, ])[0]
+				ITT[i] = self.Y[self.treated][i] - np.dot(w, self.Y[self.controls])
 
-		return Results(self, ITT.mean(), ITT)
-
-
-	def __norm(self, dX, W):
-
-		"""
-		Calculates a vector of norms given weighting matrix W.
-
-		Arguments
-		---------
-			dX: array-like
-				Matrix of covariate differences.
-			W: array-like
-				k-by-k weighting matrix or None for Eucliean norm.
-
-		"""
-
-		if W is None:
-			return (dX**2).sum(axis=1)
-		else:
-			return (dX.dot(W)*dX).sum(axis=1)
+		return Results(ITT.mean(), ITT)
 
 
-	def matching(self, replace=False, wmatrix=None, correct_bias=False,
-	             order_by_pscore=False):
+	def matching_old(self, replace=False, wmatrix=None, correct_bias=False,
+	                 order_by_pscore=False):
 
 		"""
 		Estimates the average treatment effect for the treated (ATT) using matching.
@@ -158,42 +138,121 @@ class CausalModel(object):
 
 		if replace:
 			for i in xrange(self.N_t):
-				dX = self.X_c - self.X_t[i]  # N_c-by-k matrix of covariate differences
+				dX = self.X[self.controls] - self.X[self.treated][i]  # N_c-by-k matrix
 				match_index[i] = np.argmin(self.__norm(dX, wmatrix))
 		else:
 			unmatched = range(self.N_c)
 			if order_by_pscore:
-				pscore = sm.Logit(D, X).fit(disp=False).predict()  # estimate by logit
-				order = np.argsort(pscore[D==1])[::-1]  # descending pscore order
+				pscore = sm.Logit(self.D, self.X).fit(disp=False).predict()  # estimate by logit
+				order = np.argsort(pscore[self.D==1])[::-1]  # descending pscore order
 			else:
 				order = xrange(self.N_t)
 			for i in order:
-				dX = self.X_c[unmatched] - self.X_t[i]
+				dX = self.X[self.controls][unmatched] - self.X[self.treated][i]
 				match_index[i] = unmatched.pop(np.argmin(self.__norm(dX, wmatrix)))
 
 		if correct_bias:
-			reg = sm.OLS(self.Y_c[match_index],
-			             sm.add_constant(self.X_c[match_index])).fit()
-			ITT = (self.Y_t - self.Y_c[match_index] - 
-			       np.dot((self.X_t - self.X_c[match_index]), reg.params[1:]))
+			reg = sm.OLS(self.Y[self.controls][match_index],
+			             sm.add_constant(self.X[self.controls][match_index])).fit()
+			ITT = (self.Y[self.treated] - self.Y[self.controls][match_index] - 
+			       np.dot((self.X[self.treated] - self.X[self.controls][match_index]), reg.params[1:]))
 		else:
-			ITT = self.Y_t - self.Y_c[match_index]
+			ITT = self.Y[self.treated] - self.Y[self.controls][match_index]
 
-		return Results(self, ITT.mean(), ITT)
+		return Results(ITT.mean(), ITT)
 
-	def multi_match(self, k):
 
-		match_indices = np.zeros((self.N, k), dtype=int)
+	def __norm(self, dX, W):
 
-		for i in xrange(self.N):
-			dX = self.X[self.D != self.D[i]] - self.X[i]
-			match_indices[i] = np.argpartition(self.__norm(dX, None), k)[:k]
+		"""
+		Calculates a vector of norms given weighting matrix W.
+
+		Arguments
+		---------
+			dX: array-like
+				Matrix of covariate differences.
+			W: array-like
+				k-by-k weighting matrix or None for Eucliean norm.
+
+		"""
+
+		if W is None:
+			return (dX**2).sum(axis=1)
+		else:
+			return (dX.dot(W)*dX).sum(axis=1)
+
+
+	def __matchmaking(self, X, X_m, M=1, W=None):
+		
+		n = X.shape[0]
+		m_indx = np.zeros((n, M), dtype=int)
+
+		if M==1:
+			for i in xrange(n):
+				m_indx[i] = np.argmin(self.__norm(X_m - X[i], W))
+		else:
+			for i in xrange(n):
+				m_indx[i] = np.argpartition(self.__norm(X_m - X[i], W), M)[:M]
+
+		return m_indx
+
+
+	def __bias(self, treated, m_indx):
+
+		if treated:
+			b = np.linalg.lstsq(np.column_stack((np.ones(m_indx.size), self.X[self.controls][m_indx.ravel()])),
+			                    self.Y[self.controls][m_indx.ravel()])[0][1:]
+			return np.dot(self.X[self.treated] - self.X[self.controls][m_indx].mean(1), b)
+		else:
+			b = np.linalg.lstsq(np.column_stack((np.ones(m_indx.size), self.X[self.treated][m_indx.ravel()])),
+			                    self.Y[self.treated][m_indx.ravel()])[0][1:]
+			return np.dot(self.X[self.treated][m_indx].mean(1) - self.X[self.controls], b)
+
+
+	def matching(self, wmatrix=None, matches=1, correct_bias=False):
+
+		if wmatrix == 'maha':
+			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+
+		m_indx_c = self.__matchmaking(self.X[self.controls], self.X[self.treated], matches, wmatrix)
+		m_indx_t = self.__matchmaking(self.X[self.treated], self.X[self.controls], matches, wmatrix)
 
 		ITT = np.zeros(self.N)
-		ITT[D==0] = self.Y[self.D==1][match_indices[self.D==0]].mean(axis=1) - self.Y[self.D==0]
-		ITT[D==1] = self.Y[self.D==1] - self.Y[self.D==0][match_indices[self.D==1]].mean(axis=1)
+		ITT[self.controls] = self.Y[self.treated][m_indx_c].mean(1)- self.Y[self.controls]
+		ITT[self.treated] = self.Y[self.treated] - self.Y[self.controls][m_indx_t].mean(1)
 
-		return Results(self, ITT.mean(), ITT)
+		if correct_bias:
+			ITT[self.controls] -= self.__bias(treated=False, m_indx=m_indx_c)
+			ITT[self.treated] -= self.__bias(treated=True, m_indx=m_indx_t)
+
+		return Results(ITT[self.treated].mean(), ITT)
+
+
+	def matching_without_replacement(self, wmatrix=None, order_by_pscore=False, correct_bias=False):
+
+		m_indx = np.zeros((self.N_t, 1), dtype=np.int)
+
+		if wmatrix == 'maha':
+			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+
+		if order_by_pscore:
+			pscore = sm.Logit(self.D, self.X).fit(disp=False).predict()  # estimate by logit
+			order = np.argsort(pscore[self.D==1])[::-1]  # descending pscore order
+		else:
+			order = xrange(self.N_t)
+			
+		unmatched = range(self.N_c)
+		for i in order:
+			dX = self.X[self.controls][unmatched] - self.X[self.treated][i]
+			m_indx[i] = unmatched.pop(np.argmin(self.__norm(dX, wmatrix)))
+
+		ITT = self.Y[self.treated] - self.Y[self.controls][m_indx]
+
+		if correct_bias:
+			ITT -= self.__bias(treated=True, m_indx=m_indx)
+
+		return Results(ITT.mean(), ITT)
+
 
 	def ols(self):
 
@@ -213,12 +272,12 @@ class CausalModel(object):
 		reg = sm.OLS(self.Y, sm.add_constant(Z)).fit()
 		ITT = reg.params[1] + np.dot(dX[self.D==1], reg.params[-self.k:])
 
-		return Results(self, ITT.mean(), ITT)
+		return Results(ITT.mean(), ITT)
 
 
 class Results(object):
 
-	def __init__(self, model, ATT, ITT):
+	def __init__(self, ATT, ITT):
 		self.ATT = ATT
 		self.ITT = ITT
 
