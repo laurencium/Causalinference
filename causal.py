@@ -12,8 +12,8 @@ class CausalModel(object):
 
 		self.Y, self.D, self.X = Y, D, X
 		self.N, self.k = self.X.shape
-		self.treated = np.nonzero(D)
-		self.controls = np.nonzero(D==0)
+		self.treated = np.nonzero(D)[0]
+		self.controls = np.nonzero(D==0)[0]
 		self.N_t = np.count_nonzero(D)
 		self.N_c = self.N - self.N_t
 
@@ -21,7 +21,7 @@ class CausalModel(object):
 	def __polymatrix(self, X, poly):
 
 		"""
-		Constructs matrix of polynomial terms to be used in synthetic control
+		Construct matrix of polynomial terms to be used in synthetic control
 		matching.
 
 		Arguments
@@ -34,7 +34,7 @@ class CausalModel(object):
 
 		Returns
 		-------
-			Original covariates matrix appended with higher polynomial terms.
+			Original covariate matrix appended with higher polynomial terms.
 		"""
 
 		terms = []
@@ -168,6 +168,27 @@ class CausalModel(object):
 		return m_indx
 
 
+	def __msmallest_with_ties(self, x, m):
+
+		par_indx = np.argpartition(x, m)
+		if x[par_indx[:m]].max() < x[par_indx[m]]:
+			return list(par_indx[:m])
+		elif x[par_indx[m]] < x[par_indx[(m+1):]].min():
+			return list(par_indx[:(m+1)])
+		else:
+			return self.__msmallest_with_ties(x, m+2)
+
+
+	def __matchmaking2(self, X, X_m, m=1, W=None):
+
+		n = X.shape[0]
+		m_indx = []
+
+		for i in xrange(n):
+			m_indx.append(self.__msmallest_with_ties(self.__norm(X_m - X[i], W), m))
+
+		return m_indx
+
 	def __bias(self, treated, m_indx):
 
 		'''
@@ -186,12 +207,12 @@ class CausalModel(object):
 		'''
 
 		if treated:
-			b = np.linalg.lstsq(np.column_stack((np.ones(m_indx.size), self.X[self.controls][m_indx.ravel()])),
-			                    self.Y[self.controls][m_indx.ravel()])[0][1:]
+			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx)), self.X[self.controls][m_indx])),
+			                    self.Y[self.controls][m_indx])[0][1:]
 			return np.dot(self.X[self.treated] - self.X[self.controls][m_indx].mean(1), b)
 		else:
-			b = np.linalg.lstsq(np.column_stack((np.ones(m_indx.size), self.X[self.treated][m_indx.ravel()])),
-			                    self.Y[self.treated][m_indx.ravel()])[0][1:]
+			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx)), self.X[self.treated][m_indx])),
+			                    self.Y[self.treated][m_indx])[0][1:]
 			return np.dot(self.X[self.treated][m_indx].mean(1) - self.X[self.controls], b)
 
 
@@ -243,12 +264,17 @@ class CausalModel(object):
 		if wmatrix == 'maha':
 			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
 
-		m_indx_c = self.__matchmaking(self.X[self.controls], self.X[self.treated], matches, wmatrix)
-		m_indx_t = self.__matchmaking(self.X[self.treated], self.X[self.controls], matches, wmatrix)
+		m_indx_c = self.__matchmaking2(self.X[self.controls], self.X[self.treated], matches, wmatrix)
+		m_indx_t = self.__matchmaking2(self.X[self.treated], self.X[self.controls], matches, wmatrix)
 
 		ITT = np.empty(self.N)
-		ITT[self.controls] = self.Y[self.treated][m_indx_c].mean(1)- self.Y[self.controls]
-		ITT[self.treated] = self.Y[self.treated] - self.Y[self.controls][m_indx_t].mean(1)
+		for i in xrange(self.N_c):
+			ITT[self.controls[i]] = self.Y[self.treated][m_indx_c[i]].mean() - self.Y[self.controls][i]
+		for i in xrange(self.N_t):
+			ITT[self.treated[i]] = self.Y[self.treated][i] - self.Y[self.controls][m_indx_t[i]].mean()
+
+		m_indx_c = [item for sublist in m_indx_c for item in sublist]  #flatten list
+		m_indx_t = [item for sublist in m_indx_t for item in sublist]
 
 		if correct_bias:
 			ITT[self.controls] -= self.__bias(treated=False, m_indx=m_indx_c)
@@ -263,8 +289,8 @@ class CausalModel(object):
 		Estimate average treatment effects using matching without replacement.
 
 		By default, the distance metric used for measuring covariate
-		differences	is the Euclidean metric. The Mahalanobis metric or other
-		arbitrary weighting	matrices can also be used instead.
+		differences is the Euclidean metric. The Mahalanobis metric or other
+		arbitrary weighting matrices can also be used instead.
 
 		Bias correction can optionally be done. For treated units, the bias
 		resulting from imperfect matches is estimated by
@@ -316,7 +342,7 @@ class CausalModel(object):
 		ITT = self.Y[self.treated] - self.Y[self.controls][m_indx]
 
 		if correct_bias:
-			ITT -= self.__bias(treated=True, m_indx=m_indx)
+			ITT -= self.__bias(treated=True, m_indx=m_indx.ravel())
 
 		return Results(ITT.mean())
 
@@ -448,3 +474,25 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 		return Y, D, X, Y_0, Y_1
 	else:
 		return Y, D, X
+
+
+#def UseLalonde():
+import pandas as pd
+
+lalonde = pd.read_csv('ldw_exper.csv')  # read CSV data from url
+
+covariate_list = ['age', 'educ', 'black', 'hisp', 'married',
+                  're74', 're75', 'u74', 'u75']
+
+# don't know how to not convert to array first
+Y = np.array(lalonde['re78'])
+D = np.array(lalonde['t'])
+X = np.array(lalonde[covariate_list])
+
+W = np.diag(1/X.var(0))
+
+causal = CausalModel(Y, D, X)
+print causal.matching(wmatrix=W, matches=4).ATE
+print causal.matching(wmatrix=W, matches=4).ATET
+print causal.matching(wmatrix=W, matches=1).ATET
+print causal.matching(wmatrix=W, matches=4, correct_bias=True).ATET
