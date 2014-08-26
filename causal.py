@@ -206,14 +206,23 @@ class CausalModel(object):
 			Vector of estimated biases.
 		'''
 
+
+		m_indx_flat = [item for sublist in m_indx for item in sublist]  #flatten list
+
 		if treated:
-			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx)), self.X[self.controls][m_indx])),
-			                    self.Y[self.controls][m_indx])[0][1:]
-			return np.dot(self.X[self.treated] - self.X[self.controls][m_indx].mean(1), b)
+			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X[self.controls][m_indx_flat])),
+			                    self.Y[self.controls][m_indx_flat])[0][1:]
+			X = np.empty((self.N_t, self.k))
+			for i in xrange(self.N_t):
+				X[i] = self.X[self.treated][i] - self.X[self.controls][m_indx[i]].mean(0)
+			return np.dot(X, b)
 		else:
-			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx)), self.X[self.treated][m_indx])),
-			                    self.Y[self.treated][m_indx])[0][1:]
-			return np.dot(self.X[self.treated][m_indx].mean(1) - self.X[self.controls], b)
+			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X[self.treated][m_indx_flat])),
+			                    self.Y[self.treated][m_indx_flat])[0][1:]
+			X = np.empty((self.N_c, self.k))
+			for i in xrange(self.N_c):
+				X[i] = self.X[self.controls][i] - self.X[self.treated][m_indx[i]].mean(0)
+			return -np.dot(X, b)
 
 
 	def matching(self, wmatrix=None, matches=1, correct_bias=False):
@@ -272,9 +281,6 @@ class CausalModel(object):
 			ITT[self.controls[i]] = self.Y[self.treated][m_indx_c[i]].mean() - self.Y[self.controls][i]
 		for i in xrange(self.N_t):
 			ITT[self.treated[i]] = self.Y[self.treated][i] - self.Y[self.controls][m_indx_t[i]].mean()
-
-		m_indx_c = [item for sublist in m_indx_c for item in sublist]  #flatten list
-		m_indx_t = [item for sublist in m_indx_t for item in sublist]
 
 		if correct_bias:
 			ITT[self.controls] -= self.__bias(treated=False, m_indx=m_indx_c)
@@ -342,7 +348,7 @@ class CausalModel(object):
 		ITT = self.Y[self.treated] - self.Y[self.controls][m_indx]
 
 		if correct_bias:
-			ITT -= self.__bias(treated=True, m_indx=m_indx.ravel())
+			ITT -= self.__bias(treated=True, m_indx=list(m_indx))
 
 		return Results(ITT.mean())
 
