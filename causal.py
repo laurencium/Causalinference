@@ -384,10 +384,12 @@ class CausalModel(object):
 		DdX = D * dX
 		Z = np.column_stack((D, dX, DdX))
 
+		ITT = np.empty(self.N)
 		reg = sm.OLS(self.Y, sm.add_constant(Z)).fit()
-		ITT = reg.params[1] + np.dot(dX[self.D==1], reg.params[-self.k:])
+		ITT[self.treated] = reg.params[1] + np.dot(dX[self.treated], reg.params[-self.k:])
+		ITT[self.controls] = reg.params[1] + np.dot(dX[self.controls], reg.params[-self.k:])
 
-		return Results(ITT.mean(), reg.params[1])
+		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
 
 
 class Results(object):
