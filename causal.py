@@ -51,34 +51,41 @@ class CausalModel(object):
 		return np.column_stack((X, X_poly))
 
 
-	def __synthetic(self, X):
+	def __synthetic(self, X, X_m, Y, Y_m):
 
-		'''
+		"""
 		Compute individual-level treatment effect by applying synthetic
-		control method on input covariate matrix X. The public function 
+		control method on input covariate matrix X. Automatically adds the
+		constraint that the weights have to sum to 1. The public function
 		self.synthetic is a wrapper around this.
 
 		Arguments
 		---------
 			X: array-like
-				Covariate matrix used to compute synthetic controls. Does
-				not necessarily have to be self.X.
+				Covariate matrix of units to find matches for.
+			X_m: array-like
+				Covariate matrix of units used to construct controls.
+			Y: array-like
+				Vector of outcomes of units to find matches for.
+			Y_m: array-like
+				Vector of outcomes of units used to construct controls.
 
 		Returns
 		-------
 			Vector of individual-level treatment effects.
+		"""
 
-		'''
+		N = X.shape[0]
+		N_m = X_m.shape[0]
 
-		ITT = np.empty(self.N)
+		A = np.row_stack((X_m.T, np.ones(N_m)))  # add row of 1's
 
-		for i in xrange(self.N):
-			if self.D[i]:
-				w = np.linalg.lstsq(np.row_stack((X[self.controls].T, np.ones(self.N_c))), np.append(X[i],1))[0]
-				ITT[i] = self.Y[i] - np.dot(w, self.Y_c)
-			else:
-				w = np.linalg.lstsq(np.row_stack((X[self.treated].T, np.ones(self.N_t))), np.append(X[i],1))[0]
-				ITT[i] = np.dot(w, self.Y_t) - self.Y[i]
+		ITT = np.empty(N)
+
+		for i in xrange(N):
+			b = np.append(X[i], 1)  # append 1 to restrict weights to sum to 1
+			w = np.linalg.lstsq(A, b)[0]
+			ITT[i] = Y[i] - np.dot(w, Y_m)
 
 		return ITT
 
@@ -102,13 +109,18 @@ class CausalModel(object):
 			A Results class instance.
 		"""
  
+		ITT = np.empty(self.N)
+
 		if poly > 1:
-			ITT = self.__synthetic(self.__polymatrix(self.X, poly))
+			X_t = self.__polymatrix(self.X_t, poly)
+			X_c = self.__polymatrix(self.X_c, poly)
+			ITT[self.treated] = self.__synthetic(X_t, X_c, self.Y_t, self.Y_c)
+			ITT[self.controls] = -self.__synthetic(X_c, X_t, self.Y_c, self.Y_t)
 		else:
-			ITT = self.__synthetic(self.X)
+			ITT[self.treated] = self.__synthetic(self.X_t, self.X_c, self.Y_t, self.Y_c)
+			ITT[self.controls] = -self.__synthetic(self.X_c, self.X_t, self.Y_c, self.Y_t)
 
 		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
-
 
 	def __norm(self, dX, W):
 
@@ -125,7 +137,6 @@ class CausalModel(object):
 		Returns
 		-------
 			Vector of distance measures.
-
 		"""
 
 		if W is None:
@@ -136,7 +147,7 @@ class CausalModel(object):
 
 	def __msmallest_with_ties(self, x, m):
 
-		'''
+		"""
 		Finds indices of the m smallest entries in an array. Ties are
 		included, so the number of indices can be greater than m. Algorithm
 		is of order O(nt), where t is number of ties.
@@ -151,7 +162,7 @@ class CausalModel(object):
 		Returns
 		-------
 			List of indices of smallest entries.
-		'''
+		"""
 
 		par_indx = np.argpartition(x, m)  # partition around (m+1)th order stat
 		
@@ -165,7 +176,7 @@ class CausalModel(object):
 
 	def __matchmaking(self, X, X_m, m=1, W=None):
 
-		'''
+		"""
 		Perform nearest-neigborhood matching using specified weighting
 		matrix in measuring distance. Ties are included, so the number
 		of matches for a given unit can be greater than m.
@@ -184,7 +195,7 @@ class CausalModel(object):
 		Returns
 		-------
 			List of matched indices.
-		'''
+		"""
 
 		m_indx = []
 
@@ -196,7 +207,7 @@ class CausalModel(object):
 
 	def __bias(self, treated, m_indx):
 
-		'''
+		"""
 		Estimate bias resulting from imperfect matches using least squares.
 
 		Arguments
@@ -209,7 +220,7 @@ class CausalModel(object):
 		Returns
 		-------
 			Vector of estimated biases.
-		'''
+		"""
 
 		m_indx_flat = [item for sublist in m_indx for item in sublist]  #flatten list
 
@@ -491,27 +502,27 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 		return Y, D, X
 
 
-def UseLalonde():
+#def UseLalonde():
 
-	import pandas as pd
+import pandas as pd
 
-	lalonde = pd.read_csv('ldw_exper.csv')
+lalonde = pd.read_csv('ldw_exper.csv')
 
-	covariate_list = ['age', 'educ', 'black', 'hisp', 'married',
-	                  're74', 're75', 'u74', 'u75']
+covariate_list = ['age', 'educ', 'black', 'hisp', 'married',
+                  're74', 're75', 'u74', 'u75']
 
-	# don't know how to not convert to array first
-	Y = np.array(lalonde['re78'])
-	D = np.array(lalonde['t'])
-	X = np.array(lalonde[covariate_list])
+# don't know how to not convert to array first
+Y = np.array(lalonde['re78'])
+D = np.array(lalonde['t'])
+X = np.array(lalonde[covariate_list])
 
-	#W = np.diag(1/X.var(0))
+#W = np.diag(1/X.var(0))
 
-	causal = CausalModel(Y, D, X)
-	print causal.matching(matches=4).ATE
-	print causal.matching(matches=4).ATET
-	print causal.matching(matches=1).ATET
-	print causal.matching(matches=4, correct_bias=True).ATET
+causal = CausalModel(Y, D, X)
+print causal.matching(matches=4).ATE
+print causal.matching(matches=4).ATET
+print causal.matching(matches=1).ATET
+print causal.matching(matches=4, correct_bias=True).ATET
 
 
-UseLalonde()
+#UseLalonde()
