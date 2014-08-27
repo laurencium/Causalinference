@@ -78,13 +78,13 @@ class CausalModel(object):
 		N = X.shape[0]
 		N_m = X_m.shape[0]
 
-		A = np.row_stack((X_m.T, np.ones(N_m)))  # add row of 1's
+		X_m1 = np.row_stack((X_m.T, np.ones(N_m)))  # add row of 1's
 
 		ITT = np.empty(N)
 
 		for i in xrange(N):
-			b = np.append(X[i], 1)  # append 1 to restrict weights to sum to 1
-			w = np.linalg.lstsq(A, b)[0]
+			x1 = np.append(X[i], 1)  # append 1 to restrict weights to sum to 1
+			w = np.linalg.lstsq(X_m1, x1)[0]
 			ITT[i] = Y[i] - np.dot(w, Y_m)
 
 		return ITT
@@ -205,38 +205,40 @@ class CausalModel(object):
 		return m_indx
 
 
-	def __bias(self, treated, m_indx):
+	def __bias(self, m_indx, Y_m, X_m, X):
 
 		"""
 		Estimate bias resulting from imperfect matches using least squares.
+		When estimating ATET, regression should use control units. When
+		estimating ATUT, regression should use treated units.
 
 		Arguments
 		---------
-			treated: Boolean
-				Indicates subsample to estimate bias for.
-			m_index: list
+			m_indx: list
 				Index of indices of matched units.
+			Y_m: array-like
+				Vector of outcomes to regress.
+			X_m: array-like
+				Covariate matrix to regress on.
+			X: array-like
+				Covariate matrix of subjects under study.
 
 		Returns
 		-------
 			Vector of estimated biases.
 		"""
 
-		m_indx_flat = [item for sublist in m_indx for item in sublist]  #flatten list
+		flat_indx = list(itertools.chain.from_iterable(m_indx))
 
-		if treated:
-			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X_c[m_indx_flat])),
-			                    self.Y_c[m_indx_flat])[0][1:]
-			X = np.empty((self.N_t, self.k))
-			for i in xrange(self.N_t):
-				X[i] = self.X_t[i] - self.X_c[m_indx[i]].mean(0)
-		else:
-			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X_t[m_indx_flat])),
-			                    self.Y_t[m_indx_flat])[0][1:]
-			X = np.empty((self.N_c, self.k))
-			for i in xrange(self.N_c):
-				X[i] = self.X_c[i] - self.X_t[m_indx[i]].mean(0)
-		return np.dot(X, b)
+		X_m1 = np.column_stack((np.ones(len(flat_indx)), X_m[flat_indx]))
+		b = np.linalg.lstsq(X_m1, Y_m[flat_indx])[0][1:]  # includes intercept
+
+		N = X.shape[0]
+		bias = np.empty(N)
+		for i in xrange(N):
+			bias[i] = np.dot(X[i] - X_m[m_indx[i]].mean(0), b)
+
+		return bias
 
 
 	def matching(self, wmatrix=None, matches=1, correct_bias=False):
@@ -258,12 +260,6 @@ class CausalModel(object):
 		where b is the estimated coefficient from regressiong Y_c[matched] on
 		X_c[matched]. For control units, the analogous procedure is used.
 		For details, see Imbens and Rubin.
-
-		Matching without replacement is computed via a greedy algorithm, where
-		the best match for a treated unit is chosen without regard to the rest
-		of the sample. By default, treated units are matched in the order that
-		they come in in the data. An option to match in the order of
-		descending estimated propensity score is provided.
 
 		Arguments
 		---------
@@ -287,7 +283,7 @@ class CausalModel(object):
 		"""
 
 		if wmatrix is None:
-			self.Xvar = self.X.var(0)
+			self.Xvar = self.X.var(0)  # store vector of covariate variances
 		elif wmatrix == 'maha':
 			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
 
@@ -301,8 +297,8 @@ class CausalModel(object):
 			ITT[self.treated[i]] = self.Y_t[i] - self.Y_c[m_indx_t[i]].mean()
 
 		if correct_bias:
-			ITT[self.controls] += self.__bias(treated=False, m_indx=m_indx_c)
-			ITT[self.treated] -= self.__bias(treated=True, m_indx=m_indx_t)
+			ITT[self.controls] += self.__bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
+			ITT[self.treated] -= self.__bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
 
 		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
 
@@ -312,9 +308,9 @@ class CausalModel(object):
 		"""
 		Estimate average treatment effects using matching without replacement.
 
-		By default, the distance metric used for measuring covariate
-		differences is the Euclidean metric. The Mahalanobis metric or other
-		arbitrary weighting matrices can also be used instead.
+		By default, the weighting matrix used in measuring distance is the
+		inverse variance matrix. The Mahalanobis metric or other arbitrary
+		weighting matrices can also be used instead.
 
 		Bias correction can optionally be done. For treated units, the bias
 		resulting from imperfect matches is estimated by
@@ -368,7 +364,7 @@ class CausalModel(object):
 		ITT = self.Y_t - self.Y_c[m_indx]
 
 		if correct_bias:
-			ITT -= self.__bias(treated=True, m_indx=list(m_indx))
+			ITT -= self.__bias(list(m_indx), self.Y_c, self.X_c, self.X_t)
 
 		return Results(ITT.mean())
 
