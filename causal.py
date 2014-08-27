@@ -8,12 +8,14 @@ from scipy.stats import norm
 
 class CausalModel(object):
 
+
 	def __init__(self, Y, D, X):
 
 		self.Y, self.D, self.X = Y, D, X
 		self.N, self.k = self.X.shape
-		self.treated = np.nonzero(D)[0]
-		self.controls = np.nonzero(D==0)[0]
+		self.treated, self.controls = np.nonzero(D)[0], np.nonzero(D==0)[0]
+		self.Y_t, self.Y_c = self.Y[self.treated], self.Y[self.controls]
+		self.X_t, self.X_c = self.X[self.treated], self.X[self.controls]
 		self.N_t = np.count_nonzero(D)
 		self.N_c = self.N - self.N_t
 
@@ -73,10 +75,10 @@ class CausalModel(object):
 		for i in xrange(self.N):
 			if self.D[i]:
 				w = np.linalg.lstsq(np.row_stack((X[self.controls].T, np.ones(self.N_c))), np.append(X[i],1))[0]
-				ITT[i] = self.Y[i] - np.dot(w, self.Y[self.controls])
+				ITT[i] = self.Y[i] - np.dot(w, self.Y_c)
 			else:
 				w = np.linalg.lstsq(np.row_stack((X[self.treated].T, np.ones(self.N_t))), np.append(X[i],1))[0]
-				ITT[i] = np.dot(w, self.Y[self.treated]) - self.Y[i]
+				ITT[i] = np.dot(w, self.Y_t) - self.Y[i]
 
 		return ITT
 
@@ -99,7 +101,7 @@ class CausalModel(object):
 		-------
 			A Results class instance.
 		"""
-
+ 
 		if poly > 1:
 			ITT = self.__synthetic(self.__polymatrix(self.X, poly))
 		else:
@@ -118,7 +120,7 @@ class CausalModel(object):
 			dX: array-like
 				Matrix of covariate differences.
 			W: array-like
-				k-by-k weighting matrix or None for Eucliean norm.
+				k-by-k weighting matrix or None for inverse variances.
 
 		Returns
 		-------
@@ -127,17 +129,46 @@ class CausalModel(object):
 		"""
 
 		if W is None:
-			return (dX**2).sum(axis=1)
+			return (dX**2 / self.Xvar).sum(axis=1)
 		else:
 			return (dX.dot(W)*dX).sum(axis=1)
 
 
-	def __matchmaking(self, X, X_m, M=1, W=None):
+	def __msmallest_with_ties(self, x, m):
+
+		'''
+		Finds indices of the m smallest entries in an array. Ties are
+		included, so the number of indices can be greater than m. Algorithm
+		is of order O(nt), where t is number of ties.
+
+		Arguments
+		---------
+			x: array-like
+				Array of numbers to find m smallest entries for.
+			m: integer
+				Number of smallest entries to find.
+
+		Returns
+		-------
+			List of indices of smallest entries.
+		'''
+
+		par_indx = np.argpartition(x, m)  # partition around (m+1)th order stat
+		
+		if x[par_indx[:m]].max() < x[par_indx[m]]:  # mth < (m+1)th entry
+			return list(par_indx[:m])
+		elif x[par_indx[m]] < x[par_indx[m+1:]].min():  # (m+1)th < (m+2)th
+			return list(par_indx[:m+1])
+		else:  # mth = (m+1)th = (m+2)th, so increment and recurse
+			return self.__msmallest_with_ties(x, m+2)
+
+
+	def __matchmaking(self, X, X_m, m=1, W=None):
 
 		'''
 		Perform nearest-neigborhood matching using specified weighting
-		matrix in measuring distance. If M > 1, each element of m_indx
-		is itself a list of indices.
+		matrix in measuring distance. Ties are included, so the number
+		of matches for a given unit can be greater than m.
 
 		Arguments
 		---------
@@ -145,49 +176,23 @@ class CausalModel(object):
 				Observations to find matches for.
 			X_m: array-like
 				Pool of potential matches.
-			M: integer
+			m: integer
 				Number of matches to find per unit.
 			W: array-like
-				k-by-k weighting matrix (of None for Euclidean norm)
+				k-by-k weighting matrix (or None for inverse variances)
 
 		Returns
 		-------
 			List of matched indices.
 		'''
-		
-		n = X.shape[0]
-		m_indx = np.zeros((n, M), dtype=int)
 
-		if M==1:
-			for i in xrange(n):
-				m_indx[i] = np.argmin(self.__norm(X_m - X[i], W))
-		else:
-			for i in xrange(n):
-				m_indx[i] = np.argpartition(self.__norm(X_m - X[i], W), M)[:M]
-
-		return m_indx
-
-
-	def __msmallest_with_ties(self, x, m):
-
-		par_indx = np.argpartition(x, m)
-		if x[par_indx[:m]].max() < x[par_indx[m]]:
-			return list(par_indx[:m])
-		elif x[par_indx[m]] < x[par_indx[(m+1):]].min():
-			return list(par_indx[:(m+1)])
-		else:
-			return self.__msmallest_with_ties(x, m+2)
-
-
-	def __matchmaking2(self, X, X_m, m=1, W=None):
-
-		n = X.shape[0]
 		m_indx = []
 
-		for i in xrange(n):
+		for i in xrange(X.shape[0]):
 			m_indx.append(self.__msmallest_with_ties(self.__norm(X_m - X[i], W), m))
 
 		return m_indx
+
 
 	def __bias(self, treated, m_indx):
 
@@ -198,31 +203,29 @@ class CausalModel(object):
 		---------
 			treated: Boolean
 				Indicates subsample to estimate bias for.
-			m_index: array-like
-				Index of matched units.
+			m_index: list
+				Index of indices of matched units.
 
 		Returns
 		-------
 			Vector of estimated biases.
 		'''
 
-
 		m_indx_flat = [item for sublist in m_indx for item in sublist]  #flatten list
 
 		if treated:
-			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X[self.controls][m_indx_flat])),
-			                    self.Y[self.controls][m_indx_flat])[0][1:]
+			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X_c[m_indx_flat])),
+			                    self.Y_c[m_indx_flat])[0][1:]
 			X = np.empty((self.N_t, self.k))
 			for i in xrange(self.N_t):
-				X[i] = self.X[self.treated][i] - self.X[self.controls][m_indx[i]].mean(0)
-			return np.dot(X, b)
+				X[i] = self.X_t[i] - self.X_c[m_indx[i]].mean(0)
 		else:
-			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X[self.treated][m_indx_flat])),
-			                    self.Y[self.treated][m_indx_flat])[0][1:]
+			b = np.linalg.lstsq(np.column_stack((np.ones(len(m_indx_flat)), self.X_t[m_indx_flat])),
+			                    self.Y_t[m_indx_flat])[0][1:]
 			X = np.empty((self.N_c, self.k))
 			for i in xrange(self.N_c):
-				X[i] = self.X[self.controls][i] - self.X[self.treated][m_indx[i]].mean(0)
-			return -np.dot(X, b)
+				X[i] = self.X_c[i] - self.X_t[m_indx[i]].mean(0)
+		return np.dot(X, b)
 
 
 	def matching(self, wmatrix=None, matches=1, correct_bias=False):
@@ -230,11 +233,13 @@ class CausalModel(object):
 		"""
 		Estimate average treatment effects using matching with replacement.
 
-		By default, the distance metric used for measuring covariate
-		differences	is the Euclidean metric. The Mahalanobis metric or other
-		arbitrary weighting	matrices can also be used instead.
+		By default, the weighting matrix used in measuring distance is the
+		inverse variance matrix. The Mahalanobis metric or other arbitrary
+		weighting matrices can also be used instead.
 
-		The number of matches per subject can also be specified.
+		The number of matches per subject can also be specified. Ties entries
+		are included, so the number of matches can be greater than specified
+		for some subjects.
 
 		Bias correction can optionally be done. For treated units, the bias
 		resulting from imperfect matches is estimated by
@@ -270,20 +275,22 @@ class CausalModel(object):
 			A Results class instance.
 		"""
 
-		if wmatrix == 'maha':
+		if wmatrix is None:
+			self.Xvar = self.X.var(0)
+		elif wmatrix == 'maha':
 			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
 
-		m_indx_c = self.__matchmaking2(self.X[self.controls], self.X[self.treated], matches, wmatrix)
-		m_indx_t = self.__matchmaking2(self.X[self.treated], self.X[self.controls], matches, wmatrix)
+		m_indx_c = self.__matchmaking(self.X_c, self.X_t, matches, wmatrix)
+		m_indx_t = self.__matchmaking(self.X_t, self.X_c, matches, wmatrix)
 
 		ITT = np.empty(self.N)
 		for i in xrange(self.N_c):
-			ITT[self.controls[i]] = self.Y[self.treated][m_indx_c[i]].mean() - self.Y[self.controls][i]
+			ITT[self.controls[i]] = self.Y_t[m_indx_c[i]].mean() - self.Y_c[i]
 		for i in xrange(self.N_t):
-			ITT[self.treated[i]] = self.Y[self.treated][i] - self.Y[self.controls][m_indx_t[i]].mean()
+			ITT[self.treated[i]] = self.Y_t[i] - self.Y_c[m_indx_t[i]].mean()
 
 		if correct_bias:
-			ITT[self.controls] -= self.__bias(treated=False, m_indx=m_indx_c)
+			ITT[self.controls] += self.__bias(treated=False, m_indx=m_indx_c)
 			ITT[self.treated] -= self.__bias(treated=True, m_indx=m_indx_t)
 
 		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
@@ -331,7 +338,9 @@ class CausalModel(object):
 
 		m_indx = np.zeros((self.N_t, 1), dtype=np.int)
 
-		if wmatrix == 'maha':
+		if wmatrix is None:
+			self.Xvar = self.X.var(0)
+		elif wmatrix == 'maha':
 			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
 
 		if order_by_pscore:
@@ -342,10 +351,10 @@ class CausalModel(object):
 			
 		unmatched = range(self.N_c)
 		for i in order:
-			dX = self.X[self.controls][unmatched] - self.X[self.treated][i]
+			dX = self.X_c[unmatched] - self.X_t[i]
 			m_indx[i] = unmatched.pop(np.argmin(self.__norm(dX, wmatrix)))
 
-		ITT = self.Y[self.treated] - self.Y[self.controls][m_indx]
+		ITT = self.Y_t - self.Y_c[m_indx]
 
 		if correct_bias:
 			ITT -= self.__bias(treated=True, m_indx=list(m_indx))
@@ -482,23 +491,27 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 		return Y, D, X
 
 
-#def UseLalonde():
-import pandas as pd
+def UseLalonde():
 
-lalonde = pd.read_csv('ldw_exper.csv')  # read CSV data from url
+	import pandas as pd
 
-covariate_list = ['age', 'educ', 'black', 'hisp', 'married',
-                  're74', 're75', 'u74', 'u75']
+	lalonde = pd.read_csv('ldw_exper.csv')
 
-# don't know how to not convert to array first
-Y = np.array(lalonde['re78'])
-D = np.array(lalonde['t'])
-X = np.array(lalonde[covariate_list])
+	covariate_list = ['age', 'educ', 'black', 'hisp', 'married',
+	                  're74', 're75', 'u74', 'u75']
 
-W = np.diag(1/X.var(0))
+	# don't know how to not convert to array first
+	Y = np.array(lalonde['re78'])
+	D = np.array(lalonde['t'])
+	X = np.array(lalonde[covariate_list])
 
-causal = CausalModel(Y, D, X)
-print causal.matching(wmatrix=W, matches=4).ATE
-print causal.matching(wmatrix=W, matches=4).ATET
-print causal.matching(wmatrix=W, matches=1).ATET
-print causal.matching(wmatrix=W, matches=4, correct_bias=True).ATET
+	#W = np.diag(1/X.var(0))
+
+	causal = CausalModel(Y, D, X)
+	print causal.matching(matches=4).ATE
+	print causal.matching(matches=4).ATET
+	print causal.matching(matches=1).ATET
+	print causal.matching(matches=4, correct_bias=True).ATET
+
+
+UseLalonde()
