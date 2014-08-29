@@ -242,6 +242,88 @@ class CausalModel(object):
 		return bias
 
 
+	def matching2(self, wmatrix=None, matches=1, correct_bias=False):
+
+		"""
+		Estimate average treatment effects using matching with replacement.
+
+		By default, the weighting matrix used in measuring distance is the
+		inverse variance matrix. The Mahalanobis metric or other arbitrary
+		weighting matrices can also be used instead.
+
+		The number of matches per subject can also be specified. Ties entries
+		are included, so the number of matches can be greater than specified
+		for some subjects.
+
+		Bias correction can optionally be done. For treated units, the bias
+		resulting from imperfect matches is estimated by
+			(X_t - X_c[matched]) * b,
+		where b is the estimated coefficient from regressiong Y_c[matched] on
+		X_c[matched]. For control units, the analogous procedure is used.
+		For details, see Imbens and Rubin.
+
+		Arguments
+		---------
+			wmatrix: string, array-like
+				Distance measure to be used; acceptable values are None
+				(Euclidean norm, default), string 'maha' for Mahalanobis
+				metric, or any arbitrary k-by-k matrix.
+			matches: integer
+				The number of units to match to a given subject. Defaults
+				to 1.
+			correct_bias: Boolean
+				Correct bias resulting from imperfect matches or not; defaults
+				to no correction.
+			order_by_pscore: Boolean, optional
+				Determines order of match-making when matching without
+				replacement.
+
+		Returns
+		-------
+			A Results class instance.
+		"""
+
+		if wmatrix is None:
+			self.Xvar = self.X.var(0)  # store vector of covariate variances
+		elif wmatrix == 'maha':
+			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+
+		m_indx_c = self.__matchmaking(self.X_c, self.X_t, matches, wmatrix)
+		m_indx_t = self.__matchmaking(self.X_t, self.X_c, matches, wmatrix)
+
+		ITT = np.empty(self.N)
+		for i in xrange(self.N_c):
+			ITT[self.controls[i]] = self.Y_t[m_indx_c[i]].mean() - self.Y_c[i]
+		for i in xrange(self.N_t):
+			ITT[self.treated[i]] = self.Y_t[i] - self.Y_c[m_indx_t[i]].mean()
+
+		if correct_bias:
+			ITT[self.controls] += self.__bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
+			ITT[self.treated] -= self.__bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
+
+		use_count = np.zeros(self.N)
+		for i in xrange(self.N_c):
+			for j in xrange(len(m_indx_c[i])):
+				use_count[self.treated[m_indx_c[i][j]]] += 1./len(m_indx_c[i])
+		for i in xrange(self.N_t):
+			for j in xrange(len(m_indx_t[i])):
+				use_count[self.controls[m_indx_t[i][j]]] += 1./len(m_indx_t[i])
+
+		cond_var = np.empty(self.N)
+		for i in xrange(self.N_c):
+			indx = np.argpartition(self.__norm(self.X_c - self.X_c[i], wmatrix), matches+1)[:matches+1]
+			cond_var[self.controls[i]] = self.Y[self.controls[indx]].var(ddof=1)
+		for i in xrange(self.N_t):
+			indx = np.argpartition(self.__norm(self.X_t - self.X_t[i], wmatrix), matches+1)[:matches+1]
+			cond_var[self.treated[i]] = self.Y[self.treated[indx]].var(ddof=1)
+
+		var = ((1+use_count)**2 * cond_var).sum() / self.N**2
+		var_ATT = ((self.D - (1-self.D)*use_count)**2 * cond_var).sum() / self.N_t**2
+		print sqrt(var), sqrt(var_ATT)
+
+		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
+
+
 	def matching(self, wmatrix=None, matches=1, correct_bias=False):
 
 		"""
@@ -575,10 +657,10 @@ X = np.array(lalonde[covariate_list])
 #W = np.diag(1/X.var(0))
 
 causal = CausalModel(Y, D, X)
-print causal.matching(matches=4).ATE
-print causal.matching(matches=4).ATET
-print causal.matching(matches=1).ATET
-print causal.matching(matches=4, correct_bias=True).ATET
+print causal.matching2(matches=4).ATE
+print causal.matching2(matches=4).ATET
+print causal.matching2(matches=1).ATET
+print causal.matching2(matches=4, correct_bias=True).ATET
 
 
 #UseLalonde()
