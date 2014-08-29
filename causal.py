@@ -4,6 +4,7 @@ import random
 import itertools
 import statsmodels.api as sm
 from scipy.stats import norm
+from math import sqrt
 
 
 class CausalModel(object):
@@ -300,8 +301,65 @@ class CausalModel(object):
 			ITT[self.controls] += self.__bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
 			ITT[self.treated] -= self.__bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
 
+		count = np.zeros(self.N)
+
+		for i in xrange(self.N_c):
+			for j in xrange(len(m_indx_c[i])):
+				count[self.treated[m_indx_c[i][j]]] += 1./len(m_indx_c[i])
+
+		for i in xrange(self.N_t):
+			for j in xrange(len(m_indx_t[i])):
+				count[self.controls[m_indx_t[i][j]]] += 1./len(m_indx_t[i])
+
+		'''
+		flat_indx_c = list(itertools.chain.from_iterable(m_indx_c))
+		flat_indx_t = list(itertools.chain.from_iterable(m_indx_t))
+		use_count = np.zeros(self.N, dtype=int)
+		for i in xrange(len(flat_indx_c)):
+			use_count[self.treated[flat_indx_c[i]]] += 1
+		for i in xrange(len(flat_indx_t)):
+			use_count[self.controls[flat_indx_t[i]]] += 1
+		'''
+
+		#m_indx = self.__matchmaking(self.X, self.X, matches+1, wmatrix)
+
+		m_indx = []
+
+		for i in xrange(self.N):
+			X_m = np.delete(self.X, (i), axis=0)
+			temp = self.__msmallest_with_ties(self.__norm(X_m - self.X[i], wmatrix), matches)
+			temp.append(i)
+			m_indx.append(temp)
+
+		cond_var = np.empty(self.N)
+		for i in xrange(self.N):
+			cond_var[i] = self.Y[m_indx[i]].var(ddof=1)
+
+		var_ATE = ((1+count)**2 * cond_var).sum() / self.N**2
+		var_ATT = ((self.D - (1-self.D)*count)**2 * cond_var).sum() / self.N_t**2
+
+		print 's.e.: ', sqrt(var_ATE), sqrt(var_ATT)
+
 		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
 
+
+	def variance(self, matches=1, wmatrix=None):
+
+		m_indx = self.__matchmaking(self.X, self.X, matches+1, wmatrix)
+		flat_indx = list(itertools.chain.from_iterable(m_indx))
+
+		use_count = np.zeros(self.N, dtype=int)
+		for i in xrange(len(flat_indx)):
+			use_count[flat_indx[i]] += 1
+
+		cond_var = np.empty(self.N)
+		for i in xrange(self.N):
+			cond_var[i] = self.Y[m_indx[i]].var(ddof=1)
+
+		var_ATE = ((1+use_count/matches)**2 * cond_var).sum() / self.N**2
+		var_ATT = ((self.D - (1-self.D)*use_count/matches)**2 * cond_var).sum() / self.N_t**2
+
+		return (var_ATE, var_ATT)
 
 	def matching_without_replacement(self, wmatrix=None, order_by_pscore=False, correct_bias=False):
 
