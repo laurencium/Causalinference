@@ -123,6 +123,32 @@ class CausalModel(object):
 
 		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
 
+	'''
+	def matching_synthetic(self):
+
+		self.Xvar = self.X.var(0)  # store vector of covariate variances
+
+		m_indx_t = self.__matchmaking(self.X_t, self.X_c, m=4)
+		m_indx_c = self.__matchmaking(self.X_c, self.X_t, m=4)
+
+		ITT = np.empty(self.N)
+
+		for i in xrange(self.N_t):
+			X_c1 = np.row_stack((self.X_c[m_indx_t[i]].T, np.ones(len(m_indx_t[i]))))  # add row of 1's
+			x1 = np.append(self.X_t[i], 1)  # append 1 to restrict weights to sum to 1
+			w = np.linalg.lstsq(X_c1, x1)[0]
+			ITT[self.treated[i]] = self.Y_t[i] - np.dot(w, self.Y_c[m_indx_t[i]])
+
+		for i in xrange(self.N_c):
+			X_t1 = np.row_stack((self.X_t[m_indx_c[i]].T, np.ones(len(m_indx_c[i]))))  # add row of 1's
+			x1 = np.append(self.X_c[i], 1)  # append 1 to restrict weights to sum to 1
+			w = np.linalg.lstsq(X_t1, x1)[0]
+			ITT[self.controls[i]] = np.dot(w, self.Y_t[m_indx_c[i]]) - self.Y_c[i]
+
+		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
+	'''
+
+
 	def __norm(self, dX, W):
 
 		"""
