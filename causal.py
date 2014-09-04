@@ -123,31 +123,6 @@ class CausalModel(object):
 
 		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
 
-	'''
-	def matching_synthetic(self):
-
-		self.Xvar = self.X.var(0)  # store vector of covariate variances
-
-		m_indx_t = self.__matchmaking(self.X_t, self.X_c, m=4)
-		m_indx_c = self.__matchmaking(self.X_c, self.X_t, m=4)
-
-		ITT = np.empty(self.N)
-
-		for i in xrange(self.N_t):
-			X_c1 = np.row_stack((self.X_c[m_indx_t[i]].T, np.ones(len(m_indx_t[i]))))  # add row of 1's
-			x1 = np.append(self.X_t[i], 1)  # append 1 to restrict weights to sum to 1
-			w = np.linalg.lstsq(X_c1, x1)[0]
-			ITT[self.treated[i]] = self.Y_t[i] - np.dot(w, self.Y_c[m_indx_t[i]])
-
-		for i in xrange(self.N_c):
-			X_t1 = np.row_stack((self.X_t[m_indx_c[i]].T, np.ones(len(m_indx_c[i]))))  # add row of 1's
-			x1 = np.append(self.X_c[i], 1)  # append 1 to restrict weights to sum to 1
-			w = np.linalg.lstsq(X_t1, x1)[0]
-			ITT[self.controls[i]] = np.dot(w, self.Y_t[m_indx_c[i]]) - self.Y_c[i]
-
-		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
-	'''
-
 
 	def __norm(self, dX, W):
 
@@ -159,7 +134,9 @@ class CausalModel(object):
 			dX: array-like
 				Matrix of covariate differences.
 			W: array-like
-				k-by-k weighting matrix or None for inverse variances.
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance, default), string 'maha'
+				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
 
 		Returns
 		-------
@@ -215,9 +192,11 @@ class CausalModel(object):
 			X_m: array-like
 				Pool of potential matches.
 			m: integer
-				Number of matches to find per unit.
+				The number of units to match to a given subject.
 			W: array-like
-				k-by-k weighting matrix (or None for inverse variances)
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance, default), string 'maha'
+				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
 
 		Returns
 		-------
@@ -236,8 +215,8 @@ class CausalModel(object):
 
 		"""
 		Estimate bias resulting from imperfect matches using least squares.
-		When estimating ATET, regression should use control units. When
-		estimating ATUT, regression should use treated units.
+		When estimating ATT, regression should use control units. When
+		estimating ATC, regression should use treated units.
 
 		Arguments
 		---------
@@ -270,6 +249,24 @@ class CausalModel(object):
 
 	def __match_counting(self, m_indx_t, m_indx_c):
 
+		"""
+		Calculates each unit's contribution in being used as a matching
+		unit.
+
+		Arguments
+		---------
+			m_indx_t: list
+				List of indices of control units that are matched to each
+				treated	unit. 
+			m_indx_c:
+				List of indices of treated units that are matched to each
+				control unit.
+
+		Returns
+		-------
+			Vector containing each unit's contribution in matching.
+		"""
+
 		count = np.zeros(self.N)
 		for i in xrange(self.N_c):
 			M = len(m_indx_c[i])
@@ -283,8 +280,28 @@ class CausalModel(object):
 		return count
 
 
-	def conditional_var(self, W, m):
+	def __conditional_var(self, W, m):
 
+		"""
+		Computes unit-level conditional variances. Estimation is done by
+		matching treated units with treated units, control units with control
+		units, and then calculating sample variances among the matches.
+
+		Arguments
+		---------
+			W: array-like
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance), string 'maha' for
+				Mahalanobis metric, or any arbitrary k-by-k matrix.
+			m: integer
+				The number of units to match to a given subject.
+
+		Returns
+		-------
+			Vector of conditional variances.
+		"""
+
+		# m+1 since we include the unit itself in the matching pool as well
 		m_indx_t = self.__matchmaking(self.X_t, self.X_t, W, m+1)
 		m_indx_c = self.__matchmaking(self.X_c, self.X_c, W, m+1)
 
@@ -320,9 +337,9 @@ class CausalModel(object):
 		Arguments
 		---------
 			wmatrix: string, array-like
-				Distance measure to be used; acceptable values are None
-				(Euclidean norm, default), string 'maha' for Mahalanobis
-				metric, or any arbitrary k-by-k matrix.
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance, default), string 'maha'
+				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
 			matches: integer
 				The number of units to match to a given subject. Defaults
 				to 1.
@@ -356,15 +373,15 @@ class CausalModel(object):
 			ITT[self.treated] -= self.__bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
 			ITT[self.controls] += self.__bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
 
-		''' Variance calcuation
-		cond_var = self.conditional_var(wmatrix, matches)
+		cond_var = self.__conditional_var(wmatrix, matches)
 		match_counts = self.__match_counting(m_indx_t, m_indx_c)
 
 		var_ATE = ((1+match_counts)**2 * cond_var).sum() / self.N**2
 		var_ATT = ((self.D - (1-self.D)*match_counts)**2 * cond_var).sum() / self.N_t**2
-		'''
+		var_ATC = ((self.D*match_counts - (1-self.D))**2 * cond_var).sum() / self.N_c**2
 
-		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
+		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean(),
+		               var_ATE, var_ATT, var_ATC)
 
 
 	def matching_without_replacement(self, wmatrix=None, order_by_pscore=False, correct_bias=False):
@@ -392,9 +409,9 @@ class CausalModel(object):
 		Arguments
 		---------
 			wmatrix: string, array-like
-				Distance measure to be used; acceptable values are None
-				(Euclidean norm, default), string 'maha' for Mahalanobis
-				metric, or any arbitrary k-by-k matrix.
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance, default), string 'maha'
+				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
 			order_by_pscore: Boolean, optional
 				Determines order of match-making when matching without
 				replacement.
@@ -406,6 +423,9 @@ class CausalModel(object):
 		-------
 			A Results class instance.
 		"""
+
+		if self.N_t > self.N_c:
+			raise IndexError('Not enough control units.')
 
 		m_indx = np.zeros((self.N_t, 1), dtype=np.int)
 
@@ -458,16 +478,20 @@ class CausalModel(object):
 
 class Results(object):
 
-	def __init__(self, ATET, ATE=None, ATUT=None):
-		self.ATET, self.ATE, self.ATUT = ATET, ATE, ATUT
+	def __init__(self, ATT, ATE=None, ATC=None, *variances):
+		self.ATT, self.ATE, self.ATC = ATT, ATE, ATC
+		self.calculated_var = False
+		if variances:
+			self.calculated_var = True
+			self.var_ATT, self.var_ATE, self.var_ATC = variances
 
 	def summary(self):
 
 		if self.ATE:
-			print 'Estimated Average Treatment Effect:', self.ATE
-		print 'Estimated Average Treatment Effect on the Treated:', self.ATET
-		if self.ATUT:
-			print 'Estimated Average Treatment Effect on the Untreated:', self.ATUT
+			print 'Estimated Average Treatment Effect:', self.ATE, sqrt(self.var_ATE) if self.calculated_var else ''
+		print 'Estimated Average Treatment Effect on the Treated:', self.ATT, sqrt(self.var_ATT) if self.calculated_var else ''
+		if self.ATC:
+			print 'Estimated Average Treatment Effect on the Untreated:', self.ATC, sqrt(self.var_ATC) if self.calculated_var else ''
 
 
 
@@ -579,8 +603,7 @@ def UseLalonde():
 	X = np.array(lalonde[covariate_list])
 
 	causal = CausalModel(Y, D, X)
-	print causal.matching(matches=4).ATE
-	print causal.matching(matches=4).ATET
-	print causal.matching(matches=1).ATET
-	print causal.matching(matches=4, correct_bias=True).ATET
+	causal.matching(matches=4).summary()
+	causal.matching(matches=1).summary()
+	causal.matching(matches=4, correct_bias=True).summary()
 
