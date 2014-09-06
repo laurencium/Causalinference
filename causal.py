@@ -12,16 +12,16 @@ class CausalModel(object):
 
 	def __init__(self, Y, D, X):
 
-		self.Y, self.D, self.X = Y, D, X
-		self.N, self.k = self.X.shape
-		self.treated, self.controls = np.nonzero(D)[0], np.nonzero(D==0)[0]
-		self.Y_t, self.Y_c = self.Y[self.treated], self.Y[self.controls]
-		self.X_t, self.X_c = self.X[self.treated], self.X[self.controls]
-		self.N_t = np.count_nonzero(D)
-		self.N_c = self.N - self.N_t
+		self._Y, self._D, self._X = Y, D, X
+		self._N, self._k = self._X.shape
+		self._treated, self._controls = np.nonzero(D)[0], np.nonzero(D==0)[0]
+		self._Y_t, self._Y_c = self._Y[self._treated], self._Y[self._controls]
+		self._X_t, self._X_c = self._X[self._treated], self._X[self._controls]
+		self._N_t = np.count_nonzero(D)
+		self._N_c = self._N - self._N_t
 
 
-	def __polymatrix(self, X, poly):
+	def _polymatrix(self, X, poly):
 
 		"""
 		Construct matrix of polynomial terms to be used in synthetic control
@@ -42,7 +42,7 @@ class CausalModel(object):
 
 		terms = []
 		for power in xrange(2, poly+1):
-			terms.extend(list(itertools.combinations_with_replacement(range(self.k),
+			terms.extend(list(itertools.combinations_with_replacement(range(self._k),
 			                                                          power)))
 		num_of_terms = len(terms)
 		X_poly = np.ones((X.shape[0], num_of_terms))
@@ -52,7 +52,7 @@ class CausalModel(object):
 		return np.column_stack((X, X_poly))
 
 
-	def __synthetic(self, X, X_m, Y, Y_m):
+	def _synthetic(self, X, X_m, Y, Y_m):
 
 		"""
 		Compute individual-level treatment effect by applying synthetic
@@ -110,21 +110,21 @@ class CausalModel(object):
 			A Results class instance.
 		"""
  
-		ITT = np.empty(self.N)
+		ITT = np.empty(self._N)
 
 		if poly > 1:
-			X_t = self.__polymatrix(self.X_t, poly)
-			X_c = self.__polymatrix(self.X_c, poly)
-			ITT[self.treated] = self.__synthetic(X_t, X_c, self.Y_t, self.Y_c)
-			ITT[self.controls] = -self.__synthetic(X_c, X_t, self.Y_c, self.Y_t)
+			X_t = self._polymatrix(self._X_t, poly)
+			X_c = self._polymatrix(self._X_c, poly)
+			ITT[self._treated] = self._synthetic(X_t, X_c, self._Y_t, self._Y_c)
+			ITT[self._controls] = -self._synthetic(X_c, X_t, self._Y_c, self._Y_t)
 		else:
-			ITT[self.treated] = self.__synthetic(self.X_t, self.X_c, self.Y_t, self.Y_c)
-			ITT[self.controls] = -self.__synthetic(self.X_c, self.X_t, self.Y_c, self.Y_t)
+			ITT[self._treated] = self._synthetic(self._X_t, self._X_c, self._Y_t, self._Y_c)
+			ITT[self._controls] = -self._synthetic(self._X_c, self._X_t, self._Y_c, self._Y_t)
 
-		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
+		return Results(ITT[self._treated].mean(), ITT.mean(), ITT[self._controls].mean())
 
 
-	def __norm(self, dX, W):
+	def _norm(self, dX, W):
 
 		"""
 		Calculate vector of norms given weighting matrix W.
@@ -144,12 +144,12 @@ class CausalModel(object):
 		"""
 
 		if W is None:
-			return (dX**2 / self.Xvar).sum(axis=1)
+			return (dX**2 / self._Xvar).sum(axis=1)
 		else:
 			return (dX.dot(W)*dX).sum(axis=1)
 
 
-	def __msmallest_with_ties(self, x, m):
+	def _msmallest_with_ties(self, x, m):
 
 		"""
 		Finds indices of the m smallest entries in an array. Ties are
@@ -175,10 +175,10 @@ class CausalModel(object):
 		elif x[par_indx[m]] < x[par_indx[m+1:]].min():  # (m+1)th < (m+2)th
 			return list(par_indx[:m+1])
 		else:  # mth = (m+1)th = (m+2)th, so increment and recurse
-			return self.__msmallest_with_ties(x, m+2)
+			return self._msmallest_with_ties(x, m+2)
 
 
-	def __matchmaking(self, X, X_m, W=None, m=1):
+	def _matchmaking(self, X, X_m, W=None, m=1):
 
 		"""
 		Perform nearest-neigborhood matching using specified weighting
@@ -206,12 +206,12 @@ class CausalModel(object):
 		m_indx = []
 
 		for i in xrange(X.shape[0]):
-			m_indx.append(self.__msmallest_with_ties(self.__norm(X_m - X[i], W), m))
+			m_indx.append(self._msmallest_with_ties(self._norm(X_m - X[i], W), m))
 
 		return m_indx
 
 
-	def __bias(self, m_indx, Y_m, X_m, X):
+	def _bias(self, m_indx, Y_m, X_m, X):
 
 		"""
 		Estimate bias resulting from imperfect matches using least squares.
@@ -247,7 +247,7 @@ class CausalModel(object):
 		return bias
 
 
-	def __match_counting(self, m_indx_t, m_indx_c):
+	def _match_counting(self, m_indx_t, m_indx_c):
 
 		"""
 		Calculates each unit's contribution in being used as a matching
@@ -267,20 +267,20 @@ class CausalModel(object):
 			Vector containing each unit's contribution in matching.
 		"""
 
-		count = np.zeros(self.N)
-		for i in xrange(self.N_c):
+		count = np.zeros(self._N)
+		for i in xrange(self._N_c):
 			M = len(m_indx_c[i])
 			for j in xrange(M):
-				count[self.treated[m_indx_c[i][j]]] += 1./M
-		for i in xrange(self.N_t):
+				count[self._treated[m_indx_c[i][j]]] += 1./M
+		for i in xrange(self._N_t):
 			M = len(m_indx_t[i])
 			for j in xrange(M):
-				count[self.controls[m_indx_t[i][j]]] += 1./M
+				count[self._controls[m_indx_t[i][j]]] += 1./M
 
 		return count
 
 
-	def __conditional_var(self, W, m):
+	def _conditional_var(self, W, m):
 
 		"""
 		Computes unit-level conditional variances. Estimation is done by
@@ -302,14 +302,14 @@ class CausalModel(object):
 		"""
 
 		# m+1 since we include the unit itself in the matching pool as well
-		m_indx_t = self.__matchmaking(self.X_t, self.X_t, W, m+1)
-		m_indx_c = self.__matchmaking(self.X_c, self.X_c, W, m+1)
+		m_indx_t = self._matchmaking(self._X_t, self._X_t, W, m+1)
+		m_indx_c = self._matchmaking(self._X_c, self._X_c, W, m+1)
 
-		cond_var = np.empty(self.N)
-		for i in xrange(self.N_t):
-			cond_var[self.treated[i]] = self.Y_t[m_indx_t[i]].var(ddof=1)
-		for i in xrange(self.N_c):
-			cond_var[self.controls[i]] = self.Y_c[m_indx_c[i]].var(ddof=1)
+		cond_var = np.empty(self._N)
+		for i in xrange(self._N_t):
+			cond_var[self._treated[i]] = self._Y_t[m_indx_t[i]].var(ddof=1)
+		for i in xrange(self._N_c):
+			cond_var[self._controls[i]] = self._Y_c[m_indx_c[i]].var(ddof=1)
 
 		return cond_var
 
@@ -356,31 +356,31 @@ class CausalModel(object):
 		"""
 
 		if wmatrix is None:
-			self.Xvar = self.X.var(0)  # store vector of covariate variances
+			self._Xvar = self._X.var(0)  # store vector of covariate variances
 		elif wmatrix == 'maha':
-			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+			wmatrix = np.linalg.inv(np.cov(self._X, rowvar=False))
 
-		m_indx_t = self.__matchmaking(self.X_t, self.X_c, wmatrix, matches)
-		m_indx_c = self.__matchmaking(self.X_c, self.X_t, wmatrix, matches)
+		m_indx_t = self._matchmaking(self._X_t, self._X_c, wmatrix, matches)
+		m_indx_c = self._matchmaking(self._X_c, self._X_t, wmatrix, matches)
 
-		ITT = np.empty(self.N)
-		for i in xrange(self.N_t):
-			ITT[self.treated[i]] = self.Y_t[i] - self.Y_c[m_indx_t[i]].mean()
-		for i in xrange(self.N_c):
-			ITT[self.controls[i]] = self.Y_t[m_indx_c[i]].mean() - self.Y_c[i]
+		ITT = np.empty(self._N)
+		for i in xrange(self._N_t):
+			ITT[self._treated[i]] = self._Y_t[i] - self._Y_c[m_indx_t[i]].mean()
+		for i in xrange(self._N_c):
+			ITT[self._controls[i]] = self._Y_t[m_indx_c[i]].mean() - self._Y_c[i]
 
 		if correct_bias:
-			ITT[self.treated] -= self.__bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
-			ITT[self.controls] += self.__bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
+			ITT[self._treated] -= self._bias(m_indx_t, self._Y_c, self._X_c, self._X_t)
+			ITT[self._controls] += self._bias(m_indx_c, self._Y_t, self._X_t, self._X_c)
 
-		cond_var = self.__conditional_var(wmatrix, matches)
-		match_counts = self.__match_counting(m_indx_t, m_indx_c)
+		cond_var = self._conditional_var(wmatrix, matches)
+		match_counts = self._match_counting(m_indx_t, m_indx_c)
 
-		var_ATE = ((1+match_counts)**2 * cond_var).sum() / self.N**2
-		var_ATT = ((self.D - (1-self.D)*match_counts)**2 * cond_var).sum() / self.N_t**2
-		var_ATC = ((self.D*match_counts - (1-self.D))**2 * cond_var).sum() / self.N_c**2
+		var_ATE = ((1+match_counts)**2 * cond_var).sum() / self._N**2
+		var_ATT = ((self._D - (1-self._D)*match_counts)**2 * cond_var).sum() / self._N_t**2
+		var_ATC = ((self._D*match_counts - (1-self._D))**2 * cond_var).sum() / self._N_c**2
 
-		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean(),
+		return Results(ITT[self._treated].mean(), ITT.mean(), ITT[self._controls].mean(),
 		               var_ATE, var_ATT, var_ATC)
 
 
@@ -424,31 +424,31 @@ class CausalModel(object):
 			A Results class instance.
 		"""
 
-		if self.N_t > self.N_c:
+		if self._N_t > self._N_c:
 			raise IndexError('Not enough control units.')
 
-		m_indx = np.zeros((self.N_t, 1), dtype=np.int)
+		m_indx = np.zeros((self._N_t, 1), dtype=np.int)
 
 		if wmatrix is None:
-			self.Xvar = self.X.var(0)
+			self._Xvar = self._X.var(0)
 		elif wmatrix == 'maha':
-			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+			wmatrix = np.linalg.inv(np.cov(self._X, rowvar=False))
 
 		if order_by_pscore:
-			pscore = sm.Logit(self.D, self.X).fit(disp=False).predict()  # estimate by logit
-			order = np.argsort(pscore[self.D==1])[::-1]  # descending pscore order
+			pscore = sm.Logit(self._D, self._X).fit(disp=False).predict()  # estimate by logit
+			order = np.argsort(pscore[self._D==1])[::-1]  # descending pscore order
 		else:
-			order = xrange(self.N_t)
+			order = xrange(self._N_t)
 			
-		unmatched = range(self.N_c)
+		unmatched = range(self._N_c)
 		for i in order:
-			dX = self.X_c[unmatched] - self.X_t[i]
-			m_indx[i] = unmatched.pop(np.argmin(self.__norm(dX, wmatrix)))
+			dX = self._X_c[unmatched] - self._X_t[i]
+			m_indx[i] = unmatched.pop(np.argmin(self._norm(dX, wmatrix)))
 
-		ITT = self.Y_t - self.Y_c[m_indx]
+		ITT = self._Y_t - self._Y_c[m_indx]
 
 		if correct_bias:
-			ITT -= self.__bias(list(m_indx), self.Y_c, self.X_c, self.X_t)
+			ITT -= self._bias(list(m_indx), self._Y_c, self._X_c, self._X_t)
 
 		return Results(ITT.mean())
 
@@ -463,17 +463,17 @@ class CausalModel(object):
 			A Results class instance.
 		"""
 
-		D = self.D.reshape((self.N, 1))
-		dX = self.X - self.X.mean(0)
+		D = self._D.reshape((self._N, 1))
+		dX = self._X - self._X.mean(0)
 		DdX = D * dX
 		Z = np.column_stack((D, dX, DdX))
 
-		ITT = np.empty(self.N)
-		reg = sm.OLS(self.Y, sm.add_constant(Z)).fit()
-		ITT[self.treated] = reg.params[1] + np.dot(dX[self.treated], reg.params[-self.k:])
-		ITT[self.controls] = reg.params[1] + np.dot(dX[self.controls], reg.params[-self.k:])
+		ITT = np.empty(self._N)
+		reg = sm.OLS(self._Y, sm.add_constant(Z)).fit()
+		ITT[self._treated] = reg.params[1] + np.dot(dX[self._treated], reg.params[-self._k:])
+		ITT[self._controls] = reg.params[1] + np.dot(dX[self._controls], reg.params[-self._k:])
 
-		return Results(ITT[self.treated].mean(), ITT.mean(), ITT[self.controls].mean())
+		return Results(ITT[self._treated].mean(), ITT.mean(), ITT[self._controls].mean())
 
 
 class Results(object):
