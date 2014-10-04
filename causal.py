@@ -21,10 +21,29 @@ class CausalModel(object):
 		self._N_c = self._N - self._N_t
 
 
+	def normalized_diff(self):
+
+		"""
+		Computes normalized difference in covariates for assessing balance.
+
+		Normalized difference is the difference in group means, scaled by the
+		square root of the average of the two within-group variances. Large
+		values indicate that simple linear adjustment methods may not be adequate
+		for removing biases that are associated with differences in covariates.
+
+		Unlike t-statistic, normalized differences do not, in expectation,
+		increase with sample size, and thus is more appropriate for assessing
+		balance.
+		"""
+
+		return (self._X_t.mean(0) - self._X_c.mean(0)) / np.sqrt((self._X_t.var(0) +
+		                                                         self._X_c.var(0))/2)
+
+
 	def _polymatrix(self, X, poly):
 
 		"""
-		Construct matrix of polynomial terms to be used in synthetic control
+		Constructs matrix of polynomial terms to be used in synthetic control
 		matching.
 
 		Arguments
@@ -55,7 +74,7 @@ class CausalModel(object):
 	def _synthetic(self, X, X_m, Y, Y_m):
 
 		"""
-		Compute individual-level treatment effect by applying synthetic
+		Computes individual-level treatment effect by applying synthetic
 		control method on input covariate matrix X. Automatically adds the
 		constraint that the weights have to sum to 1. The public function
 		self.synthetic is a wrapper around this.
@@ -94,7 +113,7 @@ class CausalModel(object):
 	def synthetic(self, poly=0):
 
 		"""
-		Estimate the average treatment effects via synthetic controls.
+		Estimates the average treatment effects via synthetic controls.
 
 		Terms of higher order polynomials of the covariates can be used in
 		constructing synthetic controls.
@@ -127,7 +146,7 @@ class CausalModel(object):
 	def _norm(self, dX, W):
 
 		"""
-		Calculate vector of norms given weighting matrix W.
+		Calculates vector of norms given weighting matrix W.
 
 		Arguments
 		---------
@@ -181,7 +200,7 @@ class CausalModel(object):
 	def _matchmaking(self, X, X_m, W=None, m=1):
 
 		"""
-		Perform nearest-neigborhood matching using specified weighting
+		Performs nearest-neigborhood matching using specified weighting
 		matrix in measuring distance. Ties are included, so the number
 		of matches for a given unit can be greater than m.
 
@@ -214,7 +233,7 @@ class CausalModel(object):
 	def _bias(self, m_indx, Y_m, X_m, X):
 
 		"""
-		Estimate bias resulting from imperfect matches using least squares.
+		Estimates bias resulting from imperfect matches using least squares.
 		When estimating ATT, regression should use control units. When
 		estimating ATC, regression should use treated units.
 
@@ -317,7 +336,7 @@ class CausalModel(object):
 	def matching(self, wmatrix=None, matches=1, correct_bias=False):
 
 		"""
-		Estimate average treatment effects using matching with replacement.
+		Estimates average treatment effects using matching with replacement.
 
 		By default, the weighting matrix used in measuring distance is the
 		inverse variance matrix. The Mahalanobis metric or other arbitrary
@@ -387,7 +406,7 @@ class CausalModel(object):
 	def matching_without_replacement(self, wmatrix=None, order_by_pscore=False, correct_bias=False):
 
 		"""
-		Estimate average treatment effects using matching without replacement.
+		Estimates average treatment effects using matching without replacement.
 
 		By default, the weighting matrix used in measuring distance is the
 		inverse variance matrix. The Mahalanobis metric or other arbitrary
@@ -456,7 +475,7 @@ class CausalModel(object):
 	def ols(self):
 
 		"""
-		Estimate average treatment effects using least squares.
+		Estimates average treatment effects using least squares.
 
 		Returns
 		-------
@@ -478,12 +497,15 @@ class CausalModel(object):
 
 class Results(object):
 
+
 	def __init__(self, ATT, ATE=None, ATC=None, *variances):
+
 		self.ATT, self.ATE, self.ATC = ATT, ATE, ATC
 		self.calculated_var = False
 		if variances:
 			self.calculated_var = True
 			self.var_ATT, self.var_ATE, self.var_ATC = variances
+
 
 	def summary(self):
 
@@ -603,6 +625,7 @@ def UseLalonde():
 	X = np.array(lalonde[covariate_list])
 
 	causal = CausalModel(Y, D, X)
+	print causal.normalized_diff()
 	causal.matching(matches=4).summary()
 	causal.matching(matches=1).summary()
 	causal.matching(matches=4, correct_bias=True).summary()
