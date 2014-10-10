@@ -5,6 +5,7 @@ import itertools
 import statsmodels.api as sm
 from scipy.stats import norm
 from math import sqrt
+import cvxpy as cvx
 
 
 class CausalModel(object):
@@ -141,6 +142,21 @@ class CausalModel(object):
 			ITT[self._controls] = -self._synthetic(self._X_c, self._X_t, self._Y_c, self._Y_t)
 
 		return Results(ITT[self._treated].mean(), ITT.mean(), ITT[self._controls].mean())
+
+
+	def lasso_syn(self):
+
+		ITT = np.zeros(self._N_t)
+
+		for i in xrange(self._N_t):
+			w = cvx.Variable(self._N_c)
+			objective = cvx.Minimize(cvx.sum_squares(self._X_c.T * w - self._X_t[i, ]))
+			constraints = [cvx.sum_entries(w) == 1, cvx.norm(w, 1) <= 0.7]
+			prob = cvx.Problem(objective, constraints)
+	 	 	min_value = prob.solve()
+			ITT[i] = self._Y_t[i] - np.dot(w.value.getA1(), self._Y_c)
+
+		return ITT.mean()
 
 
 	def _norm(self, dX, W):
