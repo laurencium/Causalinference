@@ -6,6 +6,7 @@ import statsmodels.api as sm
 from scipy.stats import norm
 from math import sqrt
 import cvxpy as cvx
+from sklearn import linear_model
 
 
 class CausalModel(object):
@@ -147,14 +148,15 @@ class CausalModel(object):
 	def lasso_syn(self):
 
 		ITT = np.zeros(self._N_t)
+		clf = linear_model.Lasso(alpha=0.00001)
 
 		for i in xrange(self._N_t):
-			w = cvx.Variable(self._N_c)
-			objective = cvx.Minimize(cvx.sum_squares(self._X_c.T * w - self._X_t[i, ]))
-			constraints = [cvx.sum_entries(w) == 1, cvx.norm(w, 1) <= 0.7]
-			prob = cvx.Problem(objective, constraints)
-	 	 	min_value = prob.solve()
-			ITT[i] = self._Y_t[i] - np.dot(w.value.getA1(), self._Y_c)
+			non_zero = clf.fit(self._X_c.T, self._X_t[i, ]).coef_ > 0  # L1 variable selection
+			X_c = self._X_c.T[:, non_zero].T
+			X_m1 = np.row_stack((X_c.T, np.ones(X_c.shape[0])))  # add row of 1's
+			x1 = np.append(self._X_t[i], 1)  # append 1 to restrict weights to sum to 1
+			w = np.linalg.lstsq(X_m1, x1)[0]
+			ITT[i] = self._Y_t[i] - np.dot(w, self._Y_c[non_zero])
 
 		return ITT.mean()
 
@@ -189,7 +191,7 @@ class CausalModel(object):
 		"""
 		Finds indices of the m smallest entries in an array. Ties are
 		included, so the number of indices can be greater than m. Algorithm
-		is of order O(nt), where t is number of ties.
+		is of order O(n).
 
 		Arguments
 		---------
