@@ -205,14 +205,14 @@ class CausalModel(object):
 			List of indices of smallest entries.
 		"""
 
-		par_indx = np.argpartition(x, m)  # partition around (m+1)th order stat
-		
-		if x[par_indx[:m]].max() < x[par_indx[m]]:  # mth < (m+1)th entry
-			return list(par_indx[:m])
-		elif x[par_indx[m]] < x[par_indx[m+1:]].min():  # (m+1)th < (m+2)th
-			return list(par_indx[:m+1])
-		else:  # mth = (m+1)th = (m+2)th, so increment and recurse
-			return self._msmallest_with_ties(x, m+2)
+		par_indx = np.argpartition(x, m-1)  # partition around mth order stat
+		m_indx = list(par_indx[:m])
+
+		for i in xrange(m, len(x)):
+			if np.isclose(x[par_indx[i]], x[par_indx[m-1]]):
+				m_indx.append(par_indx[i])
+
+		return m_indx
 
 
 	def _matchmaking(self, X, X_m, W=None, m=1):
