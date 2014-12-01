@@ -41,26 +41,27 @@ class CausalModel(object):
 		return (self._X_t.mean(0) - self._X_c.mean(0)) / np.sqrt((self._X_t.var(0) +
 		                                                         self._X_c.var(0))/2)
 
+
 	def _sigmoid(self, x):
 
 		return 1/(1+np.exp(-x))
 
 
-	def _logsigmoid(self, x):
+	def _log1exp(self, x):
 
-		return np.log(self._sigmoid(x))
-
-
-	def _loglike(self, beta, X_t, X_c):
-
-		return self._logsigmoid(X_t.dot(beta)).sum() + \
-		       self._logsigmoid(-X_c.dot(beta)).sum()
+		return np.log(1 + np.exp(-x))
 
 
-	def _gradient(self, beta, X_t, X_c):
+	def _neg_loglike(self, beta, X_t, X_c):
 
-		return (self._sigmoid(-X_t.dot(beta))*X_t.T).sum(1) - \
-		       (self._sigmoid(X_c.dot(beta))*X_c.T).sum(1)
+		return self._log1exp(X_t.dot(beta)).sum() + \
+		       self._log1exp(-X_c.dot(beta)).sum()
+
+
+	def _neg_gradient(self, beta, X_t, X_c):
+
+		return (self._sigmoid(X_c.dot(beta))*X_c.T).sum(1) - \
+		       (self._sigmoid(-X_t.dot(beta))*X_t.T).sum(1)
 
 
 	def _pscore(self, X):
@@ -69,20 +70,20 @@ class CausalModel(object):
 		X_c = X[self._D==0]
 		K = X.shape[1]
 
-		neg_loglike = lambda x: -self._loglike(x, X_t, X_c)
-		neg_gradient = lambda x: -self._gradient(x, X_t, X_c)
+		neg_loglike = lambda x: self._neg_loglike(x, X_t, X_c)
+		neg_gradient = lambda x: self._neg_gradient(x, X_t, X_c)
 
-		logit = fmin_bfgs(neg_loglike, np.zeros(K), neg_gradient, full_output=True)
+		logit = fmin_bfgs(neg_loglike, np.zeros(K), neg_gradient, full_output=True, disp=False)
 
 		beta = logit[0]
 		loglike = -logit[1]
 		fitted = np.empty(self._N)
-		fitted[self._D==1] = self._sigmoid(X_t.dot(beta))
-		fitted[self._D==0] = self._sigmoid(X_c.dot(beta))
+		fitted[self._treated] = self._sigmoid(X_t.dot(beta))
+		fitted[self._controls] = self._sigmoid(X_c.dot(beta))
 
 		return (beta, loglike, fitted)
-
 		
+
 	def _polymatrix(self, X, poly):
 
 		"""
@@ -246,16 +247,6 @@ class CausalModel(object):
 			List of indices of smallest entries.
 		"""
 
-<<<<<<< HEAD
-		par_indx = np.argpartition(x, m-1)  # partition around mth order stat
-		m_indx = list(par_indx[:m])
-
-		for i in xrange(m, len(x)):
-			if np.isclose(x[par_indx[i]], x[par_indx[m-1]]):
-				m_indx.append(par_indx[i])
-
-		return m_indx
-=======
 		par_indx = np.argpartition(x, m)  # partition around (m+1)th order stat
 		
 		if x[par_indx[:m]].max() < x[par_indx[m]]:  # mth < (m+1)th order stat
@@ -264,7 +255,6 @@ class CausalModel(object):
 			return list(par_indx[:m+1])
 		else:  # mth = (m+1)th = (m+2)th, so increment and recurse
 			return self._msmallest_with_ties(x, m+2)
->>>>>>> 256933354881976
 
 
 	def _matchmaking(self, X, X_m, W=None, m=1):
