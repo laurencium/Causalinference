@@ -66,8 +66,8 @@ class CausalModel(object):
 
 	def _pscore(self, X):
 
-		X_t = X[self._D==1]
-		X_c = X[self._D==0]
+		X_t = X[self._treated]
+		X_c = X[self._controls]
 		K = X.shape[1]
 
 		neg_loglike = lambda x: self._neg_loglike(x, X_t, X_c)
@@ -82,6 +82,18 @@ class CausalModel(object):
 		fitted[self._controls] = self._sigmoid(X_c.dot(beta))
 
 		return (beta, loglike, fitted)
+
+
+	def pscore(self, X=None, add_const=True, linear=None):
+
+		if X is None:
+			X = self._X
+		if linear:
+			X = X[:, linear]
+		if add_const:
+			X = np.hstack((np.ones((X.shape[0], 1)), X))
+
+		return self._pscore(X)
 		
 
 	def _polymatrix(self, X, poly):
