@@ -15,7 +15,7 @@ class CausalModel(object):
 	def __init__(self, Y, D, X):
 
 		self._Y, self._D, self._X = Y, D, X
-		self._N, self._k = self._X.shape
+		self._N, self._K = self._X.shape
 		self._treated, self._controls = np.nonzero(D)[0], np.nonzero(D==0)[0]
 		self._Y_t, self._Y_c = self._Y[self._treated], self._Y[self._controls]
 		self._X_t, self._X_c = self._X[self._treated], self._X[self._controls]
@@ -84,16 +84,40 @@ class CausalModel(object):
 		return (beta, loglike, fitted)
 
 
-	def pscore(self, X=None, add_const=True, linear=None):
+	def _form_matrix(self, X, const, lin, quad):
+
+		lin_num = len(lin)
+		quad_num = len(quad) * (len(quad)+1) / 2
+		total_col = const + lin_num + quad_num
+
+		mat = np.empty((X.shape[0], total_col))
+
+		current_col = 0
+		if const:
+			mat[:, current_col] = np.ones(X.shape[0])
+			current_col += 1
+		if lin:
+			mat[:, current_col:current_col+lin_num] = X[:, lin]
+			current_col += lin_num
+		if quad:
+			quad_terms = itertools.combinations_with_replacement(quad, 2)
+			for term in quad_terms:
+				mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
+				current_col += 1
+
+		return mat
+
+
+	def pscore(self, X=None, const=True, lin=None, quad=None):
 
 		if X is None:
 			X = self._X
-		if linear:
-			X = X[:, linear]
-		if add_const:
-			X = np.hstack((np.ones((X.shape[0], 1)), X))
+		if lin is None:
+			lin = xrange(X.shape[1])
+		if quad is None:
+			quad = ()
 
-		return self._pscore(X)
+		return self._pscore(self._form_matrix(X, const, lin, quad))
 		
 
 	def _polymatrix(self, X, poly):
@@ -117,7 +141,7 @@ class CausalModel(object):
 
 		terms = []
 		for power in xrange(2, poly+1):
-			terms.extend(list(itertools.combinations_with_replacement(range(self._k),
+			terms.extend(list(itertools.combinations_with_replacement(range(self._K),
 			                                                          power)))
 		num_of_terms = len(terms)
 		X_poly = np.ones((X.shape[0], num_of_terms))
@@ -561,8 +585,8 @@ class CausalModel(object):
 
 		ITT = np.empty(self._N)
 		reg = sm.OLS(self._Y, sm.add_constant(Z)).fit()
-		ITT[self._treated] = reg.params[1] + np.dot(dX[self._treated], reg.params[-self._k:])
-		ITT[self._controls] = reg.params[1] + np.dot(dX[self._controls], reg.params[-self._k:])
+		ITT[self._treated] = reg.params[1] + np.dot(dX[self._treated], reg.params[-self._K:])
+		ITT[self._controls] = reg.params[1] + np.dot(dX[self._controls], reg.params[-self._K:])
 
 		return Results(ITT[self._treated].mean(), ITT.mean(), ITT[self._controls].mean())
 
