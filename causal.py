@@ -86,36 +86,30 @@ class CausalModel(object):
 
 	def _form_matrix(self, X, const, lin, quad):
 
-		lin_num = len(lin)
-		quad_num = len(quad) * (len(quad)+1) / 2
-		total_col = const + lin_num + quad_num
-
-		mat = np.empty((X.shape[0], total_col))
+		mat = np.empty((X.shape[0], const+len(lin)+len(quad)))
 
 		current_col = 0
 		if const:
 			mat[:, current_col] = np.ones(X.shape[0])
 			current_col += 1
 		if lin:
-			mat[:, current_col:current_col+lin_num] = X[:, lin]
-			current_col += lin_num
-		if quad:
-			quad_terms = itertools.combinations_with_replacement(quad, 2)
-			for term in quad_terms:
-				mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
-				current_col += 1
+			mat[:, current_col:current_col+len(lin)] = X[:, lin]
+			current_col += len(lin)
+		for term in quad:
+			mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
+			current_col += 1
 
 		return mat
 
 
-	def pscore(self, X=None, const=True, lin=None, quad=None):
+	def pscore(self, X=None, const=True, lin=None, quad=()):
 
 		if X is None:
 			X = self._X
 		if lin is None:
 			lin = xrange(X.shape[1])
-		if quad is None:
-			quad = ()
+		if quad:
+			quad = list(itertools.combinations_with_replacement(quad, 2))
 
 		return self._pscore(self._form_matrix(X, const, lin, quad))
 		
