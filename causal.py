@@ -90,7 +90,7 @@ class CausalModel(object):
 
 		current_col = 0
 		if const:
-			mat[:, current_col] = np.ones(X.shape[0])
+			mat[:, current_col] = 1
 			current_col += 1
 		if lin:
 			mat[:, current_col:current_col+len(lin)] = X[:, lin]
@@ -562,6 +562,22 @@ class CausalModel(object):
 		return Results(ITT.mean())
 
 
+	def _add_const(self, X):
+
+		X1 = np.empty((X.shape[0], X.shape[1]+1))
+		X1[:, 0] = 1
+		X1[:, 1:] = X
+
+		return X1
+
+
+	def _ols_predict(self, Y, X, X_new):
+
+		beta = np.linalg.lstsq(self._add_const(X), Y)[0]
+
+		return self._add_const(X_new).dot(beta)
+
+
 	def ols(self):
 
 		"""
@@ -572,15 +588,9 @@ class CausalModel(object):
 			A Results class instance.
 		"""
 
-		D = self._D.reshape((self._N, 1))
-		dX = self._X - self._X.mean(0)
-		DdX = D * dX
-		Z = np.column_stack((D, dX, DdX))
-
 		ITT = np.empty(self._N)
-		reg = sm.OLS(self._Y, sm.add_constant(Z)).fit()
-		ITT[self._treated] = reg.params[1] + np.dot(dX[self._treated], reg.params[-self._K:])
-		ITT[self._controls] = reg.params[1] + np.dot(dX[self._controls], reg.params[-self._K:])
+		ITT[self._treated] = self._Y_t - self._ols_predict(self._Y_c, self._X_c, self._X_t)
+		ITT[self._controls] = self._ols_predict(self._Y_t, self._X_t, self._X_c) - self._Y_c
 
 		return Results(ITT[self._treated].mean(), ITT.mean(), ITT[self._controls].mean())
 
