@@ -84,9 +84,9 @@ class CausalModel(object):
 		return (beta, loglike, fitted)
 
 
-	def _form_matrix(self, X, const, lin, quad):
+	def _form_matrix(self, X, const, lin, qua):
 
-		mat = np.empty((X.shape[0], const+len(lin)+len(quad)))
+		mat = np.empty((X.shape[0], const+len(lin)+len(qua)))
 
 		current_col = 0
 		if const:
@@ -95,24 +95,54 @@ class CausalModel(object):
 		if lin:
 			mat[:, current_col:current_col+len(lin)] = X[:, lin]
 			current_col += len(lin)
-		for term in quad:
+		for term in qua:
 			mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
 			current_col += 1
 
 		return mat
 
 
-	def pscore(self, X=None, const=True, lin=None, quad=()):
+	def pscore(self, X=None, const=True, lin=None, qua=[]):
 
 		if X is None:
 			X = self._X
 		if lin is None:
 			lin = xrange(X.shape[1])
-		if quad:
-			quad = list(itertools.combinations_with_replacement(quad, 2))
+		if qua:
+			qua = list(itertools.combinations_with_replacement(qua, 2))
 
-		return self._pscore(self._form_matrix(X, const, lin, quad))
+		return self._pscore(self._form_matrix(X, const, lin, qua))
 		
+
+	def _pscore_select_linear(self, X, const, X_lin, C_lin):
+
+		X_notin = list(set(xrange(X.shape[1])) - set(X_lin))
+		if not X_notin:
+			return X_lin
+
+		ll_null = self._pscore(self._form_matrix(X, const, X_lin, []))[1]
+
+		lr = np.empty(len(X_notin))
+		for i in xrange(len(X_notin)):
+			lr[i] = 2*(self._pscore(self._form_matrix(X, const, X_lin + [X_notin[i]], []))[1] - ll_null)
+
+		argmax = np.argmax(lr)
+		if lr[argmax] < C_lin:
+			return X_lin
+		else:
+			return self._pscore_select_linear(X, const, X_lin + [X_notin[argmax]], C_lin)
+
+
+	def pscore_select(self, X=None, const=True, X_B=None, C_lin=0, C_qua=np.inf):
+	
+		if X is None:
+			X = self._X
+		if X_B is None:
+			X_B = xrange(X.shape[1])
+			# move to quadratic part
+		if C_lin==0 & C_qua==np.inf:
+			return self._pscore(self._form_matrix(X, const, X_B, ()))
+
 
 	def _polymatrix(self, X, poly):
 
