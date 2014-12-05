@@ -84,64 +84,75 @@ class CausalModel(object):
 		return (beta, loglike, fitted)
 
 
-	def _form_matrix(self, X, const, lin, qua):
+	def _form_matrix(self, const, lin, qua):
 
-		mat = np.empty((X.shape[0], const+len(lin)+len(qua)))
+		mat = np.empty((self._N, const+len(lin)+len(qua)))
 
 		current_col = 0
 		if const:
 			mat[:, current_col] = 1
 			current_col += 1
 		if lin:
-			mat[:, current_col:current_col+len(lin)] = X[:, lin]
+			mat[:, current_col:current_col+len(lin)] = self._X[:, lin]
 			current_col += len(lin)
 		for term in qua:
-			mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
+			mat[:, current_col] = self._X[:, term[0]] * self._X[:, term[1]]
 			current_col += 1
 
 		return mat
 
 
-	def pscore(self, X=None, const=True, lin=None, qua=[]):
+	def pscore(self, const=True, lin=None, qua=[]):
 
-		if X is None:
-			X = self._X
 		if lin is None:
-			lin = xrange(X.shape[1])
+			lin = xrange(self._X.shape[1])
 		if qua:
 			qua = list(itertools.combinations_with_replacement(qua, 2))
 
-		return self._pscore(self._form_matrix(X, const, lin, qua))
+		return self._pscore(self._form_matrix(const, lin, qua))
 		
 
-	def _pscore_select_linear(self, X, const, X_lin, C_lin):
+	def _pscore_select(self, const, X_cur, X_pot, crit, X_lin=[]):
+	
+		if not X_pot:
+			return X_cur
 
-		X_notin = list(set(xrange(X.shape[1])) - set(X_lin))
-		if not X_notin:
-			return X_lin
+		if not X_lin:  # X_lin is empty, so linear terms not yet decided
+			ll_null = self._pscore(self._form_matrix(const, X_cur, []))[1]
+		else:  # X_lin is not empty, so linear terms are already fixed
+			ll_null = self._pscore(self._form_matrix(const, X_lin, X_cur))[1]
 
-		ll_null = self._pscore(self._form_matrix(X, const, X_lin, []))[1]
-
-		lr = np.empty(len(X_notin))
-		for i in xrange(len(X_notin)):
-			lr[i] = 2*(self._pscore(self._form_matrix(X, const, X_lin + [X_notin[i]], []))[1] - ll_null)
+		lr = np.empty(len(X_pot))
+		if not X_lin:
+			for i in xrange(len(X_pot)):
+				lr[i] = 2*(self._pscore(self._form_matrix(const, X_cur+[X_pot[i]], []))[1] - ll_null)
+		else:
+			for i in xrange(len(X_pot)):
+				lr[i] = 2*(self._pscore(self._form_matrix(const, X_lin, X_cur+[X_pot[i]]))[1] - ll_null)
 
 		argmax = np.argmax(lr)
-		if lr[argmax] < C_lin:
-			return X_lin
+		if lr[argmax] < crit:
+			return X_cur
 		else:
-			return self._pscore_select_linear(X, const, X_lin + [X_notin[argmax]], C_lin)
+			new_term = X_pot.pop(argmax)
+			return self._pscore_select(const, X_cur+[new_term], X_pot, crit, X_lin)
 
 
-	def pscore_select(self, X=None, const=True, X_B=None, C_lin=0, C_qua=np.inf):
-	
-		if X is None:
-			X = self._X
-		if X_B is None:
-			X_B = xrange(X.shape[1])
-			# move to quadratic part
-		if C_lin==0 & C_qua==np.inf:
-			return self._pscore(self._form_matrix(X, const, X_B, ()))
+	def pscore_select(self, const=True, X_B=[], C_lin=1, C_qua=2.71):
+
+		if C_lin == 0:
+			X_lin = xrange(self._X.shape[1])
+		else:
+			X_pot = list(set(xrange(self._X.shape[1])) - set(X_B))
+			X_lin = self._pscore_select(const, X_B, X_pot, C_lin)
+
+		if C_qua == np.inf:
+			X_qua = []
+		else:
+			X_pot = list(itertools.combinations_with_replacement(X_lin, 2))
+			X_qua = self._pscore_select(const, [], X_pot, C_qua, X_lin)
+
+		return self._pscore(self._form_matrix(const, X_lin, X_qua))
 
 
 	def _polymatrix(self, X, poly):
