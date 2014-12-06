@@ -36,6 +36,10 @@ class CausalModel(object):
 		Unlike t-statistic, normalized differences do not, in expectation,
 		increase with sample size, and thus is more appropriate for assessing
 		balance.
+
+		Returns
+		-------
+			Vector of normalized differences.
 		"""
 
 		return (self._X_t.mean(0) - self._X_c.mean(0)) / np.sqrt((self._X_t.var(0) +
@@ -43,16 +47,61 @@ class CausalModel(object):
 
 
 	def _sigmoid(self, x):
+	
+		"""
+		Computes 1/(1+exp(-x)) for input x, to be used in maximum likelihood
+		estimation of propensity score.
+
+		Arguments
+		---------
+			x: array-like
+
+		Returns
+		-------
+			Vector or scalar 1/(1+exp(-x)), depending on input x.
+		"""
 
 		return 1/(1+np.exp(-x))
 
 
 	def _log1exp(self, x):
 
+		"""
+		Computes log(1+exp(-x)) for input x, to be used in maximum likelihood
+		estimation of propensity score.
+
+		Arguments
+		---------
+			x: array-like
+
+		Returns
+		-------
+			Vector or scalar log(1+exp(-x)), depending on input x.
+		"""
+
 		return np.log(1 + np.exp(-x))
 
 
 	def _neg_loglike(self, beta, X_t, X_c):
+
+		"""
+		Computes the negative of the log likelihood function for logit, to be used
+		in maximum likelihood estimation of propensity score. Negative because SciPy
+		optimizier does minimization only.
+
+		Arguments
+		---------
+			beta: array-like
+				Logisitic regression parameters to maximize over.
+			X_t: array-like
+				Covariate matrix of the treated units.
+			X_c: array-like
+				Covariate matrix of the control units.
+
+		Returns
+		-------
+			Negative log likelihood evaluated at input values.
+		"""
 
 		return self._log1exp(X_t.dot(beta)).sum() + \
 		       self._log1exp(-X_c.dot(beta)).sum()
@@ -60,11 +109,48 @@ class CausalModel(object):
 
 	def _neg_gradient(self, beta, X_t, X_c):
 
+		"""
+		Computes the negative of the gradient of the log likelihood function for
+		logit, to be used in maximum likelihood estimation of propensity score.
+		Negative because SciPy optimizier does minimization only.
+
+		Arguments
+		---------
+			beta: array-like
+				Logisitic regression parameters to maximize over.
+			X_t: array-like
+				Covariate matrix of the treated units.
+			X_c: array-like
+				Covariate matrix of the control units.
+
+		Returns
+		-------
+			Negative gradient of log likelihood function evaluated at input values.
+		"""
+
 		return (self._sigmoid(X_c.dot(beta))*X_c.T).sum(1) - \
 		       (self._sigmoid(-X_t.dot(beta))*X_t.T).sum(1)
 
 
 	def _pscore(self, X):
+
+		"""
+		Estimates via logit the propensity score based on input covariate matrix X.
+
+		Arguments
+		---------
+			X: array-like
+				Covariate matrix to estimate propensity score on.
+
+		Returns
+		-------
+			beta: array-like
+				Estimated logistic regression coefficients.
+			loglike: scalar
+				Maximized log-likelihood value.
+			fitted: array-like
+				Estimated propensity scores for each unit.
+		"""
 
 		X_t = X[self._treated]
 		X_c = X[self._controls]
@@ -86,6 +172,30 @@ class CausalModel(object):
 
 	def _form_matrix(self, const, lin, qua):
 
+		"""
+		Forms covariate matrix for use in propensity score estimation, based on
+		requirements on constant term, linear terms, and quadratic terms.
+
+		Arguments
+		---------
+			const: Boolean
+				Includes a column of one's if True.
+			lin: list
+				Column numbers of the base self._X covariate matrix
+				to include linearly.
+			qua: list
+				Tuples indicating which columns of the base self._X
+				covariate matrix to multiply and include. E.g.,
+				[(0,0), (1,2)] indicates squaring the 0th column and
+				including the product of the 1st and 2nd columns.
+
+		Returns
+		-------
+			mat: array-like
+				Covariate matrix formed based on requirements on
+				constant, linear, and quadratic terms.
+		"""
+
 		mat = np.empty((self._N, const+len(lin)+len(qua)))
 
 		current_col = 0
@@ -104,6 +214,36 @@ class CausalModel(object):
 
 	def pscore(self, const=True, lin=None, qua=[]):
 
+		"""
+		Estimates via logit the propensity score based on requirements on
+		constant term, linear terms, and quadratic terms.
+
+		Arguments
+		---------
+			const: Boolean
+				Includes a column of one's if True. Defaults to
+				True.
+			lin: list
+				Column numbers of the base covariate matrix X
+				to include linearly. Defaults to using the
+				whole covariate matrix.
+			qua: list
+				Column numbers of the base covariate matrix X
+				to include quadratic. E.g., [0,2] will include
+				squares of the 0th and 2nd columns, and the product
+				of these two columns. Default is not include any
+				quadratic terms.
+
+		Returns
+		-------
+			beta: array-like
+				Estimated logistic regression coefficients.
+			loglike: scalar
+				Maximized log-likelihood value.
+			fitted: array-like
+				Estimated propensity scores for each unit.
+		"""
+
 		if lin is None:
 			lin = xrange(self._X.shape[1])
 		if qua:
@@ -114,6 +254,33 @@ class CausalModel(object):
 
 	def _pscore_select(self, const, X_cur, X_pot, crit, X_lin=[]):
 	
+		"""
+		Estimates via logit the propensity score using Imbens and Rubin's
+		covariate selection algorithm.
+
+		Arguments
+		---------
+			const: Boolean
+				Includes a column of one's if True. 
+			X_cur: list
+				List containing terms that are currently included
+				in the logistic regression.
+			X_pot: list
+				List containing candidate terms to be iterated through.
+			crit: scalar
+				Critical value used in likelihood ratio test to decide
+				whether candidate terms should be included.
+			X_lin: list
+				List containing linear terms that have been decided on.
+				If non-empty, then X_cur and X_pot should be containing
+				candidate quadratic terms. If empty, then those two
+				matrices should be containing candidate linear terms.
+
+		Returns
+		-------
+			List containing terms that the algorithm has settled on for inclusion.
+		"""
+
 		if not X_pot:
 			return X_cur
 
@@ -139,6 +306,46 @@ class CausalModel(object):
 
 
 	def pscore_select(self, const=True, X_B=[], C_lin=1, C_qua=2.71):
+
+		"""
+		Estimates via logit the propensity score using Imbens and Rubin's
+		covariate selection algorithm.
+
+		Arguments
+		---------
+			const: Boolean
+				Includes a column of one's if True. Defaults to
+				True.
+			X_B: list
+				Column numbers of the base covariate matrix X
+				that should be included as linear terms
+				regardless. Defaults to empty list, meaning
+				every column of X is subjected to the selection
+				algorithm.
+			C_lin: scalar
+				Critical value used in likelihood ratio test to decide
+				whether candidate linear terms should be included.
+				Defaults to 1 as in Imbens (2014).
+			C_qua: scalar
+				Critical value used in likelihood ratio test to decide
+				whether candidate quadratic terms should be included.
+				Defaults to 2.71 as in Imbens (2014).
+
+		Returns
+		-------
+			beta: array-like
+				Estimated logistic regression coefficients.
+			loglike: scalar
+				Maximized log-likelihood value.
+			fitted: array-like
+				Estimated propensity scores for each unit.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in Statistics,
+				Social, and Biomedical Sciences: An Introduction.
+			Imbens, G. (2014). Matching Methods in Practice: Three Examples.
+		"""
 
 		if C_lin == 0:
 			X_lin = xrange(self._X.shape[1])
