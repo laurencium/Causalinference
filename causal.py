@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fmin_bfgs
+from itertools import combinations_with_replacement
 
 
 class CausalModel(object):
@@ -14,12 +15,12 @@ class CausalModel(object):
 		self._X_t, self._X_c = self._X[self._treated], self._X[self._controls]
 		self._N_t = np.count_nonzero(self._D)
 		self._N_c = self._N - self._N_t
-		self._normalized_diff = None
+		self._ndiff = None
 		self._pscore = {}
-		self.restore()
+		self.initialize()
 
 
-	def restore(self):
+	def initialize(self):
 
 		self.Y, self.D, self.X = self._Y, self._D, self._X
 		self.N, self.K = self._N, self._K
@@ -27,11 +28,11 @@ class CausalModel(object):
 		self.Y_t, self.Y_c = self._Y_t, self._Y_c
 		self.X_t, self.X_c = self._X_t, self._X_c
 		self.N_t, self.N_c = self._N_t, self._N_c
-		self.normalized_diff = self._normalized_diff
+		self.ndiff = self._ndiff
 		self.pscore = self._pscore
 
 
-	def compute_normalized_diff(self):
+	def compute_normalized_difference(self):
 
 		"""
 		Computes normalized difference in covariates for assessing balance.
@@ -50,8 +51,8 @@ class CausalModel(object):
 			Vector of normalized differences.
 		"""
 
-		self.normalized_diff = (self.X_t.mean(0) - self.X_c.mean(0)) / \
-		                       np.sqrt((self.X_t.var(0) + self.X_c.var(0))/2)
+		self.ndiff = (self.X_t.mean(0) - self.X_c.mean(0)) / \
+		             np.sqrt((self.X_t.var(0) + self.X_c.var(0))/2)
 
 
 	def _sigmoid(self, x):
@@ -140,7 +141,7 @@ class CausalModel(object):
 		       (self._sigmoid(-X_t.dot(beta))*X_t.T).sum(1)
 
 
-	def _compute_propensity_score(self, X):
+	def _compute_pscore(self, X):
 
 		"""
 		Estimates via logit the propensity score based on input covariate matrix X.
@@ -170,8 +171,7 @@ class CausalModel(object):
 		logit = fmin_bfgs(neg_loglike, np.zeros(K), neg_gradient, full_output=True, disp=False)
 
 		pscore = {}
-		pscore['coeff'] = logit[0]
-		pscore['loglike'] = -logit[1]
+		pscore['coeff'], pscore['loglike'] = logit[0], -logit[1]
 		pscore['fitted'] = np.empty(self.N)
 		pscore['fitted'][self.treated] = self._sigmoid(X_t.dot(pscore['coeff']))
 		pscore['fitted'][self.controls] = self._sigmoid(X_c.dot(pscore['coeff']))
@@ -221,6 +221,15 @@ class CausalModel(object):
 		return mat
 
 
+	def _change_base(self, l, pair=False, base=0):
+
+		offset = 2*base - 1
+		if pair:
+			return [(p[0]+offset, p[1]+offset) for p in l]
+		else:
+			return [e+offset for e in l]
+			
+
 	def compute_propensity_score(self, const=True, lin=None, qua=[]):
 
 		"""
@@ -255,13 +264,15 @@ class CausalModel(object):
 
 		if lin is None:
 			lin = xrange(self.X.shape[1])
-		if qua:
-			qua = list(itertools.combinations_with_replacement(qua, 2))
+		else:
+			lin = self._change_base(lin, base=0)
+		qua = self._change_base(qua, pair=True, base=0)
 
-		self.pscore = self._compute_propensity_score(self._form_matrix(const, lin, qua))
+		self.pscore = self._compute_pscore(self._form_matrix(const, lin, qua))
+		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, lin, qua
 		
 
-	def _pscore_select(self, const, X_cur, X_pot, crit, X_lin=[]):
+	def _select_terms(self, const, X_cur, X_pot, crit, X_lin=[]):
 	
 		"""
 		Estimates via logit the propensity score using Imbens and Rubin's
@@ -294,27 +305,27 @@ class CausalModel(object):
 			return X_cur
 
 		if not X_lin:  # X_lin is empty, so linear terms not yet decided
-			ll_null = self._pscore(self._form_matrix(const, X_cur, []))[1]
+			ll_null = self._compute_pscore(self._form_matrix(const, X_cur, []))['loglike']
 		else:  # X_lin is not empty, so linear terms are already fixed
-			ll_null = self._pscore(self._form_matrix(const, X_lin, X_cur))[1]
+			ll_null = self._compute_pscore(self._form_matrix(const, X_lin, X_cur))['loglike']
 
 		lr = np.empty(len(X_pot))
 		if not X_lin:
 			for i in xrange(len(X_pot)):
-				lr[i] = 2*(self._pscore(self._form_matrix(const, X_cur+[X_pot[i]], []))[1] - ll_null)
+				lr[i] = 2*(self._compute_pscore(self._form_matrix(const, X_cur+[X_pot[i]], []))['loglike'] - ll_null)
 		else:
 			for i in xrange(len(X_pot)):
-				lr[i] = 2*(self._pscore(self._form_matrix(const, X_lin, X_cur+[X_pot[i]]))[1] - ll_null)
+				lr[i] = 2*(self._compute_pscore(self._form_matrix(const, X_lin, X_cur+[X_pot[i]]))['loglike'] - ll_null)
 
 		argmax = np.argmax(lr)
 		if lr[argmax] < crit:
 			return X_cur
 		else:
 			new_term = X_pot.pop(argmax)
-			return self._pscore_select(const, X_cur+[new_term], X_pot, crit, X_lin)
+			return self._select_terms(const, X_cur+[new_term], X_pot, crit, X_lin)
 
 
-	def pscore_select(self, const=True, X_B=[], C_lin=1, C_qua=2.71):
+	def select_propensity_score(self, const=True, X_B=[], C_lin=1, C_qua=2.71):
 
 		"""
 		Estimates via logit the propensity score using Imbens and Rubin's
@@ -356,33 +367,37 @@ class CausalModel(object):
 			Imbens, G. (2014). Matching Methods in Practice: Three Examples.
 		"""
 
+		X_B = self._change_base(X_B, base=0)
 		if C_lin == 0:
 			X_lin = xrange(self._X.shape[1])
 		else:
 			X_pot = list(set(xrange(self._X.shape[1])) - set(X_B))
-			X_lin = self._pscore_select(const, X_B, X_pot, C_lin)
+			X_lin = self._select_terms(const, X_B, X_pot, C_lin)
 
 		if C_qua == np.inf:
 			X_qua = []
 		else:
-			X_pot = list(itertools.combinations_with_replacement(X_lin, 2))
-			X_qua = self._pscore_select(const, [], X_pot, C_qua, X_lin)
+			X_pot = list(combinations_with_replacement(X_lin, 2))
+			X_qua = self._select_terms(const, [], X_pot, C_qua, X_lin)
 
-		return self._pscore(self._form_matrix(const, X_lin, X_qua))
+		self.pscore = self._compute_pscore(self._form_matrix(const, X_lin, X_qua))
+		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, X_lin, X_qua
 
 
 class Results(object):
+
 
 	def __init__(self, causal):
 
 		self.causal = causal
 
-	def normalized_diff(self):
 
-		if not self.causal.normalized_diff:
-			self.causal.compute_normalized_diff()
+	def normalized_difference(self):
 
-		print self.causal.normalized_diff
+		if self.causal.ndiff is None:
+			self.causal.compute_normalized_difference()
+
+		print self.causal.ndiff
 
 
 	def propensity_score(self):
@@ -392,6 +407,7 @@ class Results(object):
 
 		print 'Coefficients:', self.causal.pscore['coeff']
 		print 'Log-likelihood:', self.causal.pscore['loglike']
+
 
 from scipy.stats import norm
 class parameters(object):
