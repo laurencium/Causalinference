@@ -22,6 +22,10 @@ class CausalModel(object):
 
 	def initialize(self):
 
+		"""
+		Restores data to initial state.
+		"""
+
 		self.Y, self.D, self.X = self._Y, self._D, self._X
 		self.N, self.K = self._N, self._K
 		self.treated, self.controls = self._treated, self._controls
@@ -223,6 +227,23 @@ class CausalModel(object):
 
 	def _change_base(self, l, pair=False, base=0):
 
+		"""
+		Changes input index to zero or one-based.
+
+		Arguments
+		---------
+			l: list
+				List of numbers of pairs of numbers.
+			pair: Boolean
+				Anticipates list of pairs if True. Defaults to False.
+			base: integer
+				Converts to zero-based if 0, one-based if 1.
+
+		Returns
+		-------
+			Input index with base changed.
+		"""
+
 		offset = 2*base - 1
 		if pair:
 			return [(p[0]+offset, p[1]+offset) for p in l]
@@ -382,6 +403,32 @@ class CausalModel(object):
 
 		self.pscore = self._compute_pscore(self._form_matrix(const, X_lin, X_qua))
 		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, X_lin, X_qua
+
+
+	def trim(self, cutoff=0.1):
+
+		"""
+		Trims data based on propensity score to create a subsample with better
+		covariate balance.
+
+		Arguments
+		---------
+			cutoff: scalar
+				Number between 0 and 1. Function keeps observations with
+				propensity score between cutoff and 1-cutoff.
+		"""
+
+		untrimmed = (self.pscore['fitted'] > cutoff) & (self.pscore['fitted'] < 1-cutoff)
+		self.Y, self.D, self.X = self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed]
+		self.N, self.K = self.X.shape
+		self.treated, self.controls = np.nonzero(self.D)[0], np.nonzero(self.D==0)[0]
+		self.Y_t, self.Y_c = self.Y[self.treated], self.Y[self.controls]
+		self.X_t, self.X_c = self.X[self.treated], self.X[self.controls]
+		self.N_t = np.count_nonzero(self.D)
+		self.N_c = self.N - self.N_t
+		if self.ndiff is not None:  # update if they have computed it before
+			self.compute_normalized_difference()
+		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
 
 
 class Results(object):
