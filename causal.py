@@ -418,7 +418,7 @@ class CausalModel(object):
 				propensity score between cutoff and 1-cutoff.
 		"""
 
-		untrimmed = (self.pscore['fitted'] > cutoff) & (self.pscore['fitted'] < 1-cutoff)
+		untrimmed = (self.pscore['fitted'] >= cutoff) & (self.pscore['fitted'] <= 1-cutoff)
 		self.Y, self.D, self.X = self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed]
 		self.N, self.K = self.X.shape
 		self.treated, self.controls = np.nonzero(self.D)[0], np.nonzero(self.D==0)[0]
@@ -429,6 +429,15 @@ class CausalModel(object):
 		if self.ndiff is not None:  # update if they have computed it before
 			self.compute_normalized_difference()
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
+
+
+	def _select_cutoff(self):
+
+		g = 1 / (self.pscore['fitted'] * (1-self.pscore['fitted']))
+		order = np.argsort(g)
+		h = g[order].cumsum()/np.square(xrange(1,self.N+1))
+		
+		return 0.5 - np.sqrt(0.25-1/g[order[h.argmin()]])
 
 
 class Results(object):
@@ -542,6 +551,19 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 		return Y, D, X, Y_0, Y_1
 	else:
 		return Y, D, X
+
+
+def Lalonde():
+
+	import pandas as pd
+
+	lalonde = pd.read_csv('ldw_exper.csv')
+
+	covariate_list = ['black', 'hisp', 'age', 'married', 'nodegree',
+	                  'educ', 're74', 'u74', 're75', 'u75']
+
+	# don't know how to not convert to array first
+	return np.array(lalonde['re78']), np.array(lalonde['t']), np.array(lalonde[covariate_list])
 
 
 Y, D, X = SimulateData()
