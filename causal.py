@@ -17,6 +17,7 @@ class CausalModel(object):
 		self._N_c = self._N - self._N_t
 		self._ndiff = None
 		self._pscore = {}
+		self._cutoff = 0.1
 		self.initialize()
 
 
@@ -34,6 +35,7 @@ class CausalModel(object):
 		self.N_t, self.N_c = self._N_t, self._N_c
 		self.ndiff = self._ndiff
 		self.pscore = self._pscore
+		self.cutoff = self._cutoff
 
 
 	def compute_normalized_difference(self):
@@ -405,20 +407,17 @@ class CausalModel(object):
 		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, X_lin, X_qua
 
 
-	def trim(self, cutoff=0.1):
+	def trim(self):
 
 		"""
 		Trims data based on propensity score to create a subsample with better
-		covariate balance.
-
-		Arguments
-		---------
-			cutoff: scalar
-				Number between 0 and 1. Function keeps observations with
-				propensity score between cutoff and 1-cutoff.
+		covariate balance. The CausalModel class has cutoff has a property,
+		with default value 0.1. User can modify this directly, or by calling
+		select_cutoff to have the cutoff selected automatically using the
+		algorithm proposed by Crump, Hotz, Imbens, and Mitnik.
 		"""
 
-		untrimmed = (self.pscore['fitted'] >= cutoff) & (self.pscore['fitted'] <= 1-cutoff)
+		untrimmed = (self.pscore['fitted'] >= self.cutoff) & (self.pscore['fitted'] <= 1-self.cutoff)
 		self.Y, self.D, self.X = self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed]
 		self.N, self.K = self.X.shape
 		self.treated, self.controls = np.nonzero(self.D)[0], np.nonzero(self.D==0)[0]
@@ -431,13 +430,23 @@ class CausalModel(object):
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
 
 
-	def _select_cutoff(self):
+	def select_cutoff(self):
+
+		"""
+		Selects cutoff value for propensity score used in trimming function.
+		
+		References
+		----------
+			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2008). Dealing
+				with Limited Overlap in Estimation of Average Treatment
+				Effects, Biometrika.
+		"""
 
 		g = 1 / (self.pscore['fitted'] * (1-self.pscore['fitted']))
 		order = np.argsort(g)
 		h = g[order].cumsum()/np.square(xrange(1,self.N+1))
 		
-		return 0.5 - np.sqrt(0.25-1/g[order[h.argmin()]])
+		self.cutoff = 0.5 - np.sqrt(0.25-1/g[order[h.argmin()]])
 
 
 class Results(object):
