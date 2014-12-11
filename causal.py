@@ -10,9 +10,8 @@ class CausalModel(object):
 
 		self._Y, self._D, self._X = Y, D, X
 		self._N, self._K = self._X.shape
-		self._treated, self._controls = np.nonzero(self._D)[0], np.nonzero(self._D==0)[0]
-		self._Y_t, self._Y_c = self._Y[self._treated], self._Y[self._controls]
-		self._X_t, self._X_c = self._X[self._treated], self._X[self._controls]
+		self._Y_t, self._Y_c = self._Y[self._D==1], self._Y[self._D==0]
+		self._X_t, self._X_c = self._X[self._D==1], self._X[self._D==0]
 		self._N_t = np.count_nonzero(self._D)
 		self._N_c = self._N - self._N_t
 		self._ndiff = None
@@ -32,7 +31,6 @@ class CausalModel(object):
 
 		self.Y, self.D, self.X = self._Y, self._D, self._X
 		self.N, self.K = self._N, self._K
-		self.treated, self.controls = self._treated, self._controls
 		self.Y_t, self.Y_c = self._Y_t, self._Y_c
 		self.X_t, self.X_c = self._X_t, self._X_c
 		self.N_t, self.N_c = self._N_t, self._N_c
@@ -173,8 +171,8 @@ class CausalModel(object):
 				Estimated propensity scores for each unit.
 		"""
 
-		X_t = X[self.treated]
-		X_c = X[self.controls]
+		X_t = X[self.D==1]
+		X_c = X[self.D==0]
 		K = X.shape[1]
 
 		neg_loglike = lambda x: self._neg_loglike(x, X_t, X_c)
@@ -185,8 +183,8 @@ class CausalModel(object):
 		pscore = {}
 		pscore['coeff'], pscore['loglike'] = logit[0], -logit[1]
 		pscore['fitted'] = np.empty(self.N)
-		pscore['fitted'][self.treated] = self._sigmoid(X_t.dot(pscore['coeff']))
-		pscore['fitted'][self.controls] = self._sigmoid(X_c.dot(pscore['coeff']))
+		pscore['fitted'][self.D==1] = self._sigmoid(X_t.dot(pscore['coeff']))
+		pscore['fitted'][self.D==0] = self._sigmoid(X_c.dot(pscore['coeff']))
 
 		return pscore
 
@@ -426,9 +424,8 @@ class CausalModel(object):
 		untrimmed = (self.pscore['fitted'] >= self.cutoff) & (self.pscore['fitted'] <= 1-self.cutoff)
 		self.Y, self.D, self.X = self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed]
 		self.N, self.K = self.X.shape
-		self.treated, self.controls = np.nonzero(self.D)[0], np.nonzero(self.D==0)[0]
-		self.Y_t, self.Y_c = self.Y[self.treated], self.Y[self.controls]
-		self.X_t, self.X_c = self.X[self.treated], self.X[self.controls]
+		self.Y_t, self.Y_c = self.Y[self.D==1], self.Y[self.D==0]
+		self.X_t, self.X_c = self.X[self.D==1], self.X[self.D==0]
 		self.N_t = np.count_nonzero(self.D)
 		self.N_c = self.N - self.N_t
 		if self.ndiff is not None:  # update if they have computed it before
@@ -459,15 +456,15 @@ class CausalModel(object):
 
 		if isinstance(self.blocks, (int, long)):
 			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
-			blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
-		else:
-			blocks = self.blocks
+			self.blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
 
-		block_sizes = np.empty(len(blocks)-1)
-		block_sizes_t = np.empty(len(blocks)-1)
-		within_est = np.empty(len(blocks)-1)
-		for i in xrange(len(blocks)-1):
-			subclass = (self.pscore['fitted']>blocks[i]) & (self.pscore['fitted']<=blocks[i+1])
+		# call function to summarize each block and create necessary data structures
+		block_sizes = np.empty(len(self.blocks)-1)
+		block_sizes_t = np.empty(len(self.blocks)-1)
+		within_est = np.empty(len(self.blocks)-1)
+		for i in xrange(len(self.blocks)-1):
+			subclass = (self.pscore['fitted']>self.blocks[i]) & \
+			           (self.pscore['fitted']<=self.blocks[i+1])
 			Y = self.Y[subclass]
 			D = self.D[subclass]
 			X = self.X[subclass]
@@ -495,21 +492,24 @@ class CausalModel(object):
 
 		return self._add_const(X_new).dot(beta)
 
-	def _ols(self, Y, D, X):
-
-		ITT = np.empty(X.shape[0])
-		ITT[D==1] = Y[D==1] - self._ols_predict(Y[D==0], X[D==0], X[D==1])
-		ITT[D==0] = self._ols_predict(Y[D==1], X[D==1], X[D==0]) - Y[D==0]
-
-		return ITT
-
 
 	def ols(self):
 
-		self.ITT = self._ols(self.Y, self.D, self.X)
+		"""
+		Estimates average treatment effects using least squares.
+
+		Returns
+		-------
+			A Results class instance.
+		"""
+
+		self.ITT = np.empty(self.N)
+		self.ITT[self.D==1] = self.Y_t - self._ols_predict(self.Y_c, self.X_c, self.X_t)
+		self.ITT[self.D==0] = self._ols_predict(self.Y_t, self.X_t, self.X_c) - self.Y_c
+
 		self.ATE = self.ITT.mean()
-		self.ATT = self.ITT[self.treated].mean()
-		self.ATC = self.ITT[self.controls].mean()
+		self.ATT = self.ITT[self.D==1].mean()
+		self.ATC = self.ITT[self.D==0].mean()
 
 
 
@@ -639,6 +639,6 @@ def Lalonde():
 	return np.array(lalonde['re78']), np.array(lalonde['t']), np.array(lalonde[covariate_list])
 
 
-Y, D, X = SimulateData()
+Y, D, X, Y0, Y1 = SimulateData(return_counterfactual=True)
 causal = CausalModel(Y, D, X)
 display = Results(causal)
