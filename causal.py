@@ -18,6 +18,9 @@ class CausalModel(object):
 		self._ndiff = None
 		self._pscore = {}
 		self._cutoff = 0.1
+		self._blocks = 5
+		self._ITT = np.empty(self._N)
+		self._ATE, self._ATT, self._ATC = None, None, None
 		self.initialize()
 
 
@@ -36,6 +39,9 @@ class CausalModel(object):
 		self.ndiff = self._ndiff
 		self.pscore = self._pscore
 		self.cutoff = self._cutoff
+		self.blocks = 5
+		self.ITT = self._ITT
+		self.ATE, self.ATT, self.ATC = self._ATE, self._ATT, self._ATC
 
 
 	def compute_normalized_difference(self):
@@ -447,6 +453,64 @@ class CausalModel(object):
 		h = g[order].cumsum()/np.square(xrange(1,self.N+1))
 		
 		self.cutoff = 0.5 - np.sqrt(0.25-1/g[order[h.argmin()]])
+
+
+	def compute_blocking_estimator(self):
+
+		if isinstance(self.blocks, (int, long)):
+			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
+			blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
+		else:
+			blocks = self.blocks
+
+		block_sizes = np.empty(len(blocks)-1)
+		block_sizes_t = np.empty(len(blocks)-1)
+		within_est = np.empty(len(blocks)-1)
+		for i in xrange(len(blocks)-1):
+			subclass = (self.pscore['fitted']>blocks[i]) & (self.pscore['fitted']<=blocks[i+1])
+			Y = self.Y[subclass]
+			D = self.D[subclass]
+			X = self.X[subclass]
+			block_sizes[i] = np.count_nonzero(subclass)
+			block_sizes_t[i] = np.count_nonzero(D)
+			within_est[i] = np.linalg.lstsq(np.column_stack((self._add_const(X), D)), Y)[0][-1]
+
+		self.ATE = (block_sizes/self.N).dot(within_est)
+		self.ATT = (block_sizes_t/self.N_t).dot(within_est)
+		self.ATC = ((block_sizes-block_sizes_t)/self.N_c).dot(within_est)
+
+
+	def _add_const(self, X):
+
+		X1 = np.empty((X.shape[0], X.shape[1]+1))
+		X1[:, 0] = 1
+		X1[:, 1:] = X
+
+		return X1
+
+
+	def _ols_predict(self, Y, X, X_new):
+
+		beta = np.linalg.lstsq(self._add_const(X), Y)[0]
+
+		return self._add_const(X_new).dot(beta)
+
+	def _ols(self, Y, D, X):
+
+		ITT = np.empty(X.shape[0])
+		ITT[D==1] = Y[D==1] - self._ols_predict(Y[D==0], X[D==0], X[D==1])
+		ITT[D==0] = self._ols_predict(Y[D==1], X[D==1], X[D==0]) - Y[D==0]
+
+		return ITT
+
+
+	def ols(self):
+
+		self.ITT = self._ols(self.Y, self.D, self.X)
+		self.ATE = self.ITT.mean()
+		self.ATT = self.ITT[self.treated].mean()
+		self.ATC = self.ITT[self.controls].mean()
+
 
 
 class Results(object):
