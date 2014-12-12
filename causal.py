@@ -477,20 +477,28 @@ class CausalModel(object):
 		self.ATC = ((block_sizes-block_sizes_t)/self.N_c).dot(within_est)
 
 
-	def _add_const(self, X):
+	def _ols_predict(self, Y, X, X_new):
+
+		"""
+		Estimates linear regression model with least squares and project based
+		on new input data.
+
+		Arguments
+		---------
+			Y: array-like
+				Vector of observed outcomes.
+			X: array-like
+				Matrix of covariates to regress on.
+			X_new: array-like
+				Matrix of covariates used to generate predictions.
+		"""
 
 		X1 = np.empty((X.shape[0], X.shape[1]+1))
 		X1[:, 0] = 1
 		X1[:, 1:] = X
+		beta = np.linalg.lstsq(X1, Y)[0]
 
-		return X1
-
-
-	def _ols_predict(self, Y, X, X_new):
-
-		beta = np.linalg.lstsq(self._add_const(X), Y)[0]
-
-		return self._add_const(X_new).dot(beta)
+		return beta[0] + X_new.dot(beta[1:])
 
 
 	def ols(self):
