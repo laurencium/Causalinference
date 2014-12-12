@@ -3,6 +3,78 @@ from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
 
 
+class Basic(object):
+
+
+	def __init__(self, Y, D, X):
+
+		self.Y, self.D, self.X = Y, D, X
+		self.N, self.K = self.X.shape
+		self.Y_t, self.Y_c = self.Y[self.D==1], self.Y[self.D==0]
+		self.X_t, self.X_c = self.X[self.D==1], self.X[self.D==0]
+		self.N_t = np.count_nonzero(self.D)
+		self.N_c = self.N - self.N_t
+
+
+	@property
+	def ndiff(self):
+
+		if not hasattr(self, '_ndiff'):
+			self._ndiff = self._compute_ndiff()
+
+		return self._ndiff
+
+
+	def _compute_ndiff(self):
+
+		"""
+		Computes normalized difference in covariates for assessing balance.
+
+		Normalized difference is the difference in group means, scaled by the
+		square root of the average of the two within-group variances. Large
+		values indicate that simple linear adjustment methods may not be adequate
+		for removing biases that are associated with differences in covariates.
+
+		Unlike t-statistic, normalized differences do not, in expectation,
+		increase with sample size, and thus is more appropriate for assessing
+		balance.
+
+		Returns
+		-------
+			Vector of normalized differences.
+		"""
+
+		return (self.X_t.mean(0) - self.X_c.mean(0)) / \
+		       np.sqrt((self.X_t.var(0) + self.X_c.var(0))/2)
+
+
+class Stratum(Basic):
+
+
+	def __init__(self, Y, D, X, pscore):
+
+		super(Stratum, self).__init__(Y, D, X)
+		self.pscore = {'fitted': pscore, 'min': pscore.min(),
+		               'mean': pscore.mean(), 'max': pscore.max()}
+
+
+	@property
+	def within(self):
+	
+		if not hasattr(self, '_within'):
+			self._within = self._compute_ols()
+
+		return self._within
+
+
+	def _compute_ols(self):
+	
+		Z = np.empty((N,K+2))
+		Z[:,0], Z[:,1], Z[:,2:] = 1, self.D, self.X
+
+		return np.linalg.lstsq(Z, self.Y)[0][1]
+
+
 class CausalModel(object):
 
 
@@ -452,6 +524,26 @@ class CausalModel(object):
 		self.cutoff = 0.5 - np.sqrt(0.25-1/g[order[h.argmin()]])
 
 
+	def compute_stratum_stats(self):
+
+		if isinstance(self.blocks, (int, long)):
+			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
+			self.blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
+
+		self.strata = [None] * (len(self.blocks)-1)
+		for i in xrange(len(self.blocks)-1):
+			subclass = (self.pscore['fitted']>self.blocks[i]) & \
+			           (self.pscore['fitted']<=self.blocks[i+1])
+			Y = self.Y[subclass]
+			D = self.D[subclass]
+			X = self.X[subclass]
+			self.strata[i] = Test(Y, D, X)
+			self.strata[i].compute_normalized_difference()
+			print self.strata[i].N, self.strata[i].N_t, self.strata[i].N_c
+			print self.strata[i].ndiff
+
+
+
 	def compute_blocking_estimator(self):
 
 		if isinstance(self.blocks, (int, long)):
@@ -520,6 +612,9 @@ class CausalModel(object):
 		self.ATC = self.ITT[self.D==0].mean()
 
 
+class Test(CausalModel):
+
+	pass
 
 class Results(object):
 
