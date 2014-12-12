@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
@@ -19,10 +20,11 @@ class Basic(object):
 	@property
 	def ndiff(self):
 
-		if not hasattr(self, '_ndiff'):
+		try:
+			return self._ndiff
+		except AttributeError:
 			self._ndiff = self._compute_ndiff()
-
-		return self._ndiff
+			return self._ndiff
 
 
 	def _compute_ndiff(self):
@@ -61,80 +63,41 @@ class Stratum(Basic):
 	@property
 	def within(self):
 	
-		if not hasattr(self, '_within'):
-			self._within = self._compute_ols()
+		try:
+			return self._within
+		except AttributeError:
+			self._within = self._compute_within()
+			return self._within
 
-		return self._within
 
-
-	def _compute_ols(self):
+	def _compute_within(self):
 	
-		Z = np.empty((N,K+2))
+		Z = np.empty((self.N, self.K+2))
 		Z[:,0], Z[:,1], Z[:,2:] = 1, self.D, self.X
 
 		return np.linalg.lstsq(Z, self.Y)[0][1]
 
 
-class CausalModel(object):
+class CausalModel(Basic):
 
 
 	def __init__(self, Y, D, X):
 
-		self._Y, self._D, self._X = Y, D, X
-		self._N, self._K = self._X.shape
-		self._Y_t, self._Y_c = self._Y[self._D==1], self._Y[self._D==0]
-		self._X_t, self._X_c = self._X[self._D==1], self._X[self._D==0]
-		self._N_t = np.count_nonzero(self._D)
-		self._N_c = self._N - self._N_t
-		self._ndiff = None
-		self._pscore = {}
-		self._cutoff = 0.1
-		self._blocks = 5
-		self._ITT = np.empty(self._N)
-		self._ATE, self._ATT, self._ATC = None, None, None
-		self.initialize()
+		super(CausalModel, self).__init__(Y, D, X)
+		self._misc_init()
+		self._Y_old, self._D_old, self._X_old = Y, D, X
 
 
-	def initialize(self):
+	def _misc_init(self):
 
-		"""
-		Restores data to initial state.
-		"""
-
-		self.Y, self.D, self.X = self._Y, self._D, self._X
-		self.N, self.K = self._N, self._K
-		self.Y_t, self.Y_c = self._Y_t, self._Y_c
-		self.X_t, self.X_c = self._X_t, self._X_c
-		self.N_t, self.N_c = self._N_t, self._N_c
-		self.ndiff = self._ndiff
-		self.pscore = self._pscore
-		self.cutoff = self._cutoff
 		self.blocks = 5
-		self.ITT = self._ITT
-		self.ATE, self.ATT, self.ATC = self._ATE, self._ATT, self._ATC
+		self.cutoff = 0.1
 
 
-	def compute_normalized_difference(self):
+	def restart(self):
 
-		"""
-		Computes normalized difference in covariates for assessing balance.
-
-		Normalized difference is the difference in group means, scaled by the
-		square root of the average of the two within-group variances. Large
-		values indicate that simple linear adjustment methods may not be adequate
-		for removing biases that are associated with differences in covariates.
-
-		Unlike t-statistic, normalized differences do not, in expectation,
-		increase with sample size, and thus is more appropriate for assessing
-		balance.
-
-		Returns
-		-------
-			Vector of normalized differences.
-		"""
-
-		self.ndiff = (self.X_t.mean(0) - self.X_c.mean(0)) / \
-		             np.sqrt((self.X_t.var(0) + self.X_c.var(0))/2)
+		super(CausalModel, self).__init__(self._Y_old, self._D_old, self._X_old)
+		self._misc_init()
 
 
 	def _sigmoid(self, x):
@@ -329,7 +292,7 @@ class CausalModel(object):
 			return [e+offset for e in l]
 			
 
-	def compute_propensity_score(self, const=True, lin=None, qua=[]):
+	def propensity(self, const=True, lin=None, qua=[]):
 
 		"""
 		Estimates via logit the propensity score based on requirements on
@@ -369,7 +332,7 @@ class CausalModel(object):
 
 		self.pscore = self._compute_pscore(self._form_matrix(const, lin, qua))
 		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, lin, qua
-		
+
 
 	def _select_terms(self, const, X_cur, X_pot, crit, X_lin=[]):
 	
@@ -424,7 +387,7 @@ class CausalModel(object):
 			return self._select_terms(const, X_cur+[new_term], X_pot, crit, X_lin)
 
 
-	def select_propensity_score(self, const=True, X_B=[], C_lin=1, C_qua=2.71):
+	def propensity_s(self, const=True, X_B=[], C_lin=1, C_qua=2.71):
 
 		"""
 		Estimates via logit the propensity score using Imbens and Rubin's
@@ -468,9 +431,9 @@ class CausalModel(object):
 
 		X_B = self._change_base(X_B, base=0)
 		if C_lin == 0:
-			X_lin = xrange(self._X.shape[1])
+			X_lin = xrange(self.X.shape[1])
 		else:
-			X_pot = list(set(xrange(self._X.shape[1])) - set(X_B))
+			X_pot = list(set(xrange(self.X.shape[1])) - set(X_B))
 			X_lin = self._select_terms(const, X_B, X_pot, C_lin)
 
 		if C_qua == np.inf:
@@ -494,18 +457,15 @@ class CausalModel(object):
 		"""
 
 		untrimmed = (self.pscore['fitted'] >= self.cutoff) & (self.pscore['fitted'] <= 1-self.cutoff)
-		self.Y, self.D, self.X = self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed]
-		self.N, self.K = self.X.shape
-		self.Y_t, self.Y_c = self.Y[self.D==1], self.Y[self.D==0]
-		self.X_t, self.X_c = self.X[self.D==1], self.X[self.D==0]
-		self.N_t = np.count_nonzero(self.D)
-		self.N_c = self.N - self.N_t
-		if self.ndiff is not None:  # update if they have computed it before
-			self.compute_normalized_difference()
+		super(CausalModel, self).__init__(self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed])
+		try:
+			del self._ndiff
+		except:
+			pass
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
 
 
-	def select_cutoff(self):
+	def _select_cutoff(self):
 
 		"""
 		Selects cutoff value for propensity score used in trimming function.
@@ -523,8 +483,14 @@ class CausalModel(object):
 		
 		self.cutoff = 0.5 - np.sqrt(0.25-1/g[order[h.argmin()]])
 
+	
+	def trim_s(self):
 
-	def compute_stratum_stats(self):
+		self._select_cutoff()
+		self.trim()
+
+
+	def stratify(self):
 
 		if isinstance(self.blocks, (int, long)):
 			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
@@ -537,36 +503,23 @@ class CausalModel(object):
 			Y = self.Y[subclass]
 			D = self.D[subclass]
 			X = self.X[subclass]
-			self.strata[i] = Test(Y, D, X)
-			self.strata[i].compute_normalized_difference()
-			print self.strata[i].N, self.strata[i].N_t, self.strata[i].N_c
-			print self.strata[i].ndiff
+			self.strata[i] = Stratum(Y, D, X, self.pscore['fitted'][subclass])
 
 
+	def _compute_blocking(self):
 
-	def compute_blocking_estimator(self):
+		self.ATE = np.sum([stratum.N/self.N * stratum.within for stratum in self.strata])
+		self.ATT = np.sum([stratum.N_t/self.N_t * stratum.within for stratum in self.strata])
+		self.ATC = np.sum([stratum.N_c/self.N_c * stratum.within for stratum in self.strata])
 
-		if isinstance(self.blocks, (int, long)):
-			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
-			self.blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
 
-		# call function to summarize each block and create necessary data structures
-		block_sizes = np.empty(len(self.blocks)-1)
-		block_sizes_t = np.empty(len(self.blocks)-1)
-		within_est = np.empty(len(self.blocks)-1)
-		for i in xrange(len(self.blocks)-1):
-			subclass = (self.pscore['fitted']>self.blocks[i]) & \
-			           (self.pscore['fitted']<=self.blocks[i+1])
-			Y = self.Y[subclass]
-			D = self.D[subclass]
-			X = self.X[subclass]
-			block_sizes[i] = np.count_nonzero(subclass)
-			block_sizes_t[i] = np.count_nonzero(D)
-			within_est[i] = np.linalg.lstsq(np.column_stack((self._add_const(X), D)), Y)[0][-1]
+	def blocking(self):
 
-		self.ATE = (block_sizes/self.N).dot(within_est)
-		self.ATT = (block_sizes_t/self.N_t).dot(within_est)
-		self.ATC = ((block_sizes-block_sizes_t)/self.N_c).dot(within_est)
+		try:
+			self._compute_blocking()
+		except AttributeError:
+			self.stratify()
+			self._compute_blocking()
 
 
 	def _ols_predict(self, Y, X, X_new):
@@ -612,10 +565,6 @@ class CausalModel(object):
 		self.ATC = self.ITT[self.D==0].mean()
 
 
-class Test(CausalModel):
-
-	pass
-
 class Results(object):
 
 
@@ -625,9 +574,6 @@ class Results(object):
 
 
 	def normalized_difference(self):
-
-		if self.causal.ndiff is None:
-			self.causal.compute_normalized_difference()
 
 		print self.causal.ndiff
 
