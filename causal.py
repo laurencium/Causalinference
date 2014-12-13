@@ -696,10 +696,8 @@ class CausalModel(Basic):
 		m_indx_c = self._matchmaking(self.X_c, self.X_t, wmatrix, matches)
 
 		self.ITT = np.empty(self.N)
-		for i in xrange(self.N_t):
-			self.ITT[self.D==1][i] = self.Y_t[i] - self.Y_c[m_indx_t[i]].mean()
-		for i in xrange(self.N_c):
-			self.ITT[self.D==0][i] = self.Y_t[m_indx_c[i]].mean() - self.Y_c[i]
+		self.ITT[self.D==1] = [self.Y_t[i] - self.Y_c[m_indx_t[i]].mean() for i in xrange(self.N_t)]
+		self.ITT[self.D==0] = [self.Y_t[m_indx_c[i]].mean() - self.Y_c[i] for i in xrange(self.N_c)]
 
 		if correct_bias:
 			self.ITT[self.D==1] -= self._bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
@@ -869,7 +867,7 @@ def Lalonde():
 
 	lalonde = pd.read_csv('ldw_exper.csv')
 
-	covariate_list = ['black', 'hisp', 'age', 'married', 'nodegree',
+	covariate_list = ['black', 'hisp', 'age', 'married', 
 	                  'educ', 're74', 'u74', 're75', 'u75']
 
 	# don't know how to not convert to array first
