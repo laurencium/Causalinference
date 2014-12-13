@@ -2,6 +2,7 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
+import itertools
 
 
 class Basic(object):
@@ -520,6 +521,193 @@ class CausalModel(Basic):
 		except AttributeError:
 			self.stratify()
 			self._compute_blocking()
+
+
+	def _norm(self, dX, W):
+
+		"""
+		Calculates vector of norms given weighting matrix W.
+
+		Arguments
+		---------
+			dX: array-like
+				Matrix of covariate differences.
+			W: array-like
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance, default), string 'maha'
+				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
+
+		Returns
+		-------
+			Vector of distance measures.
+		"""
+
+		if W is None:
+			return (dX**2 / self.Xvar).sum(axis=1)
+		else:
+			return (dX.dot(W)*dX).sum(axis=1)
+
+
+	def _msmallest_with_ties(self, x, m):
+
+		"""
+		Finds indices of the m smallest entries in an array. Ties are
+		included, so the number of indices can be greater than m. Algorithm
+		is of order O(n).
+
+		Arguments
+		---------
+			x: array-like
+				Array of numbers to find m smallest entries for.
+			m: integer
+				Number of smallest entries to find.
+
+		Returns
+		-------
+			List of indices of smallest entries.
+		"""
+
+		par_indx = np.argpartition(x, m)  # partition around (m+1)th order stat
+		
+		if x[par_indx[:m]].max() < x[par_indx[m]]:  # mth < (m+1)th order stat
+			return list(par_indx[:m])
+		elif x[par_indx[m]] < x[par_indx[m+1:]].min():  # (m+1)th < (m+2)th
+			return list(par_indx[:m+1])
+		else:  # mth = (m+1)th = (m+2)th, so increment and recurse
+			return self._msmallest_with_ties(x, m+2)
+
+
+	def _matchmaking(self, X, X_m, W=None, m=1):
+
+		"""
+		Performs nearest-neigborhood matching using specified weighting
+		matrix in measuring distance. Ties are included, so the number
+		of matches for a given unit can be greater than m.
+
+		Arguments
+		---------
+			X: array-like
+				Observations to find matches for.
+			X_m: array-like
+				Pool of potential matches.
+			m: integer
+				The number of units to match to a given subject.
+			W: array-like
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance, default), string 'maha'
+				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
+
+		Returns
+		-------
+			List of matched indices.
+		"""
+
+		m_indx = []
+
+		for i in xrange(X.shape[0]):
+			m_indx.append(self._msmallest_with_ties(self._norm(X_m - X[i], W), m))
+
+		return m_indx
+
+
+	def _bias(self, m_indx, Y_m, X_m, X):
+
+		"""
+		Estimates bias resulting from imperfect matches using least squares.
+		When estimating ATT, regression should use control units. When
+		estimating ATC, regression should use treated units.
+
+		Arguments
+		---------
+			m_indx: list
+				Index of indices of matched units.
+			Y_m: array-like
+				Vector of outcomes to regress.
+			X_m: array-like
+				Covariate matrix to regress on.
+			X: array-like
+				Covariate matrix of subjects under study.
+
+		Returns
+		-------
+			Vector of estimated biases.
+		"""
+
+		flat_indx = list(itertools.chain.from_iterable(m_indx))
+
+		X_m1 = np.column_stack((np.ones(len(flat_indx)), X_m[flat_indx]))
+		b = np.linalg.lstsq(X_m1, Y_m[flat_indx])[0][1:]  # includes intercept
+
+		N = X.shape[0]
+		bias = np.empty(N)
+		for i in xrange(N):
+			bias[i] = np.dot(X[i] - X_m[m_indx[i]].mean(0), b)
+
+		return bias
+
+
+	def matching(self, wmatrix=None, matches=1, correct_bias=False):
+
+		"""
+		Estimates average treatment effects using matching with replacement.
+
+		By default, the weighting matrix used in measuring distance is the
+		inverse variance matrix. The Mahalanobis metric or other arbitrary
+		weighting matrices can also be used instead.
+
+		The number of matches per subject can also be specified. Ties entries
+		are included, so the number of matches can be greater than specified
+		for some subjects.
+
+		Bias correction can optionally be done. For treated units, the bias
+		resulting from imperfect matches is estimated by
+			(X_t - X_c[matched]) * b,
+		where b is the estimated coefficient from regressiong Y_c[matched] on
+		X_c[matched]. For control units, the analogous procedure is used.
+		For details, see Imbens and Rubin.
+
+		Arguments
+		---------
+			wmatrix: string, array-like
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are None	(inverse variance, default), string 'maha'
+				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
+			matches: integer
+				The number of units to match to a given subject. Defaults
+				to 1.
+			correct_bias: Boolean
+				Correct bias resulting from imperfect matches or not; defaults
+				to no correction.
+			order_by_pscore: Boolean, optional
+				Determines order of match-making when matching without
+				replacement.
+
+		Returns
+		-------
+			A Results class instance.
+		"""
+
+		if wmatrix is None:
+			self.Xvar = self.X.var(0)  # store vector of covariate variances
+		elif wmatrix == 'maha':
+			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+
+		m_indx_t = self._matchmaking(self.X_t, self.X_c, wmatrix, matches)
+		m_indx_c = self._matchmaking(self.X_c, self.X_t, wmatrix, matches)
+
+		self.ITT = np.empty(self.N)
+		for i in xrange(self.N_t):
+			self.ITT[self.D==1][i] = self.Y_t[i] - self.Y_c[m_indx_t[i]].mean()
+		for i in xrange(self.N_c):
+			self.ITT[self.D==0][i] = self.Y_t[m_indx_c[i]].mean() - self.Y_c[i]
+
+		if correct_bias:
+			self.ITT[self.D==1] -= self._bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
+			self.ITT[self.D==0] += self._bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
+
+		self.ATE = self.ITT.mean()
+		self.ATT = self.ITT[self.D==1].mean()
+		self.ATC = self.ITT[self.D==0].mean()
 
 
 	def _ols_predict(self, Y, X, X_new):
