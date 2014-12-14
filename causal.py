@@ -507,6 +507,44 @@ class CausalModel(Basic):
 			self.strata[i] = Stratum(Y, D, X, self.pscore['fitted'][subclass])
 
 
+	def _select_blocks(self, e, l, e_min, e_max):
+
+		scope = (e >= e_min) & (e <= e_max)
+		t, c = (scope & (self.D==1)), (scope & (self.D==0))
+
+		N_t, N_c = np.count_nonzero(t), np.count_nonzero(c)
+		t_stat = (l[t].mean()-l[c].mean()) / \
+		         np.sqrt(l[t].var()/np.count_nonzero(t) + l[c].var()/np.count_nonzero(c))
+		if t_stat <= 1.96:
+			return [e_min, e_max]
+
+		med = e[e <= np.median(e[scope])].max()
+		left = (e <= med) & scope
+		right = (e > med) & scope
+		N_left = np.count_nonzero(left)
+		N_right = np.count_nonzero(right)
+		N_left_t = np.count_nonzero(left & (self.D==1))
+		N_right_t = np.count_nonzero(right & (self.D==1))
+
+		if np.min([N_left, N_right]) <= self.K+2:
+			return [e_min, e_max]
+		if np.min([N_left_t, N_left-N_left_t, N_right_t, N_right-N_right_t]) <= 3:
+			return [e_min, e_max]
+
+		return self._select_blocks(e, l, e[left].min(), med) + \
+		       self._select_blocks(e, l, med, e[right].max())
+
+
+	def stratify_s(self):
+
+		l = np.log(self.pscore['fitted'] / (1+self.pscore['fitted']))
+		e_min = self.pscore['fitted'].min()
+		e_max = self.pscore['fitted'].max()
+		self.blocks = sorted(set(self._select_blocks(self.pscore['fitted'], l, e_min, e_max)))
+
+		self.stratify()
+
+
 	def _compute_blocking(self):
 
 		self.ATE = np.sum([stratum.N/self.N * stratum.within for stratum in self.strata])
