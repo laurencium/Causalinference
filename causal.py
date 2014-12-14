@@ -221,7 +221,7 @@ class CausalModel(Basic):
 		return pscore
 
 
-	def _form_matrix(self, const, lin, qua):
+	def _form_matrix(self, lin, qua):
 
 		"""
 		Forms covariate matrix for use in propensity score estimation, based on
@@ -247,12 +247,10 @@ class CausalModel(Basic):
 				constant, linear, and quadratic terms.
 		"""
 
-		mat = np.empty((self.N, const+len(lin)+len(qua)))
+		mat = np.empty((self.N, 1+len(lin)+len(qua)))
 
-		current_col = 0
-		if const:
-			mat[:, current_col] = 1
-			current_col += 1
+		mat[:, 0] = 1
+		current_col = 1
 		if lin:
 			mat[:, current_col:current_col+len(lin)] = self.X[:, lin]
 			current_col += len(lin)
@@ -297,7 +295,7 @@ class CausalModel(Basic):
 			self.blocks = 5
 
 
-	def propensity(self, const=True, lin=None, qua=[]):
+	def propensity(self, lin='all', qua=[]):
 
 		"""
 		Estimates via logit the propensity score based on requirements on
@@ -305,9 +303,6 @@ class CausalModel(Basic):
 
 		Arguments
 		---------
-			const: Boolean
-				Includes a column of one's if True. Defaults to
-				True.
 			lin: list
 				Column numbers of the base covariate matrix X
 				to include linearly. Defaults to using the
@@ -329,19 +324,19 @@ class CausalModel(Basic):
 				Estimated propensity scores for each unit.
 		"""
 
-		if lin is None:
+		if lin == 'all':
 			lin = xrange(self.X.shape[1])
 		else:
 			lin = self._change_base(lin, base=0)
 		qua = self._change_base(qua, pair=True, base=0)
 
-		self.pscore = self._compute_pscore(self._form_matrix(const, lin, qua))
-		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, lin, qua
+		self.pscore = self._compute_pscore(self._form_matrix(lin, qua))
+		self.pscore['lin'], self.pscore['qua'] = lin, qua
 
 		self._post_pscore_init()
 
 
-	def _select_terms(self, const, X_cur, X_pot, crit, X_lin=[]):
+	def _select_terms(self, cur, pot, crit, lin=[]):
 	
 		"""
 		Estimates via logit the propensity score using Imbens and Rubin's
@@ -351,17 +346,17 @@ class CausalModel(Basic):
 		---------
 			const: Boolean
 				Includes a column of one's if True. 
-			X_cur: list
+			cur: list
 				List containing terms that are currently included
 				in the logistic regression.
-			X_pot: list
+			pot: list
 				List containing candidate terms to be iterated through.
 			crit: scalar
 				Critical value used in likelihood ratio test to decide
 				whether candidate terms should be included.
-			X_lin: list
+			lin: list
 				List containing linear terms that have been decided on.
-				If non-empty, then X_cur and X_pot should be containing
+				If non-empty, then cur and pot should be containing
 				candidate quadratic terms. If empty, then those two
 				matrices should be containing candidate linear terms.
 
@@ -370,31 +365,31 @@ class CausalModel(Basic):
 			List containing terms that the algorithm has settled on for inclusion.
 		"""
 
-		if not X_pot:
-			return X_cur
+		if not pot:
+			return cur
 
-		if not X_lin:  # X_lin is empty, so linear terms not yet decided
-			ll_null = self._compute_pscore(self._form_matrix(const, X_cur, []))['loglike']
-		else:  # X_lin is not empty, so linear terms are already fixed
-			ll_null = self._compute_pscore(self._form_matrix(const, X_lin, X_cur))['loglike']
+		if not lin:  # lin is empty, so linear terms not yet decided
+			ll_null = self._compute_pscore(self._form_matrix(cur, []))['loglike']
+		else:  # lin is not empty, so linear terms are already fixed
+			ll_null = self._compute_pscore(self._form_matrix(lin, cur))['loglike']
 
-		lr = np.empty(len(X_pot))
-		if not X_lin:
-			for i in xrange(len(X_pot)):
-				lr[i] = 2*(self._compute_pscore(self._form_matrix(const, X_cur+[X_pot[i]], []))['loglike'] - ll_null)
+		lr = np.empty(len(pot))
+		if not lin:
+			for i in xrange(len(pot)):
+				lr[i] = 2*(self._compute_pscore(self._form_matrix(cur+[pot[i]], []))['loglike'] - ll_null)
 		else:
-			for i in xrange(len(X_pot)):
-				lr[i] = 2*(self._compute_pscore(self._form_matrix(const, X_lin, X_cur+[X_pot[i]]))['loglike'] - ll_null)
+			for i in xrange(len(pot)):
+				lr[i] = 2*(self._compute_pscore(self._form_matrix(lin, cur+[pot[i]]))['loglike'] - ll_null)
 
 		argmax = np.argmax(lr)
 		if lr[argmax] < crit:
-			return X_cur
+			return cur
 		else:
-			new_term = X_pot.pop(argmax)
-			return self._select_terms(const, X_cur+[new_term], X_pot, crit, X_lin)
+			new_term = pot.pop(argmax)
+			return self._select_terms(cur+[new_term], pot, crit, lin)
 
 
-	def propensity_s(self, const=True, X_B=[], C_lin=1, C_qua=2.71):
+	def propensity_s(self, lin_B=[], C_lin=1, C_qua=2.71):
 
 		"""
 		Estimates via logit the propensity score using Imbens and Rubin's
@@ -402,10 +397,7 @@ class CausalModel(Basic):
 
 		Arguments
 		---------
-			const: Boolean
-				Includes a column of one's if True. Defaults to
-				True.
-			X_B: list
+			lin_B: list
 				Column numbers of the base covariate matrix X
 				that should be included as linear terms
 				regardless. Defaults to empty list, meaning
@@ -436,21 +428,23 @@ class CausalModel(Basic):
 			Imbens, G. (2014). Matching Methods in Practice: Three Examples.
 		"""
 
-		X_B = self._change_base(X_B, base=0)
+		lin_B = self._change_base(lin_B, base=0)
 		if C_lin == 0:
-			X_lin = xrange(self.X.shape[1])
+			lin = xrange(self.X.shape[1])
 		else:
-			X_pot = list(set(xrange(self.X.shape[1])) - set(X_B))
-			X_lin = self._select_terms(const, X_B, X_pot, C_lin)
+			pot = list(set(xrange(self.X.shape[1])) - set(lin_B))
+			lin = self._select_terms(lin_B, pot, C_lin)
 
 		if C_qua == np.inf:
-			X_qua = []
+			qua = []
+		elif C_qua == 0:
+			qua = list(combinations_with_replacement(lin, 2))
 		else:
-			X_pot = list(combinations_with_replacement(X_lin, 2))
-			X_qua = self._select_terms(const, [], X_pot, C_qua, X_lin)
+			pot = list(combinations_with_replacement(lin, 2))
+			qua = self._select_terms([], pot, C_qua, lin)
 
-		self.pscore = self._compute_pscore(self._form_matrix(const, X_lin, X_qua))
-		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, X_lin, X_qua
+		self.pscore = self._compute_pscore(self._form_matrix(lin, qua))
+		self.pscore['lin'], self.pscore['qua'] = lin, qua
 
 		self._post_pscore_init()
 
@@ -917,7 +911,7 @@ def Lalonde():
 
 	lalonde = pd.read_csv('ldw_exper.csv')
 
-	covariate_list = ['black', 'hisp', 'age', 'married', 
+	covariate_list = ['black', 'hisp', 'age', 'married', 'nodegree',
 	                  'educ', 're74', 'u74', 're75', 'u75']
 
 	# don't know how to not convert to array first
