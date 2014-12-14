@@ -587,7 +587,7 @@ class CausalModel(Basic):
 		"""
 
 		if W == 'inv':
-			return (dX**2 / self.X.var(0)).sum(axis=1)
+			return (dX**2 / self.Xvar).sum(axis=1)
 		else:
 			return (dX.dot(W)*dX).sum(axis=1)
 
@@ -621,7 +621,7 @@ class CausalModel(Basic):
 			return self._msmallest_with_ties(x, m+2)
 
 
-	def _matchmaking(self, X, X_m, W, m):
+	def _make_matches(self, X, X_m, W, m):
 
 		"""
 		Performs nearest-neigborhood matching using specified weighting
@@ -743,11 +743,13 @@ class CausalModel(Basic):
 			A Results class instance.
 		"""
 
-		if wmat == 'maha':
+		if wmat == 'inv':
+			self.Xvar = self.X.var(0)
+		elif wmat == 'maha':
 			wmat = np.linalg.inv(np.cov(self.X, rowvar=False))
 
-		m_indx_t = self._matchmaking(self.X_t, self.X_c, wmat, m)
-		m_indx_c = self._matchmaking(self.X_c, self.X_t, wmat, m)
+		m_indx_t = self._make_matches(self.X_t, self.X_c, wmat, m)
+		m_indx_c = self._make_matches(self.X_c, self.X_t, wmat, m)
 
 		Yhat_c = self._form_counterfactual(self.Y_c, m_indx_t)
 		Yhat_t = self._form_counterfactual(self.Y_t, m_indx_c)
