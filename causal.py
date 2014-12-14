@@ -586,8 +586,8 @@ class CausalModel(Basic):
 			Vector of distance measures.
 		"""
 
-		if W is None:
-			return (dX**2 / self.Xvar).sum(axis=1)
+		if W == 'inv':
+			return (dX**2 / self.X.var(0)).sum(axis=1)
 		else:
 			return (dX.dot(W)*dX).sum(axis=1)
 
@@ -621,7 +621,7 @@ class CausalModel(Basic):
 			return self._msmallest_with_ties(x, m+2)
 
 
-	def _matchmaking(self, X, X_m, W=None, m=1):
+	def _matchmaking(self, X, X_m, W, m):
 
 		"""
 		Performs nearest-neigborhood matching using specified weighting
@@ -646,10 +646,10 @@ class CausalModel(Basic):
 			List of matched indices.
 		"""
 
-		m_indx = []
+		m_indx = [None] * X.shape[0]
 
 		for i in xrange(X.shape[0]):
-			m_indx.append(self._msmallest_with_ties(self._norm(X_m - X[i], W), m))
+			m_indx[i] = self._msmallest_with_ties(self._norm(X_m-X[i], W), m)
 
 		return m_indx
 
@@ -690,7 +690,19 @@ class CausalModel(Basic):
 		return bias
 
 
-	def matching(self, wmatrix=None, matches=1, correct_bias=False):
+	def _form_counterfactual(self, x, m_indx, dim=1):
+
+		if dim == 1:
+			xhat = np.empty(len(m_indx))
+		else:
+			xhat = np.empty((len(m_indx), x.shape[1]))
+		for i in xrange(len(m_indx)):
+			xhat[i] = x[m_indx[i]].mean(0)
+
+		return xhat
+	
+
+	def matching(self, wmat='inv', m=1, xbias=False):
 
 		"""
 		Estimates average treatment effects using matching with replacement.
@@ -712,7 +724,7 @@ class CausalModel(Basic):
 
 		Arguments
 		---------
-			wmatrix: string, array-like
+			wmat: string, array-like
 				Weighting matrix to be used in norm calcuation. Acceptable
 				values are None	(inverse variance, default), string 'maha'
 				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
@@ -731,28 +743,42 @@ class CausalModel(Basic):
 			A Results class instance.
 		"""
 
-		if wmatrix is None:
-			self.Xvar = self.X.var(0)  # store vector of covariate variances
-		elif wmatrix == 'maha':
-			wmatrix = np.linalg.inv(np.cov(self.X, rowvar=False))
+		if wmat == 'maha':
+			wmat = np.linalg.inv(np.cov(self.X, rowvar=False))
 
-		m_indx_t = self._matchmaking(self.X_t, self.X_c, wmatrix, matches)
-		m_indx_c = self._matchmaking(self.X_c, self.X_t, wmatrix, matches)
+		m_indx_t = self._matchmaking(self.X_t, self.X_c, wmat, m)
+		m_indx_c = self._matchmaking(self.X_c, self.X_t, wmat, m)
+
+		Yhat_c = self._form_counterfactual(self.Y_c, m_indx_t)
+		Yhat_t = self._form_counterfactual(self.Y_t, m_indx_c)
 
 		self.ITT = np.empty(self.N)
-		self.ITT[self.D==1] = [self.Y_t[i] - self.Y_c[m_indx_t[i]].mean() for i in xrange(self.N_t)]
-		self.ITT[self.D==0] = [self.Y_t[m_indx_c[i]].mean() - self.Y_c[i] for i in xrange(self.N_c)]
+		self.ITT[self.D==1] = self.Y_t - Yhat_c
+		self.ITT[self.D==0] = Yhat_t - self.Y_c
 
-		if correct_bias:
+		if xbias:
 			self.ITT[self.D==1] -= self._bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
 			self.ITT[self.D==0] += self._bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
+			"""
+			Xhat_c = self._form_counterfactual(self.X_c, m_indx_t, dim=0)
+			Xhat_t = self._form_counterfactual(self.X_t, m_indx_c, dim=0)
+			bias_t = self._ols_predict(np.hstack((self.Y_c, Yhat_c)),
+			                           np.vstack((self.X_c, Xhat_c)),
+						   self.X_t-Xhat_c, const=0)
+			bias_c = self._ols_predict(np.hstack((self.Y_t, Yhat_t)),
+			                           np.vstack((self.X_t, Xhat_t)),
+						   Xhat_t-self.X_c, const=0)
+			self.ITT[self.D==1] -= bias_t
+			self.ITT[self.D==0] += bias_c
+			"""
 
 		self.ATE = self.ITT.mean()
 		self.ATT = self.ITT[self.D==1].mean()
 		self.ATC = self.ITT[self.D==0].mean()
 
 
-	def _ols_predict(self, Y, X, X_new):
+
+	def _ols_predict(self, Y, X, X_new, const=1):
 
 		"""
 		Estimates linear regression model with least squares and project based
@@ -773,7 +799,7 @@ class CausalModel(Basic):
 		X1[:, 1:] = X
 		beta = np.linalg.lstsq(X1, Y)[0]
 
-		return beta[0] + X_new.dot(beta[1:])
+		return beta[0]*const + X_new.dot(beta[1:])
 
 
 	def ols(self):
@@ -911,13 +937,13 @@ def Lalonde():
 
 	lalonde = pd.read_csv('ldw_exper.csv')
 
-	covariate_list = ['black', 'hisp', 'age', 'married', 'nodegree',
+	covariate_list = ['black', 'hisp', 'age', 'married', 
 	                  'educ', 're74', 'u74', 're75', 'u75']
 
 	# don't know how to not convert to array first
 	return np.array(lalonde['re78']), np.array(lalonde['t']), np.array(lalonde[covariate_list])
 
 
-Y, D, X, Y0, Y1 = SimulateData(return_counterfactual=True)
+Y, D, X, Y0, Y1 = SimulateData(para=parameters(N=50000, k=3), return_counterfactual=True)
 causal = CausalModel(Y, D, X)
 display = Results(causal)
