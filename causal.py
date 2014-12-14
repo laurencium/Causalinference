@@ -92,7 +92,7 @@ class CausalModel(Basic):
 
 		super(CausalModel, self).__init__(self._Y_old, self._D_old, self._X_old)
 		try:
-			del self.cutoff, self.blocks
+			del self.pscore, self.cutoff, self.blocks
 		except:
 			pass
 
@@ -779,6 +779,12 @@ class CausalModel(Basic):
 		self.ATC = self.ITT[self.D==0].mean()
 
 
+	def weighting(self):
+
+		self._check_prereq('pscore')
+		p_t, p_c = 1/self.pscore['fitted'][self.D==1], 1/(1-self.pscore['fitted'][self.D==0])
+		self.ATE = (self.Y_t*p_t).sum()/p_t.sum() - (self.Y_c*p_c).sum()/p_c.sum()
+
 
 	def _ols_predict(self, Y, X, X_new, const=1):
 
@@ -916,7 +922,7 @@ def SimulateData(para=parameters(), nonlinear=False, return_counterfactual=False
 
 	pscore = norm.cdf(Xbeta)
 	# for each p in pscore, generate Bernoulli rv with success probability p
-	D = np.array([np.random.binomial(1, p, size=1) for p in pscore]).flatten()
+	D = np.array([np.random.binomial(1, p, size=1) for p in pscore], dtype='bool').flatten()
 
 	if nonlinear:
 		Y_0 = abs(X).sum(1) + epsilon[:, 0]
