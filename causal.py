@@ -85,20 +85,16 @@ class CausalModel(Basic):
 	def __init__(self, Y, D, X):
 
 		super(CausalModel, self).__init__(Y, D, X)
-		self._misc_init()
 		self._Y_old, self._D_old, self._X_old = Y, D, X
-
-
-	def _misc_init(self):
-
-		self.blocks = 5
-		self.cutoff = 0.1
 
 
 	def restart(self):
 
 		super(CausalModel, self).__init__(self._Y_old, self._D_old, self._X_old)
-		self._misc_init()
+		try:
+			del self.cutoff, self.blocks
+		except:
+			pass
 
 
 	def _sigmoid(self, x):
@@ -293,6 +289,14 @@ class CausalModel(Basic):
 			return [e+offset for e in l]
 			
 
+	def _post_pscore_init(self):
+
+		if not hasattr(self, 'cutoff'):
+			self.cutoff = 0.1
+		if not hasattr(self, 'blocks'):
+			self.blocks = 5
+
+
 	def propensity(self, const=True, lin=None, qua=[]):
 
 		"""
@@ -333,6 +337,8 @@ class CausalModel(Basic):
 
 		self.pscore = self._compute_pscore(self._form_matrix(const, lin, qua))
 		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, lin, qua
+
+		self._post_pscore_init()
 
 
 	def _select_terms(self, const, X_cur, X_pot, crit, X_lin=[]):
@@ -446,6 +452,17 @@ class CausalModel(Basic):
 		self.pscore = self._compute_pscore(self._form_matrix(const, X_lin, X_qua))
 		self.pscore['const'], self.pscore['lin'], self.pscore['qua'] = const, X_lin, X_qua
 
+		self._post_pscore_init()
+
+
+	def _check_prereq(self, prereq):
+
+		if not hasattr(self, prereq):
+			if prereq == 'pscore':
+				raise Exception("Missing propensity score.")
+			if prereq == 'strata':
+				raise Exception("Please stratify sample.")
+	
 
 	def trim(self):
 
@@ -457,13 +474,14 @@ class CausalModel(Basic):
 		algorithm proposed by Crump, Hotz, Imbens, and Mitnik.
 		"""
 
+		self._check_prereq('pscore')
 		untrimmed = (self.pscore['fitted'] >= self.cutoff) & (self.pscore['fitted'] <= 1-self.cutoff)
 		super(CausalModel, self).__init__(self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed])
+		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
 		try:
 			del self._ndiff
 		except:
 			pass
-		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
 
 
 	def _select_cutoff(self):
@@ -487,12 +505,14 @@ class CausalModel(Basic):
 	
 	def trim_s(self):
 
+		self._check_prereq('pscore')
 		self._select_cutoff()
 		self.trim()
 
 
 	def stratify(self):
 
+		self._check_prereq('pscore')
 		if isinstance(self.blocks, (int, long)):
 			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
 			self.blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
@@ -537,28 +557,20 @@ class CausalModel(Basic):
 
 	def stratify_s(self):
 
+		self._check_prereq('pscore')
 		l = np.log(self.pscore['fitted'] / (1+self.pscore['fitted']))
 		e_min = self.pscore['fitted'].min()
 		e_max = self.pscore['fitted'].max()
 		self.blocks = sorted(set(self._select_blocks(self.pscore['fitted'], l, e_min, e_max)))
-
 		self.stratify()
-
-
-	def _compute_blocking(self):
-
-		self.ATE = np.sum([stratum.N/self.N * stratum.within for stratum in self.strata])
-		self.ATT = np.sum([stratum.N_t/self.N_t * stratum.within for stratum in self.strata])
-		self.ATC = np.sum([stratum.N_c/self.N_c * stratum.within for stratum in self.strata])
 
 
 	def blocking(self):
 
-		try:
-			self._compute_blocking()
-		except AttributeError:
-			self.stratify()
-			self._compute_blocking()
+		self._check_prereq('strata')
+		self.ATE = np.sum([stratum.N/self.N * stratum.within for stratum in self.strata])
+		self.ATT = np.sum([stratum.N_t/self.N_t * stratum.within for stratum in self.strata])
+		self.ATC = np.sum([stratum.N_c/self.N_c * stratum.within for stratum in self.strata])
 
 
 	def _norm(self, dX, W):
