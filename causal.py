@@ -14,7 +14,7 @@ class Basic(object):
 		self.N, self.K = self.X.shape
 		self.Y_t, self.Y_c = self.Y[self.D==1], self.Y[self.D==0]
 		self.X_t, self.X_c = self.X[self.D==1], self.X[self.D==0]
-		self.N_t = np.count_nonzero(self.D)
+		self.N_t = self.D.sum()
 		self.N_c = self.N - self.N_t
 
 
@@ -526,19 +526,19 @@ class CausalModel(Basic):
 		scope = (e >= e_min) & (e <= e_max)
 		t, c = (scope & (self.D==1)), (scope & (self.D==0))
 
-		N_t, N_c = np.count_nonzero(t), np.count_nonzero(c)
+		N_t, N_c = t.sum(), c.sum()
 		t_stat = (l[t].mean()-l[c].mean()) / \
-		         np.sqrt(l[t].var()/np.count_nonzero(t) + l[c].var()/np.count_nonzero(c))
+		         np.sqrt(l[t].var()/t.sum() + l[c].var()/c.sum())
 		if t_stat <= 1.96:
 			return [e_min, e_max]
 
 		med = e[e <= np.median(e[scope])].max()
 		left = (e <= med) & scope
 		right = (e > med) & scope
-		N_left = np.count_nonzero(left)
-		N_right = np.count_nonzero(right)
-		N_left_t = np.count_nonzero(left & (self.D==1))
-		N_right_t = np.count_nonzero(right & (self.D==1))
+		N_left = left.sum()
+		N_right = right.sum()
+		N_left_t = (left & (self.D==1)).sum()
+		N_right_t = (right & (self.D==1)).sum()
 
 		if np.min([N_left, N_right]) <= self.K+2:
 			return [e_min, e_max]
