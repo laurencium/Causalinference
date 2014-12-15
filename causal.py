@@ -1,9 +1,8 @@
 from __future__ import division
 import numpy as np
 from scipy.optimize import fmin_bfgs
-from itertools import combinations_with_replacement
-import itertools
-
+from itertools import combinations_with_replacement, chain
+#from itertools import chain
 
 class Basic(object):
 
@@ -86,6 +85,16 @@ class CausalModel(Basic):
 
 		super(CausalModel, self).__init__(Y, D, X)
 		self._Y_old, self._D_old, self._X_old = Y, D, X
+
+
+	@property
+	def Xvar(self):
+
+		try:
+			return self._Xvar
+		except AttributeError:
+			self._Xvar = self.X.var(0)
+			return self._Xvar
 
 
 	def restart(self):
@@ -677,17 +686,14 @@ class CausalModel(Basic):
 			Vector of estimated biases.
 		"""
 
-		flat_indx = list(itertools.chain.from_iterable(m_indx))
+		flat_indx = list(chain.from_iterable(m_indx))
 
-		X_m1 = np.column_stack((np.ones(len(flat_indx)), X_m[flat_indx]))
-		b = np.linalg.lstsq(X_m1, Y_m[flat_indx])[0][1:]  # includes intercept
+		X_m1 = np.empty((len(flat_indx), X_m.shape[1]+1))
+		X_m1[:,0] = 1
+		X_m1[:,1:] = X_m[flat_indx]
+		beta = np.linalg.lstsq(X_m1, Y_m[flat_indx])[0]
 
-		N = X.shape[0]
-		bias = np.empty(N)
-		for i in xrange(N):
-			bias[i] = np.dot(X[i] - X_m[m_indx[i]].mean(0), b)
-
-		return bias
+		return [np.dot(X[i]-X_m[m_indx[i]].mean(0), beta[1:]) for i in xrange(X.shape[0])]
 
 
 	def _form_counterfactual(self, x, m_indx, dim=1):
@@ -743,36 +749,19 @@ class CausalModel(Basic):
 			A Results class instance.
 		"""
 
-		if wmat == 'inv':
-			self.Xvar = self.X.var(0)
-		elif wmat == 'maha':
+		if wmat == 'maha':
 			wmat = np.linalg.inv(np.cov(self.X, rowvar=False))
 
 		m_indx_t = self._make_matches(self.X_t, self.X_c, wmat, m)
 		m_indx_c = self._make_matches(self.X_c, self.X_t, wmat, m)
 
-		Yhat_c = self._form_counterfactual(self.Y_c, m_indx_t)
-		Yhat_t = self._form_counterfactual(self.Y_t, m_indx_c)
-
 		self.ITT = np.empty(self.N)
-		self.ITT[self.D==1] = self.Y_t - Yhat_c
-		self.ITT[self.D==0] = Yhat_t - self.Y_c
+		self.ITT[self.D==1] = self.Y_t - [self.Y_c[m_indx_t[i]].mean() for i in xrange(self.N_t)]
+		self.ITT[self.D==0] = [self.Y_t[m_indx_c[i]].mean() for i in xrange(self.N_c)] - self.Y_c
 
 		if xbias:
 			self.ITT[self.D==1] -= self._bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
 			self.ITT[self.D==0] += self._bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
-			"""
-			Xhat_c = self._form_counterfactual(self.X_c, m_indx_t, dim=0)
-			Xhat_t = self._form_counterfactual(self.X_t, m_indx_c, dim=0)
-			bias_t = self._ols_predict(np.hstack((self.Y_c, Yhat_c)),
-			                           np.vstack((self.X_c, Xhat_c)),
-						   self.X_t-Xhat_c, const=0)
-			bias_c = self._ols_predict(np.hstack((self.Y_t, Yhat_t)),
-			                           np.vstack((self.X_t, Xhat_t)),
-						   Xhat_t-self.X_c, const=0)
-			self.ITT[self.D==1] -= bias_t
-			self.ITT[self.D==0] += bias_c
-			"""
 
 		self.ATE = self.ITT.mean()
 		self.ATT = self.ITT[self.D==1].mean()
@@ -952,6 +941,6 @@ def Lalonde():
 	return np.array(lalonde['re78']), np.array(lalonde['t']), np.array(lalonde[covariate_list])
 
 
-Y, D, X, Y0, Y1 = SimulateData(para=parameters(N=50000, k=3), return_counterfactual=True)
+Y, D, X, Y0, Y1 = SimulateData(para=parameters(N=5000, k=3), return_counterfactual=True)
 causal = CausalModel(Y, D, X)
 display = Results(causal)
