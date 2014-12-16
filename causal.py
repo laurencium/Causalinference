@@ -2,7 +2,6 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement, chain
-#from itertools import chain
 
 class Basic(object):
 
@@ -48,6 +47,14 @@ class Basic(object):
 
 		return (self.X_t.mean(0) - self.X_c.mean(0)) / \
 		       np.sqrt((self.X_t.var(0) + self.X_c.var(0))/2)
+
+
+	def _try_del(self, attrstr):
+	
+		try:
+			delattr(self, attrstr)
+		except:
+			pass
 
 
 class Stratum(Basic):
@@ -99,11 +106,17 @@ class CausalModel(Basic):
 
 	def restart(self):
 
+		"""
+		Reinitialize data to original inputs, and drop any estimated results.
+		"""
+
 		super(CausalModel, self).__init__(self._Y_old, self._D_old, self._X_old)
-		try:
-			del self.pscore, self.cutoff, self.blocks
-		except:
-			pass
+		self._try_del('pscore')
+		self._try_del('cutoff')
+		self._try_del('blocks')
+		self._try_del('ATE')
+		self._try_del('ATT')
+		self._try_del('ATC')
 
 
 	def _sigmoid(self, x):
@@ -112,8 +125,8 @@ class CausalModel(Basic):
 		Computes 1/(1+exp(-x)) for input x, to be used in maximum likelihood
 		estimation of propensity score.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			x: array-like
 
 		Returns
@@ -130,8 +143,8 @@ class CausalModel(Basic):
 		Computes log(1+exp(-x)) for input x, to be used in maximum likelihood
 		estimation of propensity score.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			x: array-like
 
 		Returns
@@ -149,13 +162,13 @@ class CausalModel(Basic):
 		in maximum likelihood estimation of propensity score. Negative because SciPy
 		optimizier does minimization only.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			beta: array-like
 				Logisitic regression parameters to maximize over.
-			X_t: array-like
+			X_t: matrix, ndarray
 				Covariate matrix of the treated units.
-			X_c: array-like
+			X_c: matrix, ndarray
 				Covariate matrix of the control units.
 
 		Returns
@@ -174,13 +187,13 @@ class CausalModel(Basic):
 		logit, to be used in maximum likelihood estimation of propensity score.
 		Negative because SciPy optimizier does minimization only.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			beta: array-like
 				Logisitic regression parameters to maximize over.
-			X_t: array-like
+			X_t: matrix, ndarray
 				Covariate matrix of the treated units.
-			X_c: array-like
+			X_c: matrix, ndarray
 				Covariate matrix of the control units.
 
 		Returns
@@ -197,19 +210,17 @@ class CausalModel(Basic):
 		"""
 		Estimates via logit the propensity score based on input covariate matrix X.
 
-		Arguments
-		---------
-			X: array-like
+		Expected args
+		-------------
+			X: matrix, ndarray
 				Covariate matrix to estimate propensity score on.
 
 		Returns
 		-------
-			beta: array-like
-				Estimated logistic regression coefficients.
-			loglike: scalar
-				Maximized log-likelihood value.
-			fitted: array-like
-				Estimated propensity scores for each unit.
+			pscore: dict containing
+				'coeff': Estimated coefficients.
+				'loglike': Maximized log-likelihood value.
+				'fitted': Vector of estimated propensity scores.
 		"""
 
 		X_t = X[self.D==1]
@@ -236,24 +247,24 @@ class CausalModel(Basic):
 		Forms covariate matrix for use in propensity score estimation, based on
 		requirements on constant term, linear terms, and quadratic terms.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			const: Boolean
 				Includes a column of one's if True.
 			lin: list
-				Column numbers of the base self._X covariate matrix
-				to include linearly.
+				Column numbers (one-based) of the original covariate
+				matrix to include linearly.
 			qua: list
-				Tuples indicating which columns of the base self._X
+				Tuples indicating which columns of the original
 				covariate matrix to multiply and include. E.g.,
-				[(0,0), (1,2)] indicates squaring the 0th column and
-				including the product of the 1st and 2nd columns.
+				[(1,1), (2,3)] indicates squaring the 1st column and
+				including the product of the 2nd and 3rd columns.
 
 		Returns
 		-------
-			mat: array-like
+			mat: matrix, ndarray
 				Covariate matrix formed based on requirements on
-				constant, linear, and quadratic terms.
+				linear and quadratic terms.
 		"""
 
 		mat = np.empty((self.N, 1+len(lin)+len(qua)))
@@ -275,10 +286,10 @@ class CausalModel(Basic):
 		"""
 		Changes input index to zero or one-based.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			l: list
-				List of numbers of pairs of numbers.
+				List of numbers or pairs of numbers.
 			pair: Boolean
 				Anticipates list of pairs if True. Defaults to False.
 			base: integer
@@ -298,6 +309,11 @@ class CausalModel(Basic):
 
 	def _post_pscore_init(self):
 
+		"""
+		Initialize cutoff threshold for trimming and number of equal-sized
+		blocks after estimation of propensity score.
+		"""
+
 		if not hasattr(self, 'cutoff'):
 			self.cutoff = 0.1
 		if not hasattr(self, 'blocks'):
@@ -310,27 +326,18 @@ class CausalModel(Basic):
 		Estimates via logit the propensity score based on requirements on
 		constant term, linear terms, and quadratic terms.
 
-		Arguments
-		---------
-			lin: list
-				Column numbers of the base covariate matrix X
-				to include linearly. Defaults to using the
-				whole covariate matrix.
+		Expected args
+		-------------
+			lin: string, list
+				Column numbers of the original covariate matrix X
+				to include linearly. Defaults to the string 'all',
+				which uses whole covariate matrix.
 			qua: list
-				Column numbers of the base covariate matrix X
-				to include quadratic. E.g., [0,2] will include
-				squares of the 0th and 2nd columns, and the product
-				of these two columns. Default is not include any
+				Column numbers of the original covariate matrix X
+				to include quadratic. E.g., [1,3] will include
+				squares of the 1st and 3rd columns, and the product
+				of these two columns. Default is to not include any
 				quadratic terms.
-
-		Returns
-		-------
-			beta: array-like
-				Estimated logistic regression coefficients.
-			loglike: scalar
-				Maximized log-likelihood value.
-			fitted: array-like
-				Estimated propensity scores for each unit.
 		"""
 
 		if lin == 'all':
@@ -351,10 +358,8 @@ class CausalModel(Basic):
 		Estimates via logit the propensity score using Imbens and Rubin's
 		covariate selection algorithm.
 
-		Arguments
-		---------
-			const: Boolean
-				Includes a column of one's if True. 
+		Expected args
+		-------------
 			cur: list
 				List containing terms that are currently included
 				in the logistic regression.
@@ -404,10 +409,10 @@ class CausalModel(Basic):
 		Estimates via logit the propensity score using Imbens and Rubin's
 		covariate selection algorithm.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			lin_B: list
-				Column numbers of the base covariate matrix X
+				Column numbers of the original covariate matrix X
 				that should be included as linear terms
 				regardless. Defaults to empty list, meaning
 				every column of X is subjected to the selection
@@ -420,15 +425,6 @@ class CausalModel(Basic):
 				Critical value used in likelihood ratio test to decide
 				whether candidate quadratic terms should be included.
 				Defaults to 2.71 as in Imbens (2014).
-
-		Returns
-		-------
-			beta: array-like
-				Estimated logistic regression coefficients.
-			loglike: scalar
-				Maximized log-likelihood value.
-			fitted: array-like
-				Estimated propensity scores for each unit.
 
 		References
 		----------
@@ -460,6 +456,10 @@ class CausalModel(Basic):
 
 	def _check_prereq(self, prereq):
 
+		"""
+		Basic checks of existence of estimated propensity score or strata.
+		"""
+
 		if not hasattr(self, prereq):
 			if prereq == 'pscore':
 				raise Exception("Missing propensity score.")
@@ -481,16 +481,14 @@ class CausalModel(Basic):
 		untrimmed = (self.pscore['fitted'] >= self.cutoff) & (self.pscore['fitted'] <= 1-self.cutoff)
 		super(CausalModel, self).__init__(self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed])
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
-		try:
-			del self._ndiff
-		except:
-			pass
+		self._try_del('_ndiff')
 
 
 	def _select_cutoff(self):
 
 		"""
-		Selects cutoff value for propensity score used in trimming function.
+		Selects cutoff value for propensity score used in trimming function
+		using algorithm suggested by Crump, Hotz, Imbens, and Mitnik (2008).
 		
 		References
 		----------
@@ -508,12 +506,30 @@ class CausalModel(Basic):
 	
 	def trim_s(self):
 
+		"""
+		Trim data based on propensity score using cutoff selected using
+		algorithm suggested by Crump, Hotz, Imbens, and Mitnik (2008).
+		Algorithm is of order O(N).
+
+		References
+		----------
+			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2008). Dealing
+				with Limited Overlap in Estimation of Average Treatment
+				Effects, Biometrika.
+		"""
+
 		self._check_prereq('pscore')
 		self._select_cutoff()
 		self.trim()
 
 
 	def stratify(self):
+
+		"""
+		Stratify the sample based on propensity score. If the attribute cutoff is
+		a number, then equal-sized bins will be created. Otherwise if cutoff is a
+		list of bin boundaries then the bins will be created accordingly.
+		"""
 
 		self._check_prereq('pscore')
 		if isinstance(self.blocks, (int, long)):
@@ -531,6 +547,33 @@ class CausalModel(Basic):
 
 
 	def _select_blocks(self, e, l, e_min, e_max):
+
+		"""
+		Select propensity bins recursively for blocking estimator using
+		algorithm suggested by Imbens and Rubin (2015). Algorithm is of
+		order O(N log N).
+
+		Expected args
+		-------------
+			e: array-like
+				Vector of estimated propensity scores for the
+				whole sample.
+			l: array-like
+				Vector of log odds ratio for the whole sample.
+			e_min: scalar
+				Lower boundary of current propensity bin.
+			e_max: scalar
+				Upper boundary of current propensity bin.
+
+		Returns
+		-------
+			List containing bin boundaries.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in Statistics,
+				Social, and Biomedical Sciences: An Introduction.
+		"""
 
 		scope = (e >= e_min) & (e <= e_max)
 		t, c = (scope & (self.D==1)), (scope & (self.D==0))
@@ -560,6 +603,16 @@ class CausalModel(Basic):
 
 	def stratify_s(self):
 
+		"""
+		Stratify the sample based on propensity score using bin selection
+		algorithm suggested by Imbens and Rubin (2015).
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in Statistics,
+				Social, and Biomedical Sciences: An Introduction.
+		"""
+
 		self._check_prereq('pscore')
 		l = np.log(self.pscore['fitted'] / (1+self.pscore['fitted']))
 		e_min = self.pscore['fitted'].min()
@@ -569,6 +622,10 @@ class CausalModel(Basic):
 
 
 	def blocking(self):
+
+		"""
+		Compute average treatment effects using regression within blocks.
+		"""
 
 		self._check_prereq('strata')
 		self.ATE = np.sum([stratum.N/self.N * stratum.within for stratum in self.strata])
@@ -581,14 +638,14 @@ class CausalModel(Basic):
 		"""
 		Calculates vector of norms given weighting matrix W.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			dX: array-like
 				Matrix of covariate differences.
-			W: array-like
+			W: string or matrix, ndarray
 				Weighting matrix to be used in norm calcuation. Acceptable
-				values are None	(inverse variance, default), string 'maha'
-				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
+				values are string 'inv' for inverse variance weighting,
+				or any arbitrary K-by-K matrix.
 
 		Returns
 		-------
@@ -608,8 +665,8 @@ class CausalModel(Basic):
 		included, so the number of indices can be greater than m. Algorithm
 		is of order O(n).
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			x: array-like
 				Array of numbers to find m smallest entries for.
 			m: integer
@@ -637,18 +694,18 @@ class CausalModel(Basic):
 		matrix in measuring distance. Ties are included, so the number
 		of matches for a given unit can be greater than m.
 
-		Arguments
-		---------
-			X: array-like
+		Expected args
+		-------------
+			X: matrix, ndarray
 				Observations to find matches for.
-			X_m: array-like
+			X_m: matrix, ndarray
 				Pool of potential matches.
+			W: string or matrix, ndarray
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are string 'inv' for inverse variance weighting,
+				or any arbitrary K-by-K matrix.
 			m: integer
 				The number of units to match to a given subject.
-			W: array-like
-				Weighting matrix to be used in norm calcuation. Acceptable
-				values are None	(inverse variance, default), string 'maha'
-				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
 
 		Returns
 		-------
@@ -670,15 +727,15 @@ class CausalModel(Basic):
 		When estimating ATT, regression should use control units. When
 		estimating ATC, regression should use treated units.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			m_indx: list
 				Index of indices of matched units.
 			Y_m: array-like
 				Vector of outcomes to regress.
-			X_m: array-like
+			X_m: matrix, ndarray
 				Covariate matrix to regress on.
-			X: array-like
+			X: matrix, ndarray
 				Covariate matrix of subjects under study.
 
 		Returns
@@ -694,18 +751,6 @@ class CausalModel(Basic):
 		beta = np.linalg.lstsq(X_m1, Y_m[flat_indx])[0]
 
 		return [np.dot(X[i]-X_m[m_indx[i]].mean(0), beta[1:]) for i in xrange(X.shape[0])]
-
-
-	def _form_counterfactual(self, x, m_indx, dim=1):
-
-		if dim == 1:
-			xhat = np.empty(len(m_indx))
-		else:
-			xhat = np.empty((len(m_indx), x.shape[1]))
-		for i in xrange(len(m_indx)):
-			xhat[i] = x[m_indx[i]].mean(0)
-
-		return xhat
 	
 
 	def matching(self, wmat='inv', m=1, xbias=False):
@@ -728,25 +773,18 @@ class CausalModel(Basic):
 		X_c[matched]. For control units, the analogous procedure is used.
 		For details, see Imbens and Rubin.
 
-		Arguments
-		---------
-			wmat: string, array-like
+		Expected args
+		-------------
+			wmat: string or matrix, ndarray
 				Weighting matrix to be used in norm calcuation. Acceptable
 				values are None	(inverse variance, default), string 'maha'
 				for Mahalanobis	metric, or any arbitrary k-by-k matrix.
-			matches: integer
+			m: integer
 				The number of units to match to a given subject. Defaults
 				to 1.
-			correct_bias: Boolean
+			xbias: Boolean
 				Correct bias resulting from imperfect matches or not; defaults
 				to no correction.
-			order_by_pscore: Boolean, optional
-				Determines order of match-making when matching without
-				replacement.
-
-		Returns
-		-------
-			A Results class instance.
 		"""
 
 		if wmat == 'maha':
@@ -770,6 +808,10 @@ class CausalModel(Basic):
 
 	def weighting(self):
 
+		"""
+		Computes ATE using inverse probability weighted estimator as in missing data.
+		"""
+
 		self._check_prereq('pscore')
 		p_t, p_c = 1/self.pscore['fitted'][self.D==1], 1/(1-self.pscore['fitted'][self.D==0])
 		self.ATE = (self.Y_t*p_t).sum()/p_t.sum() - (self.Y_c*p_c).sum()/p_c.sum()
@@ -781,14 +823,18 @@ class CausalModel(Basic):
 		Estimates linear regression model with least squares and project based
 		on new input data.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			Y: array-like
 				Vector of observed outcomes.
-			X: array-like
+			X: matrix, ndarray
 				Matrix of covariates to regress on.
-			X_new: array-like
+			X_new: matrix, ndarray
 				Matrix of covariates used to generate predictions.
+
+		Returns
+		-------
+			Vector of predicted values.
 		"""
 
 		X1 = np.empty((X.shape[0], X.shape[1]+1))
@@ -803,10 +849,6 @@ class CausalModel(Basic):
 
 		"""
 		Estimates average treatment effects using least squares.
-
-		Returns
-		-------
-			A Results class instance.
 		"""
 
 		self.ITT = np.empty(self.N)
