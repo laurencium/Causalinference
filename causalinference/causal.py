@@ -901,6 +901,57 @@ class CausalModel(Basic):
 		self.ATT = self.ITT[self.D==1].mean()
 		self.ATC = self.ITT[self.D==0].mean()
 
+	def ols2(self):
+
+		Xmean = self.X.mean(0)
+		DdX = np.einsum('i,ij->ij', self.D, self.X-Xmean)
+		Z = np.empty((self.N, 2+2*self.K))
+		Z[:,0], Z[:,1], Z[:,2:2+self.K], Z[:,-self.K:] = 1, self.D, DdX, self.X
+		olscoeff = np.linalg.lstsq(Z,self.Y)[0]
+
+		self.ATE = olscoeff[1]
+		self.ATT = olscoeff[1] + (self.X_t.mean(0)-Xmean).dot(olscoeff[2:2+self.K])
+		self.ATC = olscoeff[1] + (self.X_c.mean(0)-Xmean).dot(olscoeff[2:2+self.K])
+
+
+	def ols3(self):
+	
+		Z = np.empty((self.N_t, self.K+1))
+		Z[:, 0], Z[:, 1:] = 1, self.X_t
+		coeff_t = np.linalg.lstsq(Z, self.Y_t)[0]
+		Z = np.empty((self.N_c, self.K+1))
+		Z[:, 0], Z[:, 1:] = 1, self.X_c
+		coeff_c = np.linalg.lstsq(Z, self.Y_c)[0]
+
+		Xmean = self.X.mean(0)
+		self._olscoeff = np.empty(2+2*self.K)
+		self._olscoeff[0] = coeff_c[0]
+		self._olscoeff[2:2+self.K] = coeff_t[1:] - coeff_c[1:]
+		self._olscoeff[1] = coeff_t[0] - coeff_c[0] + Xmean.dot(self._olscoeff[2:2+self.K])
+		self._olscoeff[-self.K:] = coeff_c[1:]
+
+		self.ATE = self._olscoeff[1]
+		self.ATT = self.ATE + (self.X_t.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
+		self.ATC = self.ATE + (self.X_c.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
+
+
+	def _compute_ols_se(self):
+
+		Xmean = self.X.mean(0)
+		DdX = np.einsum('i,ij->ij', self.D, self.X-Xmean)
+		Z = np.empty((self.N, 2+2*self.K))
+		Z[:,0], Z[:,1], Z[:,2:2+self.K], Z[:,-self.K:] = 1, self.D, DdX, self.X
+
+		u = self.Y - Z.dot(self._olscoeff)
+		ZTZinv = np.linalg.inv(Z.T.dot(Z))  # 2nd-(K+2)th columns of inv(Z'Z)
+
+		covmat = np.einsum('ik,mk,m,m,ml,lj->ij',ZTZinv,Z,u,u,Z,ZTZinv)[1:2+self.K,1:2+self.K]
+		self.ATE_se = np.sqrt(covmat[0,0])
+		A = np.empty(self.K+1); A[0], A[1:] = 1, self.X_t.mean(0)-Xmean
+		self.ATT_se = np.sqrt(A.dot(covmat).dot(A))
+		B = np.empty(self.K+1); B[0], B[1:] = 1, self.X_c.mean(0)-Xmean
+		self.ATC_se = np.sqrt(B.dot(covmat).dot(B))
+
 
 class Results(object):
 
