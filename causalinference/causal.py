@@ -79,42 +79,34 @@ class Stratum(Basic):
 
 	def _compute_within(self):
 	
-		Z = np.empty((self.N, self.K+2))
-		Z[:,0], Z[:,1], Z[:,2:] = 1, self.D, self.X
-		self._olscoeff = np.linalg.lstsq(Z, self.Y)[0]
+		X = np.empty((self.N, self.K+2))  # create design matrix
+		X[:,0], X[:,1], X[:,2:] = 1, self.D, self.X
+		self._olscoeff = np.linalg.lstsq(X, self.Y)[0]
 
 		return self._olscoeff[1]
 
 
 	@property
-	def olscoeff(self):
-	
+	def se(self):
+
 		try:
-			return self._olscoeff
+			return self._se
 		except AttributeError:
+			self._se = self._compute_se()
+			return self._se
+
+
+	def _compute_se(self):
+
+		if not hasattr(self, '_olscoeff'):
 			self._within = self._compute_within()
-			return self._olscoeff
+		X = np.empty((self.N, self.K+2))  # create design matrix
+		X[:,0], X[:,1], X[:,2:] = 1, self.D, self.X
+		u = self.Y - X.dot(self._olscoeff)
+		e = np.zeros(self.K+2); e[1] = 1  # unit vector
+		XTXinv2 = np.linalg.solve(X.T.dot(X), e)  # 2nd column of inv(X'X)
 
-
-	@property
-	def stderr(self):
-
-		try:
-			return self._stderr
-		except AttributeError:
-			self._stderr = self._compute_stderr()
-			return self._stderr
-
-
-	def _compute_stderr(self):
-
-		u = self.Y - (self.olscoeff[0] + self.D*self.olscoeff[1] + self.X.dot(self.olscoeff[2:]))
-		e = np.zeros(self.K+2); e[1] = 1
-		Z = np.empty((self.N, self.K+2))
-		Z[:,0], Z[:,1], Z[:,2:] = 1, self.D, self.X
-		w = np.linalg.solve(Z.T.dot(Z), e)
-
-		return np.sqrt(np.einsum('j,k,ij,ik,i,i',w,w,Z,Z,u,u))
+		return np.sqrt(np.einsum('j,k,ij,ik,i,i',XTXinv2,XTXinv2,X,X,u,u))
 
 
 class CausalModel(Basic):
