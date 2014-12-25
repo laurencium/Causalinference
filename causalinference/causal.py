@@ -79,6 +79,12 @@ class Stratum(Basic):
 
 	def _compute_within(self):
 	
+		"""
+		Computes within-block treatment effect estimate by regressing the within-block
+		observed outcomes on covarites, treatment indicator, and a constant term. The
+		within-block estimate is then the estimated coefficient for the treatment indicator.
+		"""
+
 		X = np.empty((self.N, self.K+2))  # create design matrix
 		X[:,0], X[:,1], X[:,2:] = 1, self.D, self.X
 		self._olscoeff = np.linalg.lstsq(X, self.Y)[0]
@@ -97,6 +103,18 @@ class Stratum(Basic):
 
 
 	def _compute_se(self):
+
+		"""
+		Computes standard error for within-block treatment effect estimate.
+		
+		If X denotes the design matrix (i.e., covariates, treatment indicator, and a
+		column of ones) and u denotes the vector of least squares residual, then the
+		variance estimator can be found by computing White's heteroskedasticity robust
+		covariance matrix:
+			inv(X'X) X'diag(u^2)X inv(X'X).
+		The diagonal entry corresponding to the treatment indicator of this matrix is
+		the appropriate variance estimate for the block.
+		"""
 
 		if not hasattr(self, '_olscoeff'):
 			self._within = self._compute_within()
