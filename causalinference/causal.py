@@ -81,8 +81,40 @@ class Stratum(Basic):
 	
 		Z = np.empty((self.N, self.K+2))
 		Z[:,0], Z[:,1], Z[:,2:] = 1, self.D, self.X
+		self._olscoeff = np.linalg.lstsq(Z, self.Y)[0]
 
-		return np.linalg.lstsq(Z, self.Y)[0][1]
+		return self._olscoeff[1]
+
+
+	@property
+	def olscoeff(self):
+	
+		try:
+			return self._olscoeff
+		except AttributeError:
+			self._within = self._compute_within()
+			return self._olscoeff
+
+
+	@property
+	def stderr(self):
+
+		try:
+			return self._stderr
+		except AttributeError:
+			self._stderr = self._compute_stderr()
+			return self._stderr
+
+
+	def _compute_stderr(self):
+
+		u = self.Y - (self.olscoeff[0] + self.D*self.olscoeff[1] + self.X.dot(self.olscoeff[2:]))
+		e = np.zeros(self.K+2); e[1] = 1
+		Z = np.empty((self.N, self.K+2))
+		Z[:,0], Z[:,1], Z[:,2:] = 1, self.D, self.X
+		w = np.linalg.solve(Z.T.dot(Z), e)
+
+		return np.sqrt(np.einsum('j,k,ij,ik,i,i',w,w,Z,Z,u,u))
 
 
 class CausalModel(Basic):
