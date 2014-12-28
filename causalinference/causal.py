@@ -86,9 +86,10 @@ class Stratum(Basic):
 		within-block estimate is then the estimated coefficient for the treatment indicator.
 		"""
 
-		X = np.empty((self.N, self.K+2))  # create design matrix
-		X[:,0], X[:,1], X[:,2:] = 1, self.D, self.X
-		self._olscoeff = np.linalg.lstsq(X, self.Y)[0]
+		self._Z = np.empty((self.N, self.K+2))  # create design matrix
+		self._Z[:,0], self._Z[:,1], self._Z[:,2:] = 1, self.D, self.X
+		Q, self._R = np.linalg.qr(self._Z)
+		self._olscoeff = scipy.linalg.solve_triangular(self._R, Q.T.dot(self.Y))
 
 		return self._olscoeff[1]
 
@@ -119,13 +120,11 @@ class Stratum(Basic):
 
 		if not hasattr(self, '_olscoeff'):
 			self._within = self._compute_within()
-		X = np.empty((self.N, self.K+2))  # create design matrix
-		X[:,0], X[:,1], X[:,2:] = 1, self.D, self.X
-		u = self.Y - X.dot(self._olscoeff)
-		e = np.zeros(self.K+2); e[1] = 1  # unit vector
-		XTXinv2 = np.linalg.solve(X.T.dot(X), e)  # 2nd column of inv(X'X)
+		resid = self.Y - self._Z.dot(self._olscoeff)
+		A = np.linalg.inv(np.dot(self._R.T, self._R))
+		B = np.dot(resid[:,None]*self._Z, A[:,1])
 
-		return np.sqrt(np.einsum('j,k,ij,ik,i,i',XTXinv2,XTXinv2,X,X,u,u))
+		return np.sqrt(np.dot(B.T, B))
 
 
 class CausalModel(Basic):
