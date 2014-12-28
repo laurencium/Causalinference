@@ -4,6 +4,7 @@ import scipy.linalg
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement, chain
 
+
 class Basic(object):
 
 
@@ -109,20 +110,20 @@ class Stratum(Basic):
 		"""
 		Computes standard error for within-block treatment effect estimate.
 		
-		If X denotes the design matrix (i.e., covariates, treatment indicator, and a
+		If Z denotes the design matrix (i.e., covariates, treatment indicator, and a
 		column of ones) and u denotes the vector of least squares residual, then the
 		variance estimator can be found by computing White's heteroskedasticity robust
 		covariance matrix:
-			inv(X'X) X'diag(u^2)X inv(X'X).
+			inv(Z'Z) Z'diag(u^2)Z inv(Z'Z).
 		The diagonal entry corresponding to the treatment indicator of this matrix is
 		the appropriate variance estimate for the block.
 		"""
 
 		if not hasattr(self, '_olscoeff'):
 			self._within = self._compute_within()
-		resid = self.Y - self._Z.dot(self._olscoeff)
+		u = self.Y - self._Z.dot(self._olscoeff)
 		A = np.linalg.inv(np.dot(self._R.T, self._R))
-		B = np.dot(resid[:,None]*self._Z, A[:,1])
+		B = np.dot(u[:,None]*self._Z, A[:,1])
 
 		return np.sqrt(np.dot(B.T, B))
 
@@ -859,42 +860,33 @@ class CausalModel(Basic):
 		self.ATE = (self.Y_t*p_t).sum()/p_t.sum() - (self.Y_c*p_c).sum()/p_c.sum()
 
 
-	def _ols_predict(self, Y, X, X_new, const=1):
-
-		"""
-		Estimates linear regression model with least squares and project based
-		on new input data.
-
-		Expected args
-		-------------
-			Y: array-like
-				Vector of observed outcomes.
-			X: matrix, ndarray
-				Matrix of covariates to regress on.
-			X_new: matrix, ndarray
-				Matrix of covariates used to generate predictions.
-
-		Returns
-		-------
-			Vector of predicted values.
-		"""
-
-		X1 = np.empty((X.shape[0], X.shape[1]+1))
-		X1[:, 0] = 1
-		X1[:, 1:] = X
-		beta = np.linalg.lstsq(X1, Y)[0]
-
-		return beta[0]*const + X_new.dot(beta[1:])
-
-
 	def ols(self):
 
 		"""
 		Estimates average treatment effects using least squares.
+
+		The OLS estimate of ATT can be shown to be equal to
+			mean(Y_t) - (alpha + beta * mean(X_t)),
+		where alpha and beta are coefficients from the control group regression:
+			Y_c = alpha + beta * X_c + e.
+		ATC can be estimated analogously. Subsequently, ATE can be estimated as
+		sample weighted average of the ATT and ATC estimates.
+
+		Equivalently, we can recover ATE directly from the regression
+			Y = b_0 + b_1 * D + b_2 * D(X-mean(X)) + b_3 * X + e.
+		The estimated coefficient b_1 will then be numerically identical to the
+		ATE estimate obtained from the first method. ATT can then be computed by
+			b_1 + b_2 * (mean(X_t)-mean(X)),
+		and analogously for ATC. The advantage of this single regression approach
+		is that the matrices required for heteroskedasticity-robust covariance
+		matrix estimation can be obtained conveniently. This is the apporach used.
+
+		Least squares estimates are computed via QR factorization. The design matrix
+		and the R matrix are stored in case standard errors need to be computed later.
 		"""
 
 		Xmean = self.X.mean(0)
-		self._Z = np.empty((self.N, 2+2*self.K))
+		self._Z = np.empty((self.N, 2+2*self.K))  # create design matrix
 		self._Z[:,0], self._Z[:,1] = 1, self.D
 		self._Z[:,2:2+self.K], self._Z[:,-self.K:] = self.D[:,None]*(self.X-Xmean), self.X
 
@@ -908,17 +900,30 @@ class CausalModel(Basic):
 
 	def _compute_ols_se(self):
 	
+		"""
+		Computes standard errors for OLS estimates of ATE, ATT, and ATC.
+
+		If Z denotes the design matrix (i.e., covariates, treatment indicator, product
+		of the two, and a column of ones) and u denotes the vector of least squares
+		residual, then the variance estimator can be found by computing White's
+		heteroskedasticity robust covariance matrix:
+			inv(Z'Z) Z'diag(u^2)Z inv(Z'Z).
+		The diagonal entry corresponding to the treatment indicator of this matrix is
+		the appropriate variance estimate for ATE. Variance estimates for ATT and ATC
+		are appropriately weighted sums of entries of the above matrix.
+		"""
+
 		Xmean = self.X.mean(0)
-		resid = self.Y - self._Z.dot(self._olscoeff)
+		u = self.Y - self._Z.dot(self._olscoeff)
 		A = np.linalg.inv(np.dot(self._R.T, self._R))
-		B = np.dot(resid[:,None]*self._Z, A[:,1:2+self.K])
+		B = np.dot(u[:,None]*self._Z, A[:,1:2+self.K])  # select columns for D, D*dX from A
 		covmat = np.dot(B.T, B)
 
 		self.ATE_se = np.sqrt(covmat[0,0])
 		C = np.empty(self.K+1); C[0], C[1:] = 1, self.X_t.mean(0)-Xmean
 		self.ATT_se = np.sqrt(C.dot(covmat).dot(C))
-		D = np.empty(self.K+1); D[0], D[1:] = 1, self.X_c.mean(0)-Xmean
-		self.ATC_se = np.sqrt(D.dot(covmat).dot(D))
+		C[1:] = self.X_c.mean(0)-Xmean
+		self.ATC_se = np.sqrt(C.dot(covmat).dot(C))
 
 
 class Results(object):
