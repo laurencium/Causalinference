@@ -537,7 +537,7 @@ class CausalModel(Basic):
 		----------
 			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2008). Dealing
 				with Limited Overlap in Estimation of Average Treatment
-				Effects, Biometrika.
+				Effects. Biometrika.
 		"""
 
 		g = 1 / (self.pscore['fitted'] * (1-self.pscore['fitted']))
@@ -558,7 +558,7 @@ class CausalModel(Basic):
 		----------
 			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2008). Dealing
 				with Limited Overlap in Estimation of Average Treatment
-				Effects, Biometrika.
+				Effects. Biometrika.
 		"""
 
 		self._check_prereq('pscore')
@@ -849,15 +849,53 @@ class CausalModel(Basic):
 		self.ATC = self.ITT[self.D==0].mean()
 
 
+	def _ols_predict(self, Y, X, X_new):
+
+		"""
+		Estimates linear regression model with least squares and project based
+		on new input data.
+
+		Expected args
+		-------------
+			Y: array-like
+				Vector of observed outcomes.
+			X: matrix, ndarray
+				Matrix of covariates to regress on.
+			X_new: matrix, ndarray
+				Matrix of covariates used to generate predictions.
+
+		Returns
+		-------
+			Vector of predicted values.
+		"""
+
+		Z = np.empty((X.shape[0], X.shape[1]+1))
+		Z[:, 0] = 1
+		Z[:, 1:] = X
+		beta = np.linalg.lstsq(Z, Y)[0]
+
+		return beta[0] + X_new.dot(beta[1:])
+
+
 	def weighting(self):
 
 		"""
-		Computes ATE using inverse probability weighted estimator as in missing data.
+		Computes ATE using the Horvitz-Thompson weighting estimator modified to
+		incorporate covariates.
+
+		References
+		----------
+			Lunceford, J. K., & Davidian, M. (2004). Stratification and weighting
+				via the propensity score in estimation of causal treatment
+				effects: a comparative study. Statistics in Medicine.
 		"""
 
 		self._check_prereq('pscore')
-		p_t, p_c = 1/self.pscore['fitted'][self.D==1], 1/(1-self.pscore['fitted'][self.D==0])
-		self.ATE = (self.Y_t*p_t).sum()/p_t.sum() - (self.Y_c*p_c).sum()/p_c.sum()
+		p = self.pscore['fitted']
+		self._dr_summand = (self.D-p) * (self.Y - (1-p)*self._ols_predict(self.Y_t, self.X_t, self.X) \
+		                   - p*self._ols_predict(self.Y_c, self.X_c, self.X)) / (p*(1-p))
+		self.ATE = self._dr_summand.mean()
+		self.ATE_se = np.sqrt(self._dr_summand.var()/self.N)
 
 
 	def ols(self):
