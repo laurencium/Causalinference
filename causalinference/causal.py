@@ -134,6 +134,7 @@ class CausalModel(Basic):
 	def __init__(self, Y, D, X):
 
 		super(CausalModel, self).__init__(Y, D, X)
+		self.est = {}
 		self._Y_old, self._D_old, self._X_old = Y, D, X
 
 
@@ -147,6 +148,18 @@ class CausalModel(Basic):
 			return self._Xvar
 
 
+	def _store_est(self, method, est, indx=0):
+
+		if not self.est.has_key(method):
+			self.est[method] = [None] * 2
+		self.est[method][indx] = est
+
+	
+	def _store_se(self, method, est):
+
+		self._store_est(method, est, indx=1)
+
+
 	def restart(self):
 
 		"""
@@ -154,6 +167,7 @@ class CausalModel(Basic):
 		"""
 
 		super(CausalModel, self).__init__(self._Y_old, self._D_old, self._X_old)
+		self.est = {}
 		self._try_del('pscore')
 		self._try_del('cutoff')
 		self._try_del('blocks')
@@ -671,9 +685,19 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('strata')
-		self.ATE = np.sum([stratum.N/self.N * stratum.within for stratum in self.strata])
-		self.ATT = np.sum([stratum.N_t/self.N_t * stratum.within for stratum in self.strata])
-		self.ATC = np.sum([stratum.N_c/self.N_c * stratum.within for stratum in self.strata])
+		ATE = np.sum([stratum.N/self.N*stratum.within for stratum in self.strata])
+		ATT = np.sum([stratum.N_t/self.N_t*stratum.within for stratum in self.strata])
+		ATC = np.sum([stratum.N_c/self.N_c*stratum.within for stratum in self.strata])
+		self._store_est('blocking', (ATE, ATT, ATC))
+
+
+	def _compute_blocking_se(self):
+
+		self._check_prereq('strata')
+		ATE_se = np.sqrt(np.array([(stratum.N/self.N)**2 * stratum.se**2 for stratum in self.strata]).sum())
+		ATT_se = np.sqrt(np.array([(stratum.N_t/self.N_t)**2 * stratum.se**2 for stratum in self.strata]).sum())
+		ATC_se = np.sqrt(np.array([(stratum.N_c/self.N_c)**2 * stratum.se**2 for stratum in self.strata]).sum())
+		self._store_se('blocking', (ATE_se, ATT_se, ATC_se))
 
 
 	def _norm(self, dX, W):
@@ -844,15 +868,14 @@ class CausalModel(Basic):
 			self.ITT[self.D==1] -= self._bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
 			self.ITT[self.D==0] += self._bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
 
-		self.ATE = self.ITT.mean()
-		self.ATT = self.ITT[self.D==1].mean()
-		self.ATC = self.ITT[self.D==0].mean()
+		self._store_est('matching', (self.ITT.mean(), self.ITT[self.D==1].mean(), self.ITT[self.D==0].mean()))
 
 		self._compute_condvar(wmat, m)
 		match_counts = self._count_matches(m_indx_t, m_indx_c)
-		self.ATE_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
-		self.ATT_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
-		self.ATC_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
+		ATE_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
+		ATT_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
+		ATC_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
+		self._store_se('matching', (ATE_se, ATT_se, ATC_se))
 
 
 
@@ -961,8 +984,8 @@ class CausalModel(Basic):
 		p = self.pscore['fitted']
 		summand = (self.D-p) * (self.Y - (1-p)*self._ols_predict(self.Y_t, self.X_t, self.X) \
 		          - p*self._ols_predict(self.Y_c, self.X_c, self.X)) / (p*(1-p))
-		self.ATE = summand.mean()
-		self.ATE_se = np.sqrt(summand.var()/self.N)
+		self._store_est('weighting', summand.mean())
+		self._store_se('weighting',  np.sqrt(summand.var()/self.N))
 
 
 	def ols(self):
@@ -998,9 +1021,10 @@ class CausalModel(Basic):
 		Q, self._R = np.linalg.qr(self._Z)
 		self._olscoeff = scipy.linalg.solve_triangular(self._R, Q.T.dot(self.Y))
 
-		self.ATE = self._olscoeff[1]
-		self.ATT = self._olscoeff[1] + (self.X_t.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
-		self.ATC = self._olscoeff[1] + (self.X_c.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
+		ATE = self._olscoeff[1]
+		ATT = self._olscoeff[1] + (self.X_t.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
+		ATC = self._olscoeff[1] + (self.X_c.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
+		self._store_est('ols', (ATE, ATT, ATC))
 
 
 	def _compute_ols_se(self):
@@ -1024,11 +1048,12 @@ class CausalModel(Basic):
 		B = np.dot(u[:,None]*self._Z, A[:,1:2+self.K])  # select columns for D, D*dX from A
 		covmat = np.dot(B.T, B)
 
-		self.ATE_se = np.sqrt(covmat[0,0])
+		ATE_se = np.sqrt(covmat[0,0])
 		C = np.empty(self.K+1); C[0], C[1:] = 1, self.X_t.mean(0)-Xmean
-		self.ATT_se = np.sqrt(C.dot(covmat).dot(C))
+		ATT_se = np.sqrt(C.dot(covmat).dot(C))
 		C[1:] = self.X_c.mean(0)-Xmean
-		self.ATC_se = np.sqrt(C.dot(covmat).dot(C))
+		ATC_se = np.sqrt(C.dot(covmat).dot(C))
+		self._store_se('ols', (ATE_se, ATT_se, ATC_se))
 
 
 class Results(object):
