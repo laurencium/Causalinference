@@ -848,6 +848,73 @@ class CausalModel(Basic):
 		self.ATT = self.ITT[self.D==1].mean()
 		self.ATC = self.ITT[self.D==0].mean()
 
+		self._compute_condvar(wmat, m)
+		match_counts = self._count_matches(m_indx_t, m_indx_c)
+		self.ATE_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
+		self.ATT_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
+		self.ATC_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
+
+
+
+	def _compute_condvar(self, W, m):
+
+		"""
+		Computes unit-level conditional variances. Estimation is done by
+		matching treated units with treated units, control units with control
+		units, and then calculating sample variances among the matches.
+
+		Arguments
+		---------
+			W: string or matrix, ndarray
+				Weighting matrix to be used in norm calcuation. Acceptable
+				values are string 'inv' for inverse variance weighting,
+				or any arbitrary K-by-K matrix.
+			m: integer
+				The number of units to match to a given subject.
+		"""
+
+		# m+1 since we include the unit itself in the matching pool as well
+		m_indx_t = self._make_matches(self.X_t, self.X_t, W, m+1)
+		m_indx_c = self._make_matches(self.X_c, self.X_c, W, m+1)
+
+		self._condvar = np.empty(self.N)
+		self._condvar[self.D==1] = [self.Y_t[m_indx_t[i]].var(ddof=1) for i in xrange(self.N_t)]
+		self._condvar[self.D==0] = [self.Y_c[m_indx_c[i]].var(ddof=1) for i in xrange(self.N_c)]
+
+
+	def _count_matches(self, m_indx_t, m_indx_c):
+
+		"""
+		Calculates each unit's contribution in being used as a matching unit.
+
+		Arguments
+		---------
+			m_indx_t: list
+				List of indices of control units that are matched to each
+				treated	unit. 
+			m_indx_c:
+				List of indices of treated units that are matched to each
+				control unit.
+
+		Returns
+		-------
+			Vector containing each unit's contribution in matching.
+		"""
+
+		count = np.zeros(self.N)
+		treated = np.nonzero(self.D)[0]
+		control = np.nonzero(self.D==0)[0]
+		for i in xrange(self.N_c):
+			M = len(m_indx_c[i])
+			for j in xrange(M):
+				count[treated[m_indx_c[i][j]]] += 1./M
+		for i in xrange(self.N_t):
+			M = len(m_indx_t[i])
+			for j in xrange(M):
+				count[control[m_indx_t[i][j]]] += 1./M
+
+		return count
+
 
 	def _ols_predict(self, Y, X, X_new):
 
@@ -892,10 +959,10 @@ class CausalModel(Basic):
 
 		self._check_prereq('pscore')
 		p = self.pscore['fitted']
-		self._dr_summand = (self.D-p) * (self.Y - (1-p)*self._ols_predict(self.Y_t, self.X_t, self.X) \
-		                   - p*self._ols_predict(self.Y_c, self.X_c, self.X)) / (p*(1-p))
-		self.ATE = self._dr_summand.mean()
-		self.ATE_se = np.sqrt(self._dr_summand.var()/self.N)
+		summand = (self.D-p) * (self.Y - (1-p)*self._ols_predict(self.Y_t, self.X_t, self.X) \
+		          - p*self._ols_predict(self.Y_c, self.X_c, self.X)) / (p*(1-p))
+		self.ATE = summand.mean()
+		self.ATE_se = np.sqrt(summand.var()/self.N)
 
 
 	def ols(self):
