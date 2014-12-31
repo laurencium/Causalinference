@@ -160,6 +160,61 @@ class CausalModel(Basic):
 		self._store_est(method, est, indx=1)
 
 
+	def _get_est(self, effect, indx1, indx2):
+
+		if not self.est:
+			raise Exception(effect + ' has not been estimated yet.')
+
+		return self.est[self.cur_method][indx1][indx2]
+
+
+	@property
+	def ATE(self):
+
+		return self._get_est('ATE', 0, 0)
+		
+	
+	@property
+	def ATT(self):
+
+		return self._get_est('ATT', 0, 1)
+
+	
+	@property
+	def ATC(self):
+
+		return self._get_est('ATC', 0, 2)
+
+
+	def _get_se(self, effect, indx1, indx2):
+
+		if not self.est or not self.est[self.cur_method]:
+			raise Exception(effect + ' has not been estimated yet.')
+
+		if not self.est[self.cur_method][indx1]:
+			self._compute_se()
+
+		return self.est[self.cur_method][indx1][indx2]
+
+
+	@property
+	def ATE_se(self):
+
+		return self._get_se('ATE', 1, 0)
+
+
+	@property
+	def ATT_se(self):
+
+		return self._get_se('ATT', 1, 1)
+
+
+	@property
+	def ATC_se(self):
+
+		return self._get_se('ATC', 1, 2)
+
+
 	def restart(self):
 
 		"""
@@ -171,9 +226,6 @@ class CausalModel(Basic):
 		self._try_del('pscore')
 		self._try_del('cutoff')
 		self._try_del('blocks')
-		self._try_del('ATE')
-		self._try_del('ATT')
-		self._try_del('ATC')
 
 
 	def _sigmoid(self, x):
@@ -539,6 +591,7 @@ class CausalModel(Basic):
 		super(CausalModel, self).__init__(self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed])
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
 		self._try_del('_ndiff')
+		self.est = {}
 
 
 	def _select_cutoff(self):
@@ -688,7 +741,8 @@ class CausalModel(Basic):
 		ATE = np.sum([stratum.N/self.N*stratum.within for stratum in self.strata])
 		ATT = np.sum([stratum.N_t/self.N_t*stratum.within for stratum in self.strata])
 		ATC = np.sum([stratum.N_c/self.N_c*stratum.within for stratum in self.strata])
-		self._store_est('blocking', (ATE, ATT, ATC))
+		self.cur_method = 'blocking'
+		self._store_est(self.cur_method, (ATE, ATT, ATC))
 
 
 	def _compute_blocking_se(self):
@@ -855,28 +909,24 @@ class CausalModel(Basic):
 		"""
 
 		if wmat == 'maha':
-			wmat = np.linalg.inv(np.cov(self.X, rowvar=False))
+			self._wmat = np.linalg.inv(np.cov(self.X, rowvar=False))
+		else:
+			self._wmat = wmat
+		self._m = m
 
-		m_indx_t = self._make_matches(self.X_t, self.X_c, wmat, m)
-		m_indx_c = self._make_matches(self.X_c, self.X_t, wmat, m)
+		self._m_indx_t = self._make_matches(self.X_t, self.X_c, self._wmat, self._m)
+		self._m_indx_c = self._make_matches(self.X_c, self.X_t, self._wmat, self._m)
 
 		self.ITT = np.empty(self.N)
-		self.ITT[self.D==1] = self.Y_t - [self.Y_c[m_indx_t[i]].mean() for i in xrange(self.N_t)]
-		self.ITT[self.D==0] = [self.Y_t[m_indx_c[i]].mean() for i in xrange(self.N_c)] - self.Y_c
+		self.ITT[self.D==1] = self.Y_t - [self.Y_c[self._m_indx_t[i]].mean() for i in xrange(self.N_t)]
+		self.ITT[self.D==0] = [self.Y_t[self._m_indx_c[i]].mean() for i in xrange(self.N_c)] - self.Y_c
 
 		if xbias:
-			self.ITT[self.D==1] -= self._bias(m_indx_t, self.Y_c, self.X_c, self.X_t)
-			self.ITT[self.D==0] += self._bias(m_indx_c, self.Y_t, self.X_t, self.X_c)
+			self.ITT[self.D==1] -= self._bias(self._m_indx_t, self.Y_c, self.X_c, self.X_t)
+			self.ITT[self.D==0] += self._bias(self._m_indx_c, self.Y_t, self.X_t, self.X_c)
 
-		self._store_est('matching', (self.ITT.mean(), self.ITT[self.D==1].mean(), self.ITT[self.D==0].mean()))
-
-		self._compute_condvar(wmat, m)
-		match_counts = self._count_matches(m_indx_t, m_indx_c)
-		ATE_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
-		ATT_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
-		ATC_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
-		self._store_se('matching', (ATE_se, ATT_se, ATC_se))
-
+		self.cur_method = 'matching'
+		self._store_est(self.cur_method, (self.ITT.mean(), self.ITT[self.D==1].mean(), self.ITT[self.D==0].mean()))
 
 
 	def _compute_condvar(self, W, m):
@@ -939,6 +989,16 @@ class CausalModel(Basic):
 		return count
 
 
+	def _compute_matching_se(self):
+
+		self._compute_condvar(self._wmat, self._m)
+		match_counts = self._count_matches(self._m_indx_t, self._m_indx_c)
+		ATE_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
+		ATT_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
+		ATC_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
+		self._store_se('matching', (ATE_se, ATT_se, ATC_se))
+
+
 	def _ols_predict(self, Y, X, X_new):
 
 		"""
@@ -984,8 +1044,12 @@ class CausalModel(Basic):
 		p = self.pscore['fitted']
 		summand = (self.D-p) * (self.Y - (1-p)*self._ols_predict(self.Y_t, self.X_t, self.X) \
 		          - p*self._ols_predict(self.Y_c, self.X_c, self.X)) / (p*(1-p))
-		self._store_est('weighting', summand.mean())
-		self._store_se('weighting',  np.sqrt(summand.var()/self.N))
+		self.cur_method = 'weighting'
+		self._store_est(self.cur_method, (summand.mean(), summand[self.D==1].mean(), summand[self.D==0].mean()))
+		ATE_se = np.sqrt(summand.var()/self.N)
+		ATT_se = np.sqrt(summand[self.D==1].var()/self.N_t)
+		ATC_se = np.sqrt(summand[self.D==0].var()/self.N_c)
+		self._store_se(self.cur_method, (ATE_se, ATT_se, ATC_se))
 
 
 	def ols(self):
@@ -1024,7 +1088,8 @@ class CausalModel(Basic):
 		ATE = self._olscoeff[1]
 		ATT = self._olscoeff[1] + (self.X_t.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
 		ATC = self._olscoeff[1] + (self.X_c.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
-		self._store_est('ols', (ATE, ATT, ATC))
+		self.cur_method = 'ols'
+		self._store_est(self.cur_method, (ATE, ATT, ATC))
 
 
 	def _compute_ols_se(self):
@@ -1054,6 +1119,16 @@ class CausalModel(Basic):
 		C[1:] = self.X_c.mean(0)-Xmean
 		ATC_se = np.sqrt(C.dot(covmat).dot(C))
 		self._store_se('ols', (ATE_se, ATT_se, ATC_se))
+
+
+	def _compute_se(self):
+
+		if self.cur_method == 'ols':
+			self._compute_ols_se()
+		elif self.cur_method == 'blocking':
+			self._compute_blocking_se()
+		elif self.cur_method == 'matching':
+			self._compute_matching_se()
 
 
 class Results(object):
