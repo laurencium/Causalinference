@@ -49,21 +49,21 @@ class CausalModel(Basic):
 
 
 	@property
-	def ATE(self):
+	def ate(self):
 
-		return self._get_est('ATE', 0, 0)
+		return self._get_est('ate', 0, 0)
 		
 	
 	@property
-	def ATT(self):
+	def att(self):
 
-		return self._get_est('ATT', 0, 1)
+		return self._get_est('att', 0, 1)
 
 	
 	@property
-	def ATC(self):
+	def atc(self):
 
-		return self._get_est('ATC', 0, 2)
+		return self._get_est('atc', 0, 2)
 
 
 	def _get_se(self, effect, indx1, indx2):
@@ -78,21 +78,21 @@ class CausalModel(Basic):
 
 
 	@property
-	def ATE_se(self):
+	def ate_se(self):
 
-		return self._get_se('ATE', 1, 0)
-
-
-	@property
-	def ATT_se(self):
-
-		return self._get_se('ATT', 1, 1)
+		return self._get_se('ate', 1, 0)
 
 
 	@property
-	def ATC_se(self):
+	def att_se(self):
 
-		return self._get_se('ATC', 1, 2)
+		return self._get_se('att', 1, 1)
+
+
+	@property
+	def atc_se(self):
+
+		return self._get_se('atc', 1, 2)
 
 
 	def restart(self):
@@ -618,20 +618,20 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('strata')
-		ATE = np.sum([stratum.N/self.N*stratum.within for stratum in self.strata])
-		ATT = np.sum([stratum.N_t/self.N_t*stratum.within for stratum in self.strata])
-		ATC = np.sum([stratum.N_c/self.N_c*stratum.within for stratum in self.strata])
+		ate = np.sum([stratum.N/self.N*stratum.within for stratum in self.strata])
+		att = np.sum([stratum.N_t/self.N_t*stratum.within for stratum in self.strata])
+		atc = np.sum([stratum.N_c/self.N_c*stratum.within for stratum in self.strata])
 		self.cur_method = 'blocking'
-		self._store_est(self.cur_method, (ATE, ATT, ATC))
+		self._store_est(self.cur_method, (ate, att, atc))
 
 
 	def _compute_blocking_se(self):
 
 		self._check_prereq('strata')
-		ATE_se = np.sqrt(np.array([(stratum.N/self.N)**2 * stratum.se**2 for stratum in self.strata]).sum())
-		ATT_se = np.sqrt(np.array([(stratum.N_t/self.N_t)**2 * stratum.se**2 for stratum in self.strata]).sum())
-		ATC_se = np.sqrt(np.array([(stratum.N_c/self.N_c)**2 * stratum.se**2 for stratum in self.strata]).sum())
-		self._store_se('blocking', (ATE_se, ATT_se, ATC_se))
+		ate_se = np.sqrt(np.array([(stratum.N/self.N)**2 * stratum.se**2 for stratum in self.strata]).sum())
+		att_se = np.sqrt(np.array([(stratum.N_t/self.N_t)**2 * stratum.se**2 for stratum in self.strata]).sum())
+		atc_se = np.sqrt(np.array([(stratum.N_c/self.N_c)**2 * stratum.se**2 for stratum in self.strata]).sum())
+		self._store_se('blocking', (ate_se, att_se, atc_se))
 
 
 	def _norm(self, dX, W):
@@ -873,10 +873,10 @@ class CausalModel(Basic):
 
 		self._compute_condvar(self._wmat, self._m)
 		match_counts = self._count_matches(self._m_indx_t, self._m_indx_c)
-		ATE_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
-		ATT_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
-		ATC_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
-		self._store_se('matching', (ATE_se, ATT_se, ATC_se))
+		ate_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
+		att_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
+		atc_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
+		self._store_se('matching', (ate_se, att_se, atc_se))
 
 
 	def _ols_predict(self, Y, X, X_new):
@@ -926,10 +926,10 @@ class CausalModel(Basic):
 		          - p*self._ols_predict(self.Y_c, self.X_c, self.X)) / (p*(1-p))
 		self.cur_method = 'weighting'
 		self._store_est(self.cur_method, (summand.mean(), summand[self.D==1].mean(), summand[self.D==0].mean()))
-		ATE_se = np.sqrt(summand.var()/self.N)
-		ATT_se = np.sqrt(summand[self.D==1].var()/self.N_t)
-		ATC_se = np.sqrt(summand[self.D==0].var()/self.N_c)
-		self._store_se(self.cur_method, (ATE_se, ATT_se, ATC_se))
+		ate_se = np.sqrt(summand.var()/self.N)
+		att_se = np.sqrt(summand[self.D==1].var()/self.N_t)
+		atc_se = np.sqrt(summand[self.D==0].var()/self.N_c)
+		self._store_se(self.cur_method, (ate_se, att_se, atc_se))
 
 
 	def ols(self):
@@ -965,11 +965,11 @@ class CausalModel(Basic):
 		Q, self._R = np.linalg.qr(self._Z)
 		self._olscoeff = scipy.linalg.solve_triangular(self._R, Q.T.dot(self.Y))
 
-		ATE = self._olscoeff[1]
-		ATT = self._olscoeff[1] + (self.X_t.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
-		ATC = self._olscoeff[1] + (self.X_c.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
+		ate = self._olscoeff[1]
+		att = self._olscoeff[1] + (self.X_t.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
+		atc = self._olscoeff[1] + (self.X_c.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
 		self.cur_method = 'ols'
-		self._store_est(self.cur_method, (ATE, ATT, ATC))
+		self._store_est(self.cur_method, (ate, att, atc))
 
 
 	def _compute_ols_se(self):
@@ -993,12 +993,12 @@ class CausalModel(Basic):
 		B = np.dot(u[:,None]*self._Z, A[:,1:2+self.K])  # select columns for D, D*dX from A
 		covmat = np.dot(B.T, B)
 
-		ATE_se = np.sqrt(covmat[0,0])
+		ate_se = np.sqrt(covmat[0,0])
 		C = np.empty(self.K+1); C[0], C[1:] = 1, self.X_t.mean(0)-Xmean
-		ATT_se = np.sqrt(C.dot(covmat).dot(C))
+		att_se = np.sqrt(C.dot(covmat).dot(C))
 		C[1:] = self.X_c.mean(0)-Xmean
-		ATC_se = np.sqrt(C.dot(covmat).dot(C))
-		self._store_se('ols', (ATE_se, ATT_se, ATC_se))
+		atc_se = np.sqrt(C.dot(covmat).dot(C))
+		self._store_se('ols', (ate_se, att_se, atc_se))
 
 
 	def _compute_se(self):
