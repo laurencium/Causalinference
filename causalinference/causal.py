@@ -568,15 +568,14 @@ class CausalModel(Basic):
 		scope = (e >= e_min) & (e <= e_max)
 		t, c = (scope & (self.D==1)), (scope & (self.D==0))
 
-		N_t, N_c = t.sum(), c.sum()
 		t_stat = (l[t].mean()-l[c].mean()) / \
 		         np.sqrt(l[t].var()/t.sum() + l[c].var()/c.sum())
 		if t_stat <= 1.96:
 			return [e_min, e_max]
 
-		med = e[e <= np.median(e[scope])].max()
-		left = (e <= med) & scope
-		right = (e > med) & scope
+		mid = e[e <= np.median(e[scope])].max()
+		left = (e <= mid) & scope
+		right = (e > mid) & scope
 		N_left = left.sum()
 		N_right = right.sum()
 		N_left_t = (left & (self.D==1)).sum()
@@ -587,8 +586,8 @@ class CausalModel(Basic):
 		if np.min([N_left_t, N_left-N_left_t, N_right_t, N_right-N_right_t]) <= 3:
 			return [e_min, e_max]
 
-		return self._select_blocks(e, l, e[left].min(), med) + \
-		       self._select_blocks(e, l, med, e[right].max())
+		return self._select_blocks(e, l, e[left].min(), mid) + \
+		       self._select_blocks(e, l, mid, e[right].max())
 
 
 	def stratify_s(self):

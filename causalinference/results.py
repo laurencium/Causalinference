@@ -19,3 +19,9 @@ class Results(object):
 		print 'Coefficients:', self.causal.pscore['coeff']
 		print 'Log-likelihood:', self.causal.pscore['loglike']
 
+	def summary(self):
+
+		print '-' * 30
+		print 'ATE', '|', self.causal.ate, '|', self.causal.ate_se
+		print 'ATT', '|', self.causal.att, '|', self.causal.att_se
+		print 'ATC', '|', self.causal.atc, '|', self.causal.atc_se
