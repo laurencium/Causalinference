@@ -51,19 +51,19 @@ class CausalModel(Basic):
 	@property
 	def ate(self):
 
-		return self._get_est('ate', 0, 0)
+		return self._get_est('ATE', 0, 0)
 		
 	
 	@property
 	def att(self):
 
-		return self._get_est('att', 0, 1)
+		return self._get_est('ATT', 0, 1)
 
 	
 	@property
 	def atc(self):
 
-		return self._get_est('atc', 0, 2)
+		return self._get_est('ATC', 0, 2)
 
 
 	def _get_se(self, effect, indx1, indx2):
@@ -80,19 +80,19 @@ class CausalModel(Basic):
 	@property
 	def ate_se(self):
 
-		return self._get_se('ate', 1, 0)
+		return self._get_se('ATE', 1, 0)
 
 
 	@property
 	def att_se(self):
 
-		return self._get_se('att', 1, 1)
+		return self._get_se('ATT', 1, 1)
 
 
 	@property
 	def atc_se(self):
 
-		return self._get_se('atc', 1, 2)
+		return self._get_se('ATC', 1, 2)
 
 
 	def restart(self):

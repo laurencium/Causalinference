@@ -1,3 +1,6 @@
+import numpy as np
+from scipy.stats import norm
+
 class Results(object):
 
 
@@ -21,7 +24,16 @@ class Results(object):
 
 	def summary(self):
 
-		print '-' * 30
-		print 'ATE', '|', self.causal.ate, '|', self.causal.ate_se
-		print 'ATT', '|', self.causal.att, '|', self.causal.att_se
-		print 'ATC', '|', self.causal.atc, '|', self.causal.atc_se
+		header = ('%8s'+'%12s'*4+'%24s') % ('', 'coef', 'std err', 'z', 'P>|z|', '[95% Conf. Int.]')
+		print header
+		print '-' * len(header)
+		tuples = (('ATE', self.causal.ate, self.causal.ate_se),
+		         ('ATT', self.causal.att, self.causal.att_se),
+			 ('ATC', self.causal.atc, self.causal.atc_se))
+		for (name, coef, se) in tuples:
+			t = coef / se
+			p = 1 - norm.cdf(np.abs(t))
+			lw = coef - 1.96*se
+			up = coef + 1.96*se
+			print ('%8s'+'%12.3f'*6) % (name, coef, se, t, p, lw, up)
+
