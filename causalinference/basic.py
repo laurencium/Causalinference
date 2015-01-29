@@ -1,5 +1,20 @@
 import numpy as np
 
+from .covariates import Covariates
+
+
+def cache_readonly(func):
+
+	def try_cache(*args):
+
+		try:
+			return getattr(args[0], '_'+func.__name__)
+		except AttributeError:
+			setattr(args[0], '_'+func.__name__, func(*args))
+			return getattr(args[0], '_'+func.__name__)
+
+	return property(try_cache)
+
 
 class Basic(object):
 
@@ -12,39 +27,13 @@ class Basic(object):
 		self.X_t, self.X_c = self.X[self.D==1], self.X[self.D==0]
 		self.N_t = self.D.sum()
 		self.N_c = self.N - self.N_t
+		self._try_del('_covariates')
 
 
-	@property
-	def ndiff(self):
+	@cache_readonly
+	def covariates(self):
 
-		try:
-			return self._ndiff
-		except AttributeError:
-			self._ndiff = self._compute_ndiff()
-			return self._ndiff
-
-
-	def _compute_ndiff(self):
-
-		"""
-		Computes normalized difference in covariates for assessing balance.
-
-		Normalized difference is the difference in group means, scaled by the
-		square root of the average of the two within-group variances. Large
-		values indicate that simple linear adjustment methods may not be adequate
-		for removing biases that are associated with differences in covariates.
-
-		Unlike t-statistic, normalized differences do not, in expectation,
-		increase with sample size, and thus is more appropriate for assessing
-		balance.
-
-		Returns
-		-------
-			Vector of normalized differences.
-		"""
-
-		return (self.X_t.mean(0) - self.X_c.mean(0)) / \
-		       np.sqrt((self.X_t.var(0) + self.X_c.var(0))/2)
+		return Covariates(self.X_c, self.X_t)
 
 
 	def _try_del(self, attrstr):
