@@ -5,7 +5,7 @@ from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement, chain
 
 from .basic import Basic
-from .stratum import Stratum
+from .stratum import Stratum, Strata
 from utils.tools import _try_del
 
 
@@ -527,14 +527,16 @@ class CausalModel(Basic):
 			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
 			self.blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
 
-		self.strata = [None] * (len(self.blocks)-1)
+		bins = [None] * (len(self.blocks)-1)
 		for i in xrange(len(self.blocks)-1):
 			subclass = (self.pscore['fitted']>self.blocks[i]) & \
 			           (self.pscore['fitted']<=self.blocks[i+1])
 			Y = self.Y[subclass]
 			D = self.D[subclass]
 			X = self.X[subclass]
-			self.strata[i] = Stratum(Y, D, X, self.pscore['fitted'][subclass])
+			bins[i] = Stratum(Y, D, X, self.pscore['fitted'][subclass])
+
+		self.strata = Strata(bins)
 
 
 	def _select_blocks(self, e, l, e_min, e_max):

@@ -68,3 +68,26 @@ class Stratum(Basic):
 
 		return np.sqrt(np.dot(B.T, B))
 
+
+class Strata(object):
+
+
+	def __init__(self, strata):
+
+		self._strata = strata
+
+
+	def __len__(self):
+
+		return len(self._strata)
+
+
+	def __getitem__(self, index):
+
+		return self._strata[index]
+
+
+	def __str__(self):
+
+		return 'Strata string placeholder.'
+
