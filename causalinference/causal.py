@@ -6,6 +6,7 @@ from itertools import combinations_with_replacement, chain
 
 from .basic import Basic
 from .stratum import Stratum
+from utils.tools import _try_del
 
 
 class CausalModel(Basic):
@@ -103,9 +104,9 @@ class CausalModel(Basic):
 
 		super(CausalModel, self).__init__(self._Y_old, self._D_old, self._X_old)
 		self.est = {}
-		self._try_del('pscore')
-		self._try_del('cutoff')
-		self._try_del('blocks')
+		_try_del(self, 'pscore')
+		_try_del(self, 'cutoff')
+		_try_del(self, 'blocks')
 
 
 	def _sigmoid(self, x):
@@ -470,7 +471,7 @@ class CausalModel(Basic):
 		untrimmed = (self.pscore['fitted'] >= self.cutoff) & (self.pscore['fitted'] <= 1-self.cutoff)
 		super(CausalModel, self).__init__(self.Y[untrimmed], self.D[untrimmed], self.X[untrimmed])
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
-		self._try_del('_ndiff')
+		_try_del(self, '_ndiff')
 		self.est = {}
 
 

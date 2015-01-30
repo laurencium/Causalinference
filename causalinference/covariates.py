@@ -42,5 +42,5 @@ class Covariates(object):
 
 	def __str__(self):
 
-		return "Placeholder string."
+		return "Covariates placeholder string."
 

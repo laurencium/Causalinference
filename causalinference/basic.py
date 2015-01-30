@@ -1,19 +1,8 @@
 import numpy as np
 
 from .covariates import Covariates
-
-
-def cache_readonly(func):
-
-	def try_cache(*args):
-
-		try:
-			return getattr(args[0], '_'+func.__name__)
-		except AttributeError:
-			setattr(args[0], '_'+func.__name__, func(*args))
-			return getattr(args[0], '_'+func.__name__)
-
-	return property(try_cache)
+from utils.tools import cache_readonly
+from utils.tools import _try_del
 
 
 class Basic(object):
@@ -27,7 +16,7 @@ class Basic(object):
 		self.X_t, self.X_c = self.X[self.D==1], self.X[self.D==0]
 		self.N_t = self.D.sum()
 		self.N_c = self.N - self.N_t
-		self._try_del('_covariates')
+		_try_del(self, '_covariates')
 
 
 	@cache_readonly
@@ -36,10 +25,4 @@ class Basic(object):
 		return Covariates(self.X_c, self.X_t)
 
 
-	def _try_del(self, attrstr):
-	
-		try:
-			delattr(self, attrstr)
-		except:
-			pass
 

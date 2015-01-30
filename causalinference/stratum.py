@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.linalg
+
 from .basic import Basic
+from utils.tools import cache_readonly
 
 
 class Stratum(Basic):
@@ -13,14 +15,14 @@ class Stratum(Basic):
 		               'mean': pscore.mean(), 'max': pscore.max()}
 
 
-	@property
+	def __str__(self):
+
+		return 'Stratum class string placeholder. Print within estimates here probably.'
+
+
+	@cache_readonly
 	def within(self):
-	
-		try:
-			return self._within
-		except AttributeError:
-			self._within = self._compute_within()
-			return self._within
+		return self._compute_within()
 
 
 	def _compute_within(self):
@@ -39,14 +41,9 @@ class Stratum(Basic):
 		return self._olscoeff[1]
 
 
-	@property
+	@cache_readonly
 	def se(self):
-
-		try:
-			return self._se
-		except AttributeError:
-			self._se = self._compute_se()
-			return self._se
+		return self._compute_se()
 
 
 	def _compute_se(self):
