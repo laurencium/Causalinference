@@ -3,7 +3,7 @@ import numpy as np
 import scipy.linalg
 
 from .basic import Basic
-from .stratum import Stratum, Strata
+from .strata import Stratum, Strata
 from .propensity import Propensity, PropensitySelect
 from utils.tools import _try_del
 
@@ -261,6 +261,7 @@ class CausalModel(Basic):
 		if isinstance(self.blocks, (int, long)):
 			q = list(np.linspace(0,100,self.blocks+1))[1:-1]
 			self.blocks = [0] + np.percentile(self.pscore['fitted'], q) + [1]
+		self.blocks[0] *= 0.99  # adjust down to not drop obs with min pscore
 
 		bins = [None] * (len(self.blocks)-1)
 		for i in xrange(len(self.blocks)-1):

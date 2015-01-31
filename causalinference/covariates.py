@@ -24,10 +24,9 @@ class Covariates(object):
 		self._dict['mean_t'] = X_t.mean(0)
 		self._dict['sd_c'] = np.sqrt(X_c.var(0))
 		self._dict['sd_t'] = np.sqrt(X_t.var(0))
-		self._dict['ndiff'] = (self._dict['mean_t'] - \
-		                       self._dict['mean_c']) / \
-		                      np.sqrt((self._dict['sd_t']**2 + \
-				               self._dict['sd_c']**2)/2)
+		mean_diff = self._dict['mean_t'] - self._dict['mean_c']
+		var_sum = self._dict['sd_c']**2 + self._dict['sd_t']**2
+		self._dict['ndiff'] = mean_diff / np.sqrt(var_sum/2)
 
 
 	def __dir__(self):
