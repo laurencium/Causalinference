@@ -19,6 +19,11 @@ class EstimatesSingle(object):
 		return repr(self._dict)
 
 
+	def __str__(self):
+
+		return "Print estimates in table here."
+
+
 	def __getitem__(self, key):
 
 		if 'se' in key and self._dict['ate_se'] is None:
@@ -57,6 +62,11 @@ class Estimates(object):
 	def __getitem__(self, key):
 
 		return self._dict[key]
+
+
+	def __str__(self):
+
+		return "Print all estimates in table here."
 
 
 	def keys(self):

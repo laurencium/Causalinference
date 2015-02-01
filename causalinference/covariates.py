@@ -37,7 +37,7 @@ class Covariates(object):
 
 	def __str__(self):
 
-		return "Covariates placeholder string."
+		return "Print covariate summaries in table."
 
 
 	def keys(self):

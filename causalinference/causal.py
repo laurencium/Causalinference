@@ -37,12 +37,11 @@ class CausalModel(Basic):
 		results.
 		"""
 
-		super(CausalModel, self).__init__(self._Y_old, self._D_old,
-		                                  self._X_old)
-		self.est = Estimates()
+		self.__init__(self._Y_old, self._D_old, self._X_old)
 		_try_del(self, 'pscore')
 		_try_del(self, 'cutoff')
 		_try_del(self, 'blocks')
+		_try_del(self, 'strata')
 
 
 	def _post_pscore_init(self):
@@ -152,7 +151,6 @@ class CausalModel(Basic):
 		                                  self.D[untrimmed],
 						  self.X[untrimmed])
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
-		_try_del(self, '_ndiff')
 		self.est = Estimates()
 
 
@@ -206,12 +204,14 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('pscore')
+		_try_del(self, 'strata')
+
 		phat = self.pscore['fitted']
 		if isinstance(self.blocks, (int, long)):
-			q = list(np.linspace(0, 100, self.blocks+1))[1:-1]
-			self.blocks = [0] + np.percentile(phat, q) + [1]
-		self.blocks[0] *= 0.99  # adjust to not drop obs w/ min pscore
+			q = np.linspace(0, 100, self.blocks+1)[1:-1]
+			self.blocks = [0] + list(np.percentile(phat, q)) + [1]
 
+		self.blocks[0] *= 0.99  # adjust to not drop obs w/ min pscore
 		bins = [None] * (len(self.blocks)-1)
 		for i in xrange(len(self.blocks)-1):
 			subclass = (phat>self.blocks[i]) & \
@@ -686,14 +686,14 @@ class CausalModel(Basic):
 		self._Z[:,-self.K:] = self.X
 
 		Q, self._R = np.linalg.qr(self._Z)
-		self._olscoeff = scipy.linalg.solve_triangular(self._R,
+		self._olscoef = scipy.linalg.solve_triangular(self._R,
 		                                               Q.T.dot(self.Y))
 
-		ate = self._olscoeff[1]
-		att = self._olscoeff[1] + np.dot(self.X_t.mean(0)-Xmean,
-		                                 self._olscoeff[2:2+self.K])
-		atc = self._olscoeff[1] + np.dot(self.X_c.mean(0)-Xmean,
-		                                 self._olscoeff[2:2+self.K])
+		ate = self._olscoef[1]
+		att = self._olscoef[1] + np.dot(self.X_t.mean(0)-Xmean,
+		                                 self._olscoef[2:2+self.K])
+		atc = self._olscoef[1] + np.dot(self.X_c.mean(0)-Xmean,
+		                                 self._olscoef[2:2+self.K])
 		self.est._add(ate, att, atc, 'ols', self)
 
 
@@ -715,7 +715,7 @@ class CausalModel(Basic):
 		"""
 
 		Xmean = self.X.mean(0)
-		u = self.Y - self._Z.dot(self._olscoeff)
+		u = self.Y - self._Z.dot(self._olscoef)
 		A = np.linalg.inv(np.dot(self._R.T, self._R))
 		# select columns for D, D*dX from A
 		B = np.dot(u[:,None]*self._Z, A[:,1:2+self.K])  

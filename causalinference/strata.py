@@ -18,11 +18,6 @@ class Stratum(Basic):
 		super(Stratum, self).__init__(Y, D, X)
 		self.pscore = {'fitted': pscore, 'min': pscore.min(),
 		               'mean': pscore.mean(), 'max': pscore.max()}
-
-
-	def __str__(self):
-
-		return 'Stratum class string placeholder.'
 		
 
 	def keys(self):
@@ -53,10 +48,10 @@ class Stratum(Basic):
 		self._Z = np.empty((self.N, self.K+2))  # create design matrix
 		self._Z[:,0], self._Z[:,1], self._Z[:,2:] = 1, self.D, self.X
 		Q, self._R = np.linalg.qr(self._Z)  # save R for later use
-		self._olscoeff = scipy.linalg.solve_triangular(self._R,
+		self._olscoef = scipy.linalg.solve_triangular(self._R,
 		                                               Q.T.dot(self.Y))
 
-		return self._olscoeff[1]
+		return self._olscoef[1]
 
 
 	def _compute_se(self):
@@ -75,9 +70,9 @@ class Stratum(Basic):
 		this matrix is the appropriate variance estimate for the block.
 		"""
 
-		if not hasattr(self, '_olscoeff'):
+		if not hasattr(self, '_olscoef'):
 			self._within = self._compute_within()
-		u = self.Y - self._Z.dot(self._olscoeff)
+		u = self.Y - self._Z.dot(self._olscoef)
 		A = np.linalg.inv(np.dot(self._R.T, self._R))
 		B = np.dot(u[:,None]*self._Z, A[:,1])
 
@@ -107,5 +102,5 @@ class Strata(object):
 
 	def __str__(self):
 
-		return 'Strata string placeholder.'
+		return "Print summary for all strata in one table."
 
