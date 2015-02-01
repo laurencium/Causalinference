@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.optimize import fmin_bfgs
-from itertools import combinations_with_replacement, chain
+from itertools import combinations_with_replacement
 
 
 class Propensity(object):
@@ -21,19 +21,19 @@ class Propensity(object):
 		qua = self._change_base(qua, pair=True, base=0)
 
 		mat = self._form_matrix(X, lin, qua)
-		self._pscore = self._compute_pscore(D, mat) 
-		self._pscore['lin'], self._pscore['qua'] = lin, qua
+		self._dict = self._compute_pscore(D, mat) 
+		self._dict['lin'], self._dict['qua'] = lin, qua
 
 
 	def __getitem__(self, key):
 
-		return self._pscore[key]
+		return self._dict[key]
 
 
 	def __setitem__(self, key, value):
 
 		if key == 'fitted':
-			self._pscore[key] = value
+			self._dict[key] = value
 		else:
 			raise TypeError("'" + self.__class__.__name__ +
 			                "' object does not support item " +
@@ -47,7 +47,7 @@ class Propensity(object):
 
 	def keys(self):
 
-		return self._pscore.keys()
+		return self._dict.keys()
 
 
 	def _sigmoid(self, x):
@@ -271,8 +271,8 @@ class PropensitySelect(Propensity):
 			qua = self._select_terms(D, X, [], pot, C_qua, lin)
 
 		mat = self._form_matrix(X, lin, qua)
-		self._pscore = self._compute_pscore(D, mat)
-		self._pscore['lin'], self._pscore['qua'] = lin, qua
+		self._dict = self._compute_pscore(D, mat)
+		self._dict['lin'], self._dict['qua'] = lin, qua
 		
 
 	def __str__(self):

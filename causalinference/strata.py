@@ -8,10 +8,9 @@ from utils.tools import cache_readonly
 class Stratum(Basic):
 
 	"""
-	Dictionary-like class containing propensity-bin-specific data,
-	including sample sizes, covariate summaries, estimated propensity
-	scores, and within-stratum treatment effect estimates and standard
-	errors.
+	Class containing as attributes propensity-bin-specific data, including
+	sample sizes, covariate summaries, propensity-score-related data, and
+	within-stratum treatment effect estimates and standard errors.
 	"""
 
 	def __init__(self, Y, D, X, pscore):
@@ -89,7 +88,6 @@ class Strata(object):
 
 	"""
 	List-like object containing the list of stratified propensity bins.
-	Invoke print to view summary statistics for all blocks.
 	"""
 
 	def __init__(self, strata):
