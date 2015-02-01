@@ -5,6 +5,7 @@ import scipy.linalg
 from .basic import Basic
 from .strata import Stratum, Strata
 from .propensity import Propensity, PropensitySelect
+from .estimates import Estimates
 from utils.tools import _try_del
 
 
@@ -43,7 +44,7 @@ class CausalModel(Basic):
 	def _get_est(self, effect, indx1, indx2):
 
 		if not self.est:
-			raise Exception(effect + ' has not been estimated yet.')
+			raise Exception(effect + ' has not been estimated yet')
 
 		return self.est[self.cur_method][indx1][indx2]
 
@@ -69,7 +70,7 @@ class CausalModel(Basic):
 	def _get_se(self, effect, indx1, indx2):
 
 		if not self.est or not self.est[self.cur_method]:
-			raise Exception(effect + ' has not been estimated yet.')
+			raise Exception(effect + ' has not been estimated yet')
 
 		if not self.est[self.cur_method][indx1]:
 			self._compute_se()
@@ -187,9 +188,9 @@ class CausalModel(Basic):
 
 		if not hasattr(self, prereq):
 			if prereq == 'pscore':
-				raise Exception("Missing propensity score.")
+				raise Exception("Missing propensity score")
 			if prereq == 'strata':
-				raise Exception("Please stratify sample.")
+				raise Exception("Please stratify sample")
 	
 
 	def trim(self):
@@ -706,8 +707,7 @@ class CausalModel(Basic):
 		ate = self._olscoeff[1]
 		att = self._olscoeff[1] + (self.X_t.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
 		atc = self._olscoeff[1] + (self.X_c.mean(0)-Xmean).dot(self._olscoeff[2:2+self.K])
-		self.cur_method = 'ols'
-		self._store_est(self.cur_method, (ate, att, atc))
+		self.est['ols'] = Estimates(ate, att, atc, 'ols', self)
 
 
 	def _compute_ols_se(self):
@@ -736,15 +736,16 @@ class CausalModel(Basic):
 		att_se = np.sqrt(C.dot(covmat).dot(C))
 		C[1:] = self.X_c.mean(0)-Xmean
 		atc_se = np.sqrt(C.dot(covmat).dot(C))
-		self._store_se('ols', (ate_se, att_se, atc_se))
+
+		return (ate_se, att_se, atc_se)
 
 
-	def _compute_se(self):
+	def _compute_se(self, method):
 
-		if self.cur_method == 'ols':
-			self._compute_ols_se()
-		elif self.cur_method == 'blocking':
-			self._compute_blocking_se()
-		elif self.cur_method == 'matching':
-			self._compute_matching_se()
+		if method == 'ols':
+			return self._compute_ols_se()
+		elif method == 'blocking':
+			return self._compute_blocking_se()
+		elif method == 'matching':
+			return self._compute_matching_se()
 

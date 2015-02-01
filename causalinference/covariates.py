@@ -4,7 +4,8 @@ import numpy as np
 class Covariates(object):
 
 	"""
-	Contains summary statistics for the covariate variables.
+	Dictionary-like class containing summary statistics for the covariate
+	variables.
 
 	One of the summary statistics is the normalized differenced, defined as
 	the difference in group means, scaled by the square root of the average
@@ -29,11 +30,6 @@ class Covariates(object):
 		self._dict['ndiff'] = mean_diff / np.sqrt(var_sum/2)
 
 
-	def __dir__(self):
-
-		return ['mean_c', 'mean_t', 'sd_c', 'sd_t', 'ndiff']
-
-
 	def __getitem__(self, key):
 
 		return self._dict[key]
@@ -42,4 +38,9 @@ class Covariates(object):
 	def __str__(self):
 
 		return "Covariates placeholder string."
+
+
+	def keys(self):
+
+		return self._dict.keys()
 

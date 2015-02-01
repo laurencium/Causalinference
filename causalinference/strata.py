@@ -8,9 +8,10 @@ from utils.tools import cache_readonly
 class Stratum(Basic):
 
 	"""
-	Class containing propensity-bin-specific data, including sample sizes,
-	covariate summaries, estimated propensity scores, and within-stratum
-	treatment effect estimates and standard errors.
+	Dictionary-like class containing propensity-bin-specific data,
+	including sample sizes, covariate summaries, estimated propensity
+	scores, and within-stratum treatment effect estimates and standard
+	errors.
 	"""
 
 	def __init__(self, Y, D, X, pscore):
@@ -20,15 +21,15 @@ class Stratum(Basic):
 		               'mean': pscore.mean(), 'max': pscore.max()}
 
 
-	def __dir__(self):
-
-		return ['N', 'N_c', 'N_t', 'K', 'covariates', 'pscore',
-		        'within', 'se']
-
-
 	def __str__(self):
 
 		return 'Stratum class string placeholder.'
+		
+
+	def keys(self):
+
+		return ['N', 'N_c', 'N_t', 'K', 'covariates', 'pscore',
+		        'within', 'se']
 
 
 	@cache_readonly

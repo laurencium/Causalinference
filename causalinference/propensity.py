@@ -6,10 +6,10 @@ from itertools import combinations_with_replacement, chain
 class Propensity(object):
 
 	"""
-	Class containing propensity score data, including estimated logistic
-	regression coefficients, predicted propensity score, maximized
-	log-likelihood, and lists of the linear and quadratic terms that are
-	included in the regression.
+	Dictionary-like class containing propensity score data, including
+	estimated logistic regression coefficients, predicted propensity score,
+	maximized log-likelihood, and lists of the linear and quadratic terms
+	that are included in the regression.
 	"""
 
 	def __init__(self, D, X, lin, qua):
@@ -23,11 +23,6 @@ class Propensity(object):
 		mat = self._form_matrix(X, lin, qua)
 		self._pscore = self._compute_pscore(D, mat) 
 		self._pscore['lin'], self._pscore['qua'] = lin, qua
-
-
-	def __dir__(self):
-
-		return ['coef', 'fitted', 'loglike', 'lin', 'qua']
 
 
 	def __getitem__(self, key):
@@ -48,6 +43,11 @@ class Propensity(object):
 	def __str__(self):
 
 		return 'Propensity class string placeholder.'
+
+
+	def keys(self):
+
+		return self._pscore.keys()
 
 
 	def _sigmoid(self, x):
@@ -245,10 +245,10 @@ class Propensity(object):
 class PropensitySelect(Propensity):
 
 	"""
-	Class containing propensity score data, including estimated logistic
-	regression coefficients, predicted propensity score, maximized
-	log-likelihood, and lists of the linear and quadratic terms that are
-	included in the regression.
+	Dictionary-like class containing propensity score data, including
+	estimated logistic regression coefficients, predicted propensity score,
+	maximized log-likelihood, and lists of the linear and quadratic terms
+	that are included in the regression.
 	"""
 
 	def __init__(self, D, X, lin_B, C_lin, C_qua):
