@@ -2,7 +2,7 @@ import numpy as np
 
 from .covariates import Covariates
 from utils.tools import cache_readonly
-from utils.tools import _try_del
+from utils.tools import remove
 
 
 class Basic(object):
@@ -21,7 +21,7 @@ class Basic(object):
 		self.X_c, self.X_t = self.X[self.D==0], self.X[self.D==1]
 		self.N_t = self.D.sum()
 		self.N_c = self.N - self.N_t
-		_try_del(self, '_covariates')
+		remove(self, '_covariates')
 
 
 	@cache_readonly

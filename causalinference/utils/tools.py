@@ -11,7 +11,7 @@ def cache_readonly(func):
 	return property(try_cache)
 
 
-def _try_del(obj, attrstr):
+def remove(obj, attrstr):
 
 	if hasattr(obj, attrstr):
 		delattr(obj, attrstr)

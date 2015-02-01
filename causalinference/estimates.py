@@ -1,7 +1,12 @@
-from utils.tools import cache_readonly
 
 
 class EstimatesSingle(object):
+
+	"""
+	Dictionary-like class containing treatment effect estimates associated
+	with one method (e.g., OLS, matching, etc.). Standard errors for most
+	estimators are computed only when needed.
+	"""
 
 	def __init__(self, ate, att, atc, method, model):
 
@@ -53,6 +58,11 @@ class EstimatesSingle(object):
 
 
 class Estimates(object):
+
+	"""
+	Dictionary-like class containing treatment effect estimates for each
+	estimator used.
+	"""
 
 	def __init__(self):
 

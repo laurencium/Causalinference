@@ -185,7 +185,7 @@ class Propensity(object):
 		Expected args
 		-------------
 			lin: list
-				Column numbers (one-based) of the original
+				Column numbers (zero-based) of the original
 				covariate matrix to include linearly.
 			qua: list
 				Tuples indicating which columns of the original

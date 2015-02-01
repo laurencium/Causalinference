@@ -7,7 +7,7 @@ from .basic import Basic
 from .strata import Stratum, Strata
 from .propensity import Propensity, PropensitySelect
 from .estimates import Estimates
-from utils.tools import _try_del
+from utils.tools import remove
 
 
 class CausalModel(Basic):
@@ -33,21 +33,21 @@ class CausalModel(Basic):
 	def restart(self):
 
 		"""
-		Reinitialize data to original inputs, and drop any estimated
+		Reinitializes data to original inputs, and drop any estimated
 		results.
 		"""
 
 		self.__init__(self._Y_old, self._D_old, self._X_old)
-		_try_del(self, 'pscore')
-		_try_del(self, 'cutoff')
-		_try_del(self, 'blocks')
-		_try_del(self, 'strata')
+		remove(self, 'pscore')
+		remove(self, 'cutoff')
+		remove(self, 'blocks')
+		remove(self, 'strata')
 
 
 	def _post_pscore_init(self):
 
 		"""
-		Initialize cutoff threshold for trimming and number of
+		Initializes cutoff threshold for trimming and number of
 		equal-sized blocks after estimation of propensity score.
 		"""
 
@@ -61,20 +61,22 @@ class CausalModel(Basic):
 
 		"""
 		Estimates via logit the propensity score based on requirements
-		on constant term, linear terms, and quadratic terms.
+		on linear terms, and quadratic terms.
 
 		Expected args
 		-------------
 			lin: string, list
-				Column numbers of the original covariate matrix
-				X to include linearly. Defaults to the string
-				'all', which uses whole covariate matrix.
+				Column numbers (one-based) of the original
+				covariate matrix X to include linearly. Defaults
+				to the string 'all', which uses whole covariate
+				matrix.
 			qua: list
-				Column numbers of the original covariate matrix
-				X to include quadratic. E.g., [1,3] will include
-				squares of the 1st and 3rd columns, and the
-				product of these two columns. Default is to not
-				include any quadratic terms.
+				Column numbers (one-based) of the original
+				covariate matrix X to include as quadratic
+				terms. E.g., [1,3] will include squares of the
+				1st and 3rd columns, and the product of these
+				two columns.  Default is to not include any
+				quadratic terms.
 		"""
 
 		self.pscore = Propensity(self.D, self.X, lin, qua)
@@ -84,17 +86,17 @@ class CausalModel(Basic):
 	def propensity_s(self, lin_B=[], C_lin=1, C_qua=2.71):
 
 		"""
-		Estimates via logit the propensity score using Imbens and
-		Rubin's covariate selection algorithm.
+		Estimates via logit the propensity score using the covariate
+		selection algorithm of Imbens and Rubin (2015).
 
 		Expected args
 		-------------
 			lin_B: list
-				Column numbers of the original covariate matrix
-				X that should be included as linear terms
-				regardless. Defaults to empty list, meaning
-				every column of X is subjected to the selection
-				algorithm.
+				Column numbers (one-based) of the original
+				covariate matrix X that should be included as
+				linear terms regardless. Defaults to empty list,
+				meaning every column of X is subjected to the
+				selection algorithm.
 			C_lin: scalar
 				Critical value used in likelihood ratio test
 				to decide whether candidate linear terms should
@@ -107,11 +109,11 @@ class CausalModel(Basic):
 
 		References
 		----------
+			Imbens, G. (2014). Matching Methods in Practice: Three
+				Examples.
 			Imbens, G. & Rubin, D. (2015). Causal Inference in
 				Statistics, Social, and Biomedical Sciences: An
 				Introduction.
-			Imbens, G. (2014). Matching Methods in Practice: Three
-				Examples.
 		"""
 
 		self.pscore = PropensitySelect(self.D, self.X,
@@ -122,15 +124,14 @@ class CausalModel(Basic):
 	def _check_prereq(self, prereq):
 
 		"""
-		Basic checks of existence of estimated propensity score or
-		strata.
+		Checks existence of estimated propensity score or strata.
 		"""
 
 		if not hasattr(self, prereq):
 			if prereq == 'pscore':
 				raise Exception("Missing propensity score")
 			if prereq == 'strata':
-				raise Exception("Please stratify sample")
+				raise Exception("Sample has not been stratified")
 	
 
 	def trim(self):
@@ -139,12 +140,19 @@ class CausalModel(Basic):
 		Trims data based on propensity score to create a subsample with
 		better covariate balance. The CausalModel class has cutoff has
 		a property, with default value 0.1. User can modify this
-		directly, or by calling select_cutoff to have the cutoff
+		directly, or by calling the method trim_s to have the cutoff
 		selected automatically using the algorithm proposed by Crump,
-		Hotz, Imbens, and Mitnik.
+		Hotz, Imbens, and Mitnik (2008).
+
+		References
+		----------
+			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2008).
+				Dealing with Limited Overlap in Estimation of
+				Average Treatment Effects. Biometrika.
 		"""
 
 		self._check_prereq('pscore')
+		
 		untrimmed = (self.pscore['fitted'] >= self.cutoff) & \
 		            (self.pscore['fitted'] <= 1-self.cutoff)
 		super(CausalModel, self).__init__(self.Y[untrimmed],
@@ -178,7 +186,7 @@ class CausalModel(Basic):
 	def trim_s(self):
 
 		"""
-		Trim data based on propensity score using cutoff selected using
+		Trims data based on propensity score using cutoff selected using
 		algorithm suggested by Crump, Hotz, Imbens, and Mitnik (2008).
 		Algorithm is of order O(N).
 
@@ -190,6 +198,7 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('pscore')
+
 		self._select_cutoff()
 		self.trim()
 
@@ -197,20 +206,21 @@ class CausalModel(Basic):
 	def stratify(self):
 
 		"""
-		Stratify the sample based on propensity score. If the attribute
-		cutoff is a number, then equal-sized bins will be created.
-		Otherwise if cutoff is a list of bin boundaries then the bins
-		will be created accordingly.
+		Stratifies the sample based on propensity score. If the class
+		attribute blocks is a number, then equal-sized bins will be
+		created. Otherwise if blocks is a list of bin boundaries then
+		the bins will be created accordingly.
 		"""
 
 		self._check_prereq('pscore')
-		_try_del(self, 'strata')
+		remove(self, 'strata')
 
 		phat = self.pscore['fitted']
 		if isinstance(self.blocks, (int, long)):
 			q = np.linspace(0, 100, self.blocks+1)[1:-1]
 			self.blocks = [0] + list(np.percentile(phat, q)) + [1]
 
+		self.blocks.sort()
 		self.blocks[0] *= 0.99  # adjust to not drop obs w/ min pscore
 		bins = [None] * (len(self.blocks)-1)
 		for i in xrange(len(self.blocks)-1):
@@ -227,9 +237,8 @@ class CausalModel(Basic):
 	def _select_blocks(self, e, l, e_min, e_max):
 
 		"""
-		Select propensity bins recursively for blocking estimator using
-		algorithm suggested by Imbens and Rubin (2015). Algorithm is of
-		order O(N log N).
+		Selects propensity bins recursively for blocking estimator using
+		algorithm suggested by Imbens and Rubin (2015).
 
 		Expected args
 		-------------
@@ -257,6 +266,7 @@ class CausalModel(Basic):
 		scope = (e >= e_min) & (e <= e_max)
 		t, c = (scope & (self.D==1)), (scope & (self.D==0))
 
+		# unravel if no significant difference in log odds ratio
 		t_stat = (l[t].mean()-l[c].mean()) / \
 		         np.sqrt(l[t].var()/t.sum() + l[c].var()/c.sum())
 		if t_stat <= 1.96:
@@ -270,12 +280,14 @@ class CausalModel(Basic):
 		N_left_t = (left & (self.D==1)).sum()
 		N_right_t = (right & (self.D==1)).sum()
 
+		# unravel if sample sizes are too small
 		if np.min([N_left, N_right]) <= self.K+2:
 			return [e_min, e_max]
 		if np.min([N_left_t, N_left-N_left_t, N_right_t,
 		           N_right-N_right_t]) <= 3:
 			return [e_min, e_max]
 
+		# split bin and recurse on left and right
 		return self._select_blocks(e, l, e[left].min(), mid) + \
 		       self._select_blocks(e, l, mid, e[right].max())
 
@@ -283,8 +295,9 @@ class CausalModel(Basic):
 	def stratify_s(self):
 
 		"""
-		Stratify the sample based on propensity score using bin
+		Stratifies the sample based on propensity score using bin
 		selection algorithm suggested by Imbens and Rubin (2015).
+		Algorithm is of order O(N log N).
 
 		References
 		----------
@@ -294,23 +307,25 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('pscore')
+
 		phat = self.pscore['fitted']
-		l = np.log(phat / (1+phat))
+		l = np.log(phat / (1+phat))  # log odds ratio
 		e_min = phat.min()
 		e_max = phat.max()
-		self.blocks = sorted(set(self._select_blocks(phat, l,
-		                                             e_min, e_max)))
+		self.blocks = list(set(self._select_blocks(phat, l,
+		                                           e_min, e_max)))
 		self.stratify()
 
 
 	def blocking(self):
 
 		"""
-		Compute average treatment effects using regression within
-		blocks.
+		Computes average treatment effects using regression within
+		blocks. Sample must be stratified first.
 		"""
 
 		self._check_prereq('strata')
+
 		ate = np.sum([s.N/self.N*s.within for s in self.strata])
 		att = np.sum([s.N_t/self.N_t*s.within for s in self.strata])
 		atc = np.sum([s.N_c/self.N_c*s.within for s in self.strata])
@@ -319,7 +334,13 @@ class CausalModel(Basic):
 
 	def _compute_blocking_se(self):
 
+		"""
+		Computes standard errors for average treatment effects
+		estimated via regression within blocks.
+		"""
+
 		self._check_prereq('strata')
+
 		wvar = [(s.N/self.N)**2 * s.se**2 for s in self.strata] 
 		wvar_t = [(s.N_t/self.N_t)**2 * s.se**2 for s in self.strata]
 		wvar_c = [(s.N_c/self.N_c)**2 * s.se**2 for s in self.strata]
@@ -476,6 +497,12 @@ class CausalModel(Basic):
 		Y_c[matched] on X_c[matched]. For control units, the analogous
 		procedure is used. For details, see Imbens and Rubin (2015).
 
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences:
+				An Introduction.
+
 		Expected args
 		-------------
 			wmat: string or matrix, ndarray
@@ -524,8 +551,8 @@ class CausalModel(Basic):
 		control units, and then calculating sample variances among the
 		matches.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			W: string or matrix, ndarray
 				Weighting matrix to be used in norm calcuation.
 				Acceptable values are string 'inv' for inverse
@@ -550,8 +577,8 @@ class CausalModel(Basic):
 		Calculates each unit's contribution in being used as a matching
 		unit.
 
-		Arguments
-		---------
+		Expected args
+		-------------
 			m_indx_t: list
 				List of indices of control units that are
 				matched to each treated	unit. 
@@ -612,7 +639,7 @@ class CausalModel(Basic):
 		"""
 
 		Z = np.empty((X.shape[0], X.shape[1]+1))
-		Z[:, 0] = 1
+		Z[:, 0] = 1  # constant term
 		Z[:, 1:] = X
 		beta = np.linalg.lstsq(Z, Y)[0]
 
@@ -634,17 +661,20 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('pscore')
+
 		phat = self.pscore['fitted']
 		Yhat_t = self._ols_predict(self.Y_t, self.X_t, self.X)
-		Yhat_c =self._ols_predict(self.Y_c, self.X_c, self.X)
+		Yhat_c = self._ols_predict(self.Y_c, self.X_c, self.X)
 		summand = (self.D-phat) * (self.Y - (1-phat)*Yhat_t - \
 		          phat*Yhat_c) / (phat*(1-phat))
+
 		ate = summand.mean()
 		att = summand[self.D==1].mean()
 		atc = summand[self.D==0].mean()
 		ate_se = np.sqrt(summand.var()/self.N)
 		att_se = np.sqrt(summand[self.D==1].var()/self.N_t)
 		atc_se = np.sqrt(summand[self.D==0].var()/self.N_c)
+
 		self.est._add(ate, att, atc, 'weighting', self)
 		self.est['weighting']._add_se(ate_se, att_se, atc_se)
 
@@ -681,7 +711,8 @@ class CausalModel(Basic):
 
 		Xmean = self.X.mean(0)
 		self._Z = np.empty((self.N, 2+2*self.K))  # create design matrix
-		self._Z[:,0], self._Z[:,1] = 1, self.D
+		self._Z[:,0] = 1  # constant term
+		self._Z[:,1] = self.D
 		self._Z[:,2:2+self.K] = self.D[:,None]*(self.X-Xmean)
 		self._Z[:,-self.K:] = self.X
 
@@ -691,9 +722,9 @@ class CausalModel(Basic):
 
 		ate = self._olscoef[1]
 		att = self._olscoef[1] + np.dot(self.X_t.mean(0)-Xmean,
-		                                 self._olscoef[2:2+self.K])
+		                                self._olscoef[2:2+self.K])
 		atc = self._olscoef[1] + np.dot(self.X_c.mean(0)-Xmean,
-		                                 self._olscoef[2:2+self.K])
+		                                self._olscoef[2:2+self.K])
 		self.est._add(ate, att, atc, 'ols', self)
 
 
@@ -705,7 +736,7 @@ class CausalModel(Basic):
 		If Z denotes the design matrix (i.e., covariates, treatment
 		indicator, product of the two, and a column of ones) and u
 		denotes the vector of least squares residual, then the variance
-		estimator can be found by computing White's heteroskedasticity
+		estimator can be found by computing White's heteroskedasticity-
 		robust covariance matrix:
 			inv(Z'Z) Z'diag(u^2)Z inv(Z'Z).
 		The diagonal entry corresponding to the treatment indicator of
@@ -722,7 +753,8 @@ class CausalModel(Basic):
 		covmat = np.dot(B.T, B)
 
 		ate_se = np.sqrt(covmat[0,0])
-		C = np.empty(self.K+1); C[0], C[1:] = 1, self.X_t.mean(0)-Xmean
+		C = np.empty(self.K+1); C[0] = 1
+		C[1:] = self.X_t.mean(0)-Xmean
 		att_se = np.sqrt(C.dot(covmat).dot(C))
 		C[1:] = self.X_c.mean(0)-Xmean
 		atc_se = np.sqrt(C.dot(covmat).dot(C))
@@ -731,6 +763,23 @@ class CausalModel(Basic):
 
 
 	def _compute_se(self, method):
+
+		"""
+		Wrapper function that calls requested standard-error-computing
+		function.
+
+		Expected args
+		-------------
+			method: string
+				One of 'ols', 'blocking', or 'matching'; used
+				to determine which function to call to compute
+				standard errors.
+
+		Returns
+		-------
+			3-tuple of standard errors for ATE, ATT, and ATC,
+			respectively.
+		"""
 
 		if method == 'ols':
 			return self._compute_ols_se()
