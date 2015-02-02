@@ -1,11 +1,15 @@
 import numpy as np
 import scipy.linalg
 
-
 from .estimators import Estimator
 
 
 class OLS(Estimator):
+
+	"""
+	Dictionary-like class containing treatment effect estimates. Standard
+	errors are only computed when needed.
+	"""
 
 	def __init__(self, model):
 
@@ -14,6 +18,34 @@ class OLS(Estimator):
 
 
 	def _compute_est(self):
+
+		"""
+		Estimates average treatment effects using least squares.
+
+		The OLS estimate of ATT can be shown to be equal to
+			mean(Y_t) - (alpha + beta * mean(X_t)),
+		where alpha and beta are coefficients from the control group
+		regression:
+			Y_c = alpha + beta * X_c + e.
+		ATC can be estimated analogously. Subsequently, ATE can be
+		estimated as sample weighted average of the ATT and ATC
+		estimates.
+
+		Equivalently, we can recover ATE directly from the regression
+			Y = b_0 + b_1 * D + b_2 * D(X-mean(X)) + b_3 * X + e.
+		The estimated coefficient b_1 will then be numerically identical
+		to the ATE estimate obtained from the first method. ATT can then
+		be computed by
+			b_1 + b_2 * (mean(X_t)-mean(X)),
+		and analogously for ATC. The advantage of this single regression
+		approach is that the matrices required for heteroskedasticity-
+		robust covariance matrix estimation can be obtained
+		conveniently. This is the apporach used.
+
+		Least squares estimates are computed via QR factorization. The
+		design matrix and the R matrix are stored in case standard
+		errors need to be computed later.
+		"""
 
 		N, K = self._model.N, self._model.K
 		Y, D = self._model.Y, self._model.D

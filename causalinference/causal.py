@@ -7,6 +7,7 @@ from .strata import Stratum, Strata
 from .propensity import Propensity, PropensitySelect
 from .estimators import Estimators
 from .ols import OLS
+from .weighting import Weighting
 from .matching import Matching
 from utils.tools import remove
 
@@ -387,40 +388,15 @@ class CausalModel(Basic):
 		#self.est._add_obj('matching', Matching(wmat, m, xbias, self))
 
 
-	def _ols_predict(self, Y, X, X_new):
-
-		"""
-		Estimates linear regression model with least squares and project
-		based on new input data.
-
-		Expected args
-		-------------
-			Y: array-like
-				Vector of observed outcomes.
-			X: matrix, ndarray
-				Matrix of covariates to regress on.
-			X_new: matrix, ndarray
-				Matrix of covariates used to generate
-				predictions.
-
-		Returns
-		-------
-			Vector of predicted values.
-		"""
-
-		Z = np.empty((X.shape[0], X.shape[1]+1))
-		Z[:, 0] = 1  # constant term
-		Z[:, 1:] = X
-		beta = np.linalg.lstsq(Z, Y)[0]
-
-		return beta[0] + X_new.dot(beta[1:])
 
 
 	def weighting(self):
 
 		"""
-		Computes ATE using the Horvitz-Thompson weighting estimator
-		modified to incorporate covariates.
+		Computes treatment effects using the Horvitz-Thompson weighting
+		estimator modified to incorporate covariates. Estimator
+		possesses the so-called 'double robustness' property. See
+		Lunceford and Davidian (2004) for details.
 
 		References
 		----------
@@ -431,22 +407,7 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('pscore')
-
-		phat = self.pscore['fitted']
-		Yhat_t = self._ols_predict(self.Y_t, self.X_t, self.X)
-		Yhat_c = self._ols_predict(self.Y_c, self.X_c, self.X)
-		summand = (self.D-phat) * (self.Y - (1-phat)*Yhat_t - \
-		          phat*Yhat_c) / (phat*(1-phat))
-
-		ate = summand.mean()
-		att = summand[self.D==1].mean()
-		atc = summand[self.D==0].mean()
-		ate_se = np.sqrt(summand.var()/self.N)
-		att_se = np.sqrt(summand[self.D==1].var()/self.N_t)
-		atc_se = np.sqrt(summand[self.D==0].var()/self.N_c)
-
-		# self.est._add(ate, att, atc, 'weighting', self)
-		# self.est['weighting']._add_se(ate_se, att_se, atc_se)
+		self.est['weighting'] = Weighting(self)
 
 
 	def ols(self):
@@ -462,21 +423,6 @@ class CausalModel(Basic):
 		ATC can be estimated analogously. Subsequently, ATE can be
 		estimated as sample weighted average of the ATT and ATC
 		estimates.
-
-		Equivalently, we can recover ATE directly from the regression
-			Y = b_0 + b_1 * D + b_2 * D(X-mean(X)) + b_3 * X + e.
-		The estimated coefficient b_1 will then be numerically identical
-		to the ATE estimate obtained from the first method. ATT can then
-		be computed by
-			b_1 + b_2 * (mean(X_t)-mean(X)),
-		and analogously for ATC. The advantage of this single regression
-		approach is that the matrices required for heteroskedasticity-
-		robust covariance matrix estimation can be obtained
-		conveniently. This is the apporach used.
-
-		Least squares estimates are computed via QR factorization. The
-		design matrix and the R matrix are stored in case standard
-		errors need to be computed later.
 		"""
 
 		self.est['ols'] = OLS(self)

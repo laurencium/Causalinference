@@ -17,8 +17,9 @@ class Basic(object):
 
 		self.Y, self.D, self.X = Y, D, X
 		self.N, self.K = self.X.shape
-		self.Y_c, self.Y_t = self.Y[self.D==0], self.Y[self.D==1]
-		self.X_c, self.X_t = self.X[self.D==0], self.X[self.D==1]
+		self.controls, self.treated = (self.D==0), (self.D==1)
+		self.Y_c, self.Y_t = self.Y[self.controls], self.Y[self.treated]
+		self.X_c, self.X_t = self.X[self.controls], self.X[self.treated]
 		self.N_t = self.D.sum()
 		self.N_c = self.N - self.N_t
 		remove(self, '_covariates')
