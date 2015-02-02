@@ -45,6 +45,10 @@ class OLS(Estimator):
 		Least squares estimates are computed via QR factorization. The
 		design matrix and the R matrix are stored in case standard
 		errors need to be computed later.
+
+		Returns
+		-------
+			3-tuple of ATE, ATT, and ATC estimates, respectively.
 		"""
 
 		N, K = self._model.N, self._model.K
@@ -86,6 +90,11 @@ class OLS(Estimator):
 		this matrix is the appropriate variance estimate for ATE.
 		Variance estimates for ATT and ATC are appropriately weighted
 		sums of entries of the above matrix.
+
+		Returns
+		-------
+			3-tuple of ATE, ATT, and ATC standard error estimates,
+			respectively.
 		"""
 
 		N, K = self._model.N, self._model.K
@@ -99,10 +108,12 @@ class OLS(Estimator):
 		B = np.dot(u[:,None]*self._Z, A[:,1:2+K])  
 		covmat = np.dot(B.T, B)
 
-		self._dict['ate_se'] = np.sqrt(covmat[0,0])
+		ate_se = np.sqrt(covmat[0,0])
 		C = np.empty(K+1); C[0] = 1
 		C[1:] = X_t.mean(0)-Xmean
-		self._dict['att_se'] = np.sqrt(C.dot(covmat).dot(C))
+		att_se = np.sqrt(C.dot(covmat).dot(C))
 		C[1:] = X_c.mean(0)-Xmean
-		self._dict['atc_se'] = np.sqrt(C.dot(covmat).dot(C))
+		atc_se = np.sqrt(C.dot(covmat).dot(C))
+
+		return (ate_se, att_se, atc_se)
 

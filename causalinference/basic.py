@@ -30,5 +30,3 @@ class Basic(object):
 
 		return Covariates(self.X_c, self.X_t)
 
-
-

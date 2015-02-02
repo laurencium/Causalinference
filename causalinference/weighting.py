@@ -53,6 +53,10 @@ class Weighting(Estimator):
 		possesses the so-called 'double robustness' property. See
 		Lunceford and Davidian (2004) for details.
 
+		Returns
+		-------
+			3-tuple of ATE, ATT, and ATC estimates, respectively.
+
 		References
 		----------
 			Lunceford, J. K., & Davidian, M. (2004). Stratification
@@ -86,6 +90,11 @@ class Weighting(Estimator):
 		Computes standard errors for weighting estimator. See Lunceford
 		and Davidian (2004) for details.
 
+		Returns
+		-------
+			3-tuple of ATE, ATT, and ATC standard error estimates,
+			respectively.
+
 		References
 		----------
 			Lunceford, J. K., & Davidian, M. (2004). Stratification
@@ -97,7 +106,9 @@ class Weighting(Estimator):
 		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
 		c, t = self._model.controls, self._model.treated
 
-		self._dict['ate_se'] = np.sqrt(self._summand.var()/N)
-		self._dict['att_se'] = np.sqrt(self._summand[t].var()/N_t)
-		self._dict['atc_se'] = np.sqrt(self._summand[c].var()/N_c)
+		ate_se = np.sqrt(self._summand.var()/N)
+		att_se = np.sqrt(self._summand[t].var()/N_t)
+		atc_se = np.sqrt(self._summand[c].var()/N_c)
+
+		return (ate_se, att_se, atc_se)
 

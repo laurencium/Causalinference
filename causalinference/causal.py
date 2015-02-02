@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy as np
 import scipy.linalg
 
@@ -8,6 +7,7 @@ from .propensity import Propensity, PropensitySelect
 from .estimators import Estimators
 from .ols import OLS
 from .weighting import Weighting
+from .blocking import Blocking
 from .matching import Matching
 from utils.tools import remove
 
@@ -151,7 +151,7 @@ class CausalModel(Basic):
 		                                  self.D[untrimmed],
 						  self.X[untrimmed])
 		self.pscore['fitted'] = self.pscore['fitted'][untrimmed]
-		self.est = Estimates()
+		self.est = Estimators()
 
 
 	def _select_cutoff(self):
@@ -317,30 +317,7 @@ class CausalModel(Basic):
 		"""
 
 		self._check_prereq('strata')
-
-		ate = np.sum([s.N/self.N*s.within for s in self.strata])
-		att = np.sum([s.N_t/self.N_t*s.within for s in self.strata])
-		atc = np.sum([s.N_c/self.N_c*s.within for s in self.strata])
-		#self.est._add(ate, att, atc, 'blocking', self)
-
-
-	def _compute_blocking_se(self):
-
-		"""
-		Computes standard errors for average treatment effects
-		estimated via regression within blocks.
-		"""
-
-		self._check_prereq('strata')
-
-		wvar = [(s.N/self.N)**2 * s.se**2 for s in self.strata] 
-		wvar_t = [(s.N_t/self.N_t)**2 * s.se**2 for s in self.strata]
-		wvar_c = [(s.N_c/self.N_c)**2 * s.se**2 for s in self.strata]
-		ate_se = np.sqrt(np.array(wvar).sum())
-		att_se = np.sqrt(np.array(wvar_t).sum())
-		atc_se = np.sqrt(np.array(wvar_c).sum())
-
-		return (ate_se, att_se, atc_se)
+		self.est['blocking'] = Blocking(self)
 
 
 	def matching(self, wmat='inv', m=1, xbias=False):
@@ -364,12 +341,6 @@ class CausalModel(Basic):
 		Y_c[matched] on X_c[matched]. For control units, the analogous
 		procedure is used. For details, see Imbens and Rubin (2015).
 
-		References
-		----------
-			Imbens, G. & Rubin, D. (2015). Causal Inference in
-				Statistics, Social, and Biomedical Sciences:
-				An Introduction.
-
 		Expected args
 		-------------
 			wmat: string or matrix, ndarray
@@ -383,11 +354,15 @@ class CausalModel(Basic):
 			xbias: Boolean
 				Correct bias resulting from imperfect matches or
 				not; defaults to no correction.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences:
+				An Introduction.
 		"""
 
 		#self.est._add_obj('matching', Matching(wmat, m, xbias, self))
-
-
 
 
 	def weighting(self):

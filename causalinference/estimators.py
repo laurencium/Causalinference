@@ -18,7 +18,8 @@ class Estimator(object):
 	def __repr__(self):
 
 		if self._dict['ate_se'] is None:
-			self._compute_se()
+			ate_se, att_se, atc_se = self._compute_se()
+			self._store_se(ate_se, att_se, atc_se)
 
 		return repr(self._dict)
 
@@ -31,10 +32,18 @@ class Estimator(object):
 	def __getitem__(self, key):
 
 		if 'se' in key and self._dict['ate_se'] is None:
-			self._compute_se()
+			ate_se, att_se, atc_se = self._compute_se()
+			self._store_se(ate_se, att_se, atc_se)
 
 		return self._dict[key]
-	
+
+
+	def _store_se(self, ate_se, att_se, atc_se):
+
+		self._dict['ate_se'] = ate_se
+		self._dict['att_se'] = att_se
+		self._dict['atc_se'] = atc_se
+
 
 	def keys(self):
 
