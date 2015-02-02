@@ -1,12 +1,13 @@
 from __future__ import division
 import numpy as np
 import scipy.linalg
-from itertools import chain
 
 from .basic import Basic
 from .strata import Stratum, Strata
 from .propensity import Propensity, PropensitySelect
-from .estimates import Estimates
+from .estimators import Estimators
+from .ols import OLS
+from .matching import Matching
 from utils.tools import remove
 
 
@@ -16,18 +17,8 @@ class CausalModel(Basic):
 	def __init__(self, Y, D, X):
 
 		super(CausalModel, self).__init__(Y, D, X)
-		self.est = Estimates()
+		self.est = Estimators()
 		self._Y_old, self._D_old, self._X_old = Y, D, X
-
-
-	@property
-	def Xvar(self):
-
-		try:
-			return self._Xvar
-		except AttributeError:
-			self._Xvar = self.X.var(0)
-			return self._Xvar
 
 
 	def restart(self):
@@ -329,7 +320,7 @@ class CausalModel(Basic):
 		ate = np.sum([s.N/self.N*s.within for s in self.strata])
 		att = np.sum([s.N_t/self.N_t*s.within for s in self.strata])
 		atc = np.sum([s.N_c/self.N_c*s.within for s in self.strata])
-		self.est._add(ate, att, atc, 'blocking', self)
+		#self.est._add(ate, att, atc, 'blocking', self)
 
 
 	def _compute_blocking_se(self):
@@ -350,131 +341,6 @@ class CausalModel(Basic):
 
 		return (ate_se, att_se, atc_se)
 
-
-	def _norm(self, dX, W):
-
-		"""
-		Calculates vector of norms given weighting matrix W.
-
-		Expected args
-		-------------
-			dX: array-like
-				Matrix of covariate differences.
-			W: string or matrix, ndarray
-				Weighting matrix to be used in norm calcuation.
-				Acceptable values are string 'inv' for inverse
-				variance weighting, or any arbitrary K-by-K
-				matrix.
-
-		Returns
-		-------
-			Vector of distance measures.
-		"""
-
-		if W == 'inv':
-			return (dX**2 / self.Xvar).sum(axis=1)
-		else:
-			return (dX.dot(W)*dX).sum(axis=1)
-
-
-	def _msmallest_w_ties(self, x, m):
-
-		"""
-		Finds indices of the m smallest entries in an array. Ties are
-		included, so the number of indices can be greater than m.
-		Algorithm is of order O(n).
-
-		Expected args
-		-------------
-			x: array-like
-				Array of numbers to find m smallest entries for.
-			m: integer
-				Number of smallest entries to find.
-
-		Returns
-		-------
-			List of indices of smallest entries.
-		"""
-
-		# partition around (m+1)th order stat
-		par_indx = np.argpartition(x, m)
-		
-		if x[par_indx[:m]].max() < x[par_indx[m]]:  # m < (m+1)th
-			return list(par_indx[:m])
-		elif x[par_indx[m]] < x[par_indx[m+1:]].min():  # m+1 < (m+2)th
-			return list(par_indx[:m+1])
-		else:  # mth = (m+1)th = (m+2)th, so increment and recurse
-			return self._msmallest_w_ties(x, m+2)
-
-
-	def _make_matches(self, X, X_m, W, m):
-
-		"""
-		Performs nearest-neigborhood matching using specified weighting
-		matrix in measuring distance. Ties are included, so the number
-		of matches for a given unit can be greater than m.
-
-		Expected args
-		-------------
-			X: matrix, ndarray
-				Observations to find matches for.
-			X_m: matrix, ndarray
-				Pool of potential matches.
-			W: string or matrix, ndarray
-				Weighting matrix to be used in norm calcuation.
-				Acceptable values are string 'inv' for inverse
-				variance weighting, or any arbitrary K-by-K
-				matrix.
-			m: integer
-				The number of units to match to a given subject.
-
-		Returns
-		-------
-			List of matched indices.
-		"""
-
-		m_indx = [None] * X.shape[0]
-
-		for i in xrange(X.shape[0]):
-			m_indx[i] = self._msmallest_w_ties(self._norm(X_m-X[i],
-			                                              W), m)
-
-		return m_indx
-
-
-	def _bias(self, m_indx, Y_m, X_m, X):
-
-		"""
-		Estimates bias resulting from imperfect matches using least
-		squares.  When estimating ATT, regression should use control
-		units. When estimating ATC, regression should use treated units.
-
-		Expected args
-		-------------
-			m_indx: list
-				Index of indices of matched units.
-			Y_m: array-like
-				Vector of outcomes to regress.
-			X_m: matrix, ndarray
-				Covariate matrix to regress on.
-			X: matrix, ndarray
-				Covariate matrix of subjects under study.
-
-		Returns
-		-------
-			Vector of estimated biases.
-		"""
-
-		flat_indx = list(chain.from_iterable(m_indx))
-
-		X_m1 = np.empty((len(flat_indx), X_m.shape[1]+1))
-		X_m1[:,0] = 1
-		X_m1[:,1:] = X_m[flat_indx]
-		beta = np.linalg.lstsq(X_m1, Y_m[flat_indx])[0]
-
-		return [np.dot(X[i]-X_m[m_indx[i]].mean(0),
-		               beta[1:]) for i in xrange(X.shape[0])]
-	
 
 	def matching(self, wmat='inv', m=1, xbias=False):
 
@@ -518,103 +384,7 @@ class CausalModel(Basic):
 				not; defaults to no correction.
 		"""
 
-		if wmat == 'maha':
-			self._wmat = np.linalg.inv(np.cov(self.X, rowvar=False))
-		else:
-			self._wmat = wmat
-		self._m = m
-
-		self._m_indx_t = self._make_matches(self.X_t, self.X_c,
-		                                    self._wmat, self._m)
-		self._m_indx_c = self._make_matches(self.X_c, self.X_t,
-		                                    self._wmat, self._m)
-
-		self.ITT = np.empty(self.N)
-		self.ITT[self.D==1] = self.Y_t - [self.Y_c[self._m_indx_t[i]].mean() for i in xrange(self.N_t)]
-		self.ITT[self.D==0] = [self.Y_t[self._m_indx_c[i]].mean() for i in xrange(self.N_c)] - self.Y_c
-
-		if xbias:
-			self.ITT[self.D==1] -= self._bias(self._m_indx_t, self.Y_c, self.X_c, self.X_t)
-			self.ITT[self.D==0] += self._bias(self._m_indx_c, self.Y_t, self.X_t, self.X_c)
-
-		ate = self.ITT.mean()
-		att = self.ITT[self.D==1].mean()
-		atc = self.ITT[self.D==0].mean()
-		self.est._add(ate, att, atc, 'matching', self)
-
-
-	def _compute_condvar(self, W, m):
-
-		"""
-		Computes unit-level conditional variances. Estimation is done by
-		matching treated units with treated units, control units with
-		control units, and then calculating sample variances among the
-		matches.
-
-		Expected args
-		-------------
-			W: string or matrix, ndarray
-				Weighting matrix to be used in norm calcuation.
-				Acceptable values are string 'inv' for inverse
-				variance weighting, or any arbitrary K-by-K
-				matrix.
-			m: integer
-				The number of units to match to a given subject.
-		"""
-
-		# m+1 since we include the unit itself in matching pool as well
-		m_indx_t = self._make_matches(self.X_t, self.X_t, W, m+1)
-		m_indx_c = self._make_matches(self.X_c, self.X_c, W, m+1)
-
-		self._condvar = np.empty(self.N)
-		self._condvar[self.D==1] = [self.Y_t[m_indx_t[i]].var(ddof=1) for i in xrange(self.N_t)]
-		self._condvar[self.D==0] = [self.Y_c[m_indx_c[i]].var(ddof=1) for i in xrange(self.N_c)]
-
-
-	def _count_matches(self, m_indx_t, m_indx_c):
-
-		"""
-		Calculates each unit's contribution in being used as a matching
-		unit.
-
-		Expected args
-		-------------
-			m_indx_t: list
-				List of indices of control units that are
-				matched to each treated	unit. 
-			m_indx_c:
-				List of indices of treated units that are
-				matched to each control unit.
-
-		Returns
-		-------
-			Vector containing each unit's contribution in matching.
-		"""
-
-		count = np.zeros(self.N)
-		treated = np.nonzero(self.D)[0]
-		control = np.nonzero(self.D==0)[0]
-		for i in xrange(self.N_c):
-			M = len(m_indx_c[i])
-			for j in xrange(M):
-				count[treated[m_indx_c[i][j]]] += 1./M
-		for i in xrange(self.N_t):
-			M = len(m_indx_t[i])
-			for j in xrange(M):
-				count[control[m_indx_t[i][j]]] += 1./M
-
-		return count
-
-
-	def _compute_matching_se(self):
-
-		self._compute_condvar(self._wmat, self._m)
-		match_counts = self._count_matches(self._m_indx_t, self._m_indx_c)
-		ate_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
-		att_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
-		atc_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
-
-		return (ate_se, att_se, atc_se)
+		#self.est._add_obj('matching', Matching(wmat, m, xbias, self))
 
 
 	def _ols_predict(self, Y, X, X_new):
@@ -675,8 +445,8 @@ class CausalModel(Basic):
 		att_se = np.sqrt(summand[self.D==1].var()/self.N_t)
 		atc_se = np.sqrt(summand[self.D==0].var()/self.N_c)
 
-		self.est._add(ate, att, atc, 'weighting', self)
-		self.est['weighting']._add_se(ate_se, att_se, atc_se)
+		# self.est._add(ate, att, atc, 'weighting', self)
+		# self.est['weighting']._add_se(ate_se, att_se, atc_se)
 
 
 	def ols(self):
@@ -709,82 +479,5 @@ class CausalModel(Basic):
 		errors need to be computed later.
 		"""
 
-		Xmean = self.X.mean(0)
-		self._Z = np.empty((self.N, 2+2*self.K))  # create design matrix
-		self._Z[:,0] = 1  # constant term
-		self._Z[:,1] = self.D
-		self._Z[:,2:2+self.K] = self.D[:,None]*(self.X-Xmean)
-		self._Z[:,-self.K:] = self.X
-
-		Q, self._R = np.linalg.qr(self._Z)
-		self._olscoef = scipy.linalg.solve_triangular(self._R,
-		                                               Q.T.dot(self.Y))
-
-		ate = self._olscoef[1]
-		att = self._olscoef[1] + np.dot(self.X_t.mean(0)-Xmean,
-		                                self._olscoef[2:2+self.K])
-		atc = self._olscoef[1] + np.dot(self.X_c.mean(0)-Xmean,
-		                                self._olscoef[2:2+self.K])
-		self.est._add(ate, att, atc, 'ols', self)
-
-
-	def _compute_ols_se(self):
-	
-		"""
-		Computes standard errors for OLS estimates of ATE, ATT, and ATC.
-
-		If Z denotes the design matrix (i.e., covariates, treatment
-		indicator, product of the two, and a column of ones) and u
-		denotes the vector of least squares residual, then the variance
-		estimator can be found by computing White's heteroskedasticity-
-		robust covariance matrix:
-			inv(Z'Z) Z'diag(u^2)Z inv(Z'Z).
-		The diagonal entry corresponding to the treatment indicator of
-		this matrix is the appropriate variance estimate for ATE.
-		Variance estimates for ATT and ATC are appropriately weighted
-		sums of entries of the above matrix.
-		"""
-
-		Xmean = self.X.mean(0)
-		u = self.Y - self._Z.dot(self._olscoef)
-		A = np.linalg.inv(np.dot(self._R.T, self._R))
-		# select columns for D, D*dX from A
-		B = np.dot(u[:,None]*self._Z, A[:,1:2+self.K])  
-		covmat = np.dot(B.T, B)
-
-		ate_se = np.sqrt(covmat[0,0])
-		C = np.empty(self.K+1); C[0] = 1
-		C[1:] = self.X_t.mean(0)-Xmean
-		att_se = np.sqrt(C.dot(covmat).dot(C))
-		C[1:] = self.X_c.mean(0)-Xmean
-		atc_se = np.sqrt(C.dot(covmat).dot(C))
-
-		return (ate_se, att_se, atc_se)
-
-
-	def _compute_se(self, method):
-
-		"""
-		Wrapper function that calls requested standard-error-computing
-		function.
-
-		Expected args
-		-------------
-			method: string
-				One of 'ols', 'blocking', or 'matching'; used
-				to determine which function to call to compute
-				standard errors.
-
-		Returns
-		-------
-			3-tuple of standard errors for ATE, ATT, and ATC,
-			respectively.
-		"""
-
-		if method == 'ols':
-			return self._compute_ols_se()
-		elif method == 'blocking':
-			return self._compute_blocking_se()
-		elif method == 'matching':
-			return self._compute_matching_se()
+		self.est['ols'] = OLS(self)
 

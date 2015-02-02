@@ -1,6 +1,6 @@
 
 
-class EstimatesSingle(object):
+class Estimator(object):
 
 	"""
 	Dictionary-like class containing treatment effect estimates associated
@@ -8,12 +8,11 @@ class EstimatesSingle(object):
 	estimators are computed only when needed.
 	"""
 
-	def __init__(self, ate, att, atc, method, model):
+	def __init__(self):
 
+		ate, att, atc = self._compute_est()
 		self._dict = {'ate': ate, 'att': att, 'atc': atc,
 		              'ate_se': None, 'att_se': None, 'atc_se': None}
-		self._method = method
-		self._model = model
 
 	
 	def __repr__(self):
@@ -35,29 +34,14 @@ class EstimatesSingle(object):
 			self._compute_se()
 
 		return self._dict[key]
-
-
-	def _compute_se(self):
-
-		se = self._model._compute_se(self._method)
-		self._dict['ate_se'] = se[0]
-		self._dict['att_se'] = se[1]
-		self._dict['atc_se'] = se[2]
-
-
-	def _add_se(self, ate_se, att_se, atc_se):
-
-		self._dict['ate_se'] = ate_se
-		self._dict['att_se'] = att_se
-		self._dict['atc_se'] = atc_se
-
 	
+
 	def keys(self):
 
 		return self._dict.keys()
 
 
-class Estimates(object):
+class Estimators(object):
 
 	"""
 	Dictionary-like class containing treatment effect estimates for each
@@ -74,6 +58,11 @@ class Estimates(object):
 		return self._dict[key]
 
 
+	def __setitem__(self, key, value):
+
+		self._dict[key] = value
+
+
 	def __str__(self):
 
 		return "Print all estimates in table here."
@@ -82,9 +71,4 @@ class Estimates(object):
 	def keys(self):
 
 		return self._dict.keys()
-
-
-	def _add(self, ate, att, atc, method, model):
-
-		self._dict[method] = EstimatesSingle(ate, att, atc, method, model)
 
