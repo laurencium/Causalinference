@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.linalg
 
-from .core import Estimator
+from base import Estimator
 
 
 class OLS(Estimator):

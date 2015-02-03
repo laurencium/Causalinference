@@ -1,8 +1,8 @@
 import numpy as np
 
-from .covariates import Covariates
-from utils.tools import cache_readonly
-from utils.tools import remove
+from covariates import Covariates
+from ..utils.tools import cache_readonly
+from ..utils.tools import remove
 
 
 class Basic(object):

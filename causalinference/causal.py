@@ -1,10 +1,8 @@
 import numpy as np
 import scipy.linalg
 
-from .basic import Basic
-from .strata import Stratum, Strata
-from .propensity import Propensity, PropensitySelect
-from .estimators import Estimators, Blocking, Matching, Weighting, OLS
+from core import Basic, Stratum, Strata, Propensity, PropensitySelect
+from estimators import Estimators, Blocking, Matching, Weighting, OLS
 from utils.tools import remove
 
 
@@ -131,6 +129,8 @@ class CausalModel(Basic):
 		directly, or by calling the method trim_s to have the cutoff
 		selected automatically using the algorithm proposed by Crump,
 		Hotz, Imbens, and Mitnik (2008).
+
+		Note that trimming the data erases all current estimates.
 
 		References
 		----------

@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.linalg
 
-from .basic import Basic
-from utils.tools import cache_readonly
+from basic import Basic
+from ..utils.tools import cache_readonly
 
 
 class Stratum(Basic):

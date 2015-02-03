@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import chain
 
-from .core import Estimator
+from base import Estimator
 
 
 class Matching(Estimator):

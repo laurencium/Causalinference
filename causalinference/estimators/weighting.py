@@ -1,6 +1,6 @@
 import numpy as np
 
-from .core import Estimator
+from base import Estimator
 
 
 class Weighting(Estimator):
