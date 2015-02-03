@@ -362,7 +362,7 @@ class CausalModel(Basic):
 				An Introduction.
 		"""
 
-		#self.est._add_obj('matching', Matching(wmat, m, xbias, self))
+		self.est['matching'] = Matching(wmat, m, xbias, self)
 
 
 	def weighting(self):

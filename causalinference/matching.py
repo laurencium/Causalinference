@@ -1,3 +1,4 @@
+import numpy as np
 from itertools import chain
 
 
@@ -7,44 +8,47 @@ from .estimators import Estimator
 class Matching(Estimator):
 
 
-	def __init__(self, wmat, m, xbias, data):
+	def __init__(self, wmat, m, xbias, model):
 
-		N, N_c, N_t = data.N, data.N_c, data.N_t
-		X, X_c, X_t = data.X, data.X_c, data.X_t
-		Y, Y_c, Y_t = data.Y, data.Y_c, data.Y_t
-		c, t = (data.D==0), (data.D==1)
-
+		self._model = model
 		self._inv = (wmat == 'inv')
 		if wmat == 'maha':
-			self._wmat = np.linalg.inv(np.cov(X, False))
+			self._wmat = np.linalg.inv(np.cov(self._model.X,
+			                                  rowvar=False))
 		elif wmat == 'inv':
-			self._wmat = X.var(0)
+			self._wmat = self._model.X.var(0)
 		else:
 			self._wmat = wmat
-
 		self._m = m
 		self._xbias = xbias
+		super(Matching, self).__init__()
 
-		self._m_indx_t = self._make_matches(X_t, X_c)
-		self._m_indx_c = self._make_matches(X_c, X_t)
+
+	def _compute_est(self):
+
+		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
+		X, X_c, X_t = self._model.X, self._model.X_c, self._model.X_t
+		Y, Y_c, Y_t = self._model.Y, self._model.Y_c, self._model.Y_t
+		c, t = self._model.controls, self._model.treated
+
+		self._idx_t = self._make_matches(X_t, X_c, self._m)
+		self._idx_c = self._make_matches(X_c, X_t, self._m)
 
 		self._ITT = np.empty(N)
-		Yhat_c = [Y_c[self._m_indx_t[i]].mean() for i in xrange(N_t)]
-		self._ITT[t] = Y_t - Yhat_c
-		Yhat_t = [Y_t[self._m_indx_c[i]].mean() for i in xrange(N_c)]
+		Yhat_t = [Y_t[self._idx_c[i]].mean() for i in xrange(N_c)]
 		self._ITT[c] = Yhat_t - Y_c
+		Yhat_c = [Y_c[self._idx_t[i]].mean() for i in xrange(N_t)]
+		self._ITT[t] = Y_t - Yhat_c
 
-		if xbias:
-			self._ITT[t] -= self._bias(self._m_indx_t,
-			                           Y_c, X_c, X_t)
-			self._ITT[c] += self._bias(self._m_indx_c,
-			                           Y_t, X_t, X_c)
+		if self._xbias:
+			self._ITT[t] -= self._bias(self._idx_t, Y_c, X_c, X_t)
+			self._ITT[c] += self._bias(self._idx_c, Y_t, X_t, X_c)
 
 		ate = self._ITT.mean()
 		att = self._ITT[t].mean()
 		atc = self._ITT[c].mean()
 
-		super(Matching, self).__init__(ate, att, atc, 'matching', self)
+		return (ate, att, atc)
 
 
 	def _norm(self, dX):
@@ -73,7 +77,7 @@ class Matching(Estimator):
 			return (dX.dot(self._wmat)*dX).sum(1)
 
 
-	def _msmallest(self, x):
+	def _msmallest(self, x, m):
 
 		"""
 		Finds indices of the m smallest entries in an array. Ties are
@@ -92,20 +96,18 @@ class Matching(Estimator):
 			List of indices of smallest entries.
 		"""
 
-		m = self._m
-
 		# partition around (m+1)th order stat
-		par_indx = np.argpartition(x, m)
+		par_idx = np.argpartition(x, m)
 		
-		if x[par_indx[:m]].max() < x[par_indx[m]]:  # m < (m+1)th
-			return list(par_indx[:m])
-		elif x[par_indx[m]] < x[par_indx[m+1:]].min():  # m+1 < (m+2)th
-			return list(par_indx[:m+1])
+		if x[par_idx[:m]].max() < x[par_idx[m]]:  # m < (m+1)th
+			return list(par_idx[:m])
+		elif x[par_idx[m]] < x[par_idx[m+1:]].min():  # m+1 < (m+2)th
+			return list(par_idx[:m+1])
 		else:  # mth = (m+1)th = (m+2)th, so increment and recurse
 			return self._msmallest(x, m+2)
 
 
-	def _make_matches(self, X, X_m):
+	def _make_matches(self, X, X_m, m):
 
 		"""
 		Performs nearest-neigborhood matching using specified weighting
@@ -131,16 +133,16 @@ class Matching(Estimator):
 			List of matched indices.
 		"""
 
-		m_indx = [None] * X.shape[0]
+		m_idx = [None] * X.shape[0]
 
 		for i in xrange(X.shape[0]):
 			norm = self._norm(X_m-X[i])
-			m_indx[i] = self._msmallest(norm)
+			m_idx[i] = self._msmallest(norm, m)
 
-		return m_indx
+		return m_idx
 
 
-	def _bias(self, m_indx, Y_m, X_m, X):
+	def _bias(self, m_idx, Y_m, X_m, X):
 
 		"""
 		Estimates bias resulting from imperfect matches using least
@@ -149,7 +151,7 @@ class Matching(Estimator):
 
 		Expected args
 		-------------
-			m_indx: list
+			m_idx: list
 				Index of indices of matched units.
 			Y_m: array-like
 				Vector of outcomes to regress.
@@ -163,18 +165,18 @@ class Matching(Estimator):
 			Vector of estimated biases.
 		"""
 
-		flat_indx = list(chain.from_iterable(m_indx))
+		flat_idx = list(chain.from_iterable(m_idx))
 
-		X_m1 = np.empty((len(flat_indx), X_m.shape[1]+1))
+		X_m1 = np.empty((len(flat_idx), X_m.shape[1]+1))
 		X_m1[:,0] = 1
-		X_m1[:,1:] = X_m[flat_indx]
-		beta = np.linalg.lstsq(X_m1, Y_m[flat_indx])[0]
+		X_m1[:,1:] = X_m[flat_idx]
+		beta = np.linalg.lstsq(X_m1, Y_m[flat_idx])[0]
 
-		return [np.dot(X[i]-X_m[m_indx[i]].mean(0),
+		return [np.dot(X[i]-X_m[m_idx[i]].mean(0),
 		               beta[1:]) for i in xrange(X.shape[0])]
 	
 
-	def _compute_condvar(self, W, m):
+	def _compute_cvar(self):
 
 		"""
 		Computes unit-level conditional variances. Estimation is done by
@@ -193,16 +195,21 @@ class Matching(Estimator):
 				The number of units to match to a given subject.
 		"""
 
+		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
+		X, X_c, X_t = self._model.X, self._model.X_c, self._model.X_t
+		Y, Y_c, Y_t = self._model.Y, self._model.Y_c, self._model.Y_t
+		c, t = self._model.controls, self._model.treated
+
 		# m+1 since we include the unit itself in matching pool as well
-		m_indx_t = self._make_matches(self.X_t, self.X_t, W, m+1)
-		m_indx_c = self._make_matches(self.X_c, self.X_c, W, m+1)
+		idx_t = self._make_matches(X_t, X_t, self._m+1)
+		idx_c = self._make_matches(X_c, X_c, self._m+1)
 
-		self._condvar = np.empty(self.N)
-		self._condvar[self.D==1] = [self.Y_t[m_indx_t[i]].var(ddof=1) for i in xrange(self.N_t)]
-		self._condvar[self.D==0] = [self.Y_c[m_indx_c[i]].var(ddof=1) for i in xrange(self.N_c)]
+		self._cvar = np.empty(N)
+		self._cvar[t] = [Y_t[idx_t[i]].var(ddof=1) for i in xrange(N_t)]
+		self._cvar[c] = [Y_c[idx_c[i]].var(ddof=1) for i in xrange(N_c)]
 
 
-	def _count_matches(self, m_indx_t, m_indx_c):
+	def _count_matches(self):
 
 		"""
 		Calculates each unit's contribution in being used as a matching
@@ -210,10 +217,10 @@ class Matching(Estimator):
 
 		Expected args
 		-------------
-			m_indx_t: list
+			idx_t: list
 				List of indices of control units that are
 				matched to each treated	unit. 
-			m_indx_c:
+			idx_c:
 				List of indices of treated units that are
 				matched to each control unit.
 
@@ -222,28 +229,32 @@ class Matching(Estimator):
 			Vector containing each unit's contribution in matching.
 		"""
 
-		count = np.zeros(self.N)
-		treated = np.nonzero(self.D)[0]
-		control = np.nonzero(self.D==0)[0]
-		for i in xrange(self.N_c):
-			M = len(m_indx_c[i])
+		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
+		c, t = self._model.controls, self._model.treated
+
+		count = np.zeros(N)
+		for i in xrange(N_c):
+			M = len(self._idx_c[i])
 			for j in xrange(M):
-				count[treated[m_indx_c[i][j]]] += 1./M
-		for i in xrange(self.N_t):
-			M = len(m_indx_t[i])
+				count[t[self._idx_c[i][j]]] += 1./M
+		for i in xrange(N_t):
+			M = len(self._idx_t[i])
 			for j in xrange(M):
-				count[control[m_indx_t[i][j]]] += 1./M
+				count[c[self._idx_t[i][j]]] += 1./M
 
 		return count
 
 
-	def _compute_matching_se(self):
+	def _compute_se(self):
 
-		self._compute_condvar(self._wmat, self._m)
-		match_counts = self._count_matches(self._m_indx_t, self._m_indx_c)
-		ate_se = np.sqrt(((1+match_counts)**2 * self._condvar).sum() / self.N**2)
-		att_se = np.sqrt(((self.D - (1-self.D)*match_counts)**2 * self._condvar).sum() / self.N_t**2)
-		atc_se = np.sqrt(((self.D*match_counts - (1-self.D))**2 * self._condvar).sum() / self.N_c**2)
+		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
+		D = self._model.D
+
+		self._compute_cvar()
+		M = self._count_matches()
+		ate_se = np.sqrt(((1+M)**2 * self._cvar).sum() / N**2)
+		att_se = np.sqrt(((D - (1-D)*M)**2 * self._cvar).sum() / N_t**2)
+		atc_se = np.sqrt(((D*M - (1-D))**2 * self._cvar).sum() / N_c**2)
 
 		return (ate_se, att_se, atc_se)
 
