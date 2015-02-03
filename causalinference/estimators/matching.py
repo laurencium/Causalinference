@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import chain
 
-from .estimators import Estimator
+from .core import Estimator
 
 
 class Matching(Estimator):
@@ -169,8 +169,8 @@ class Matching(Estimator):
 		idx_t = self._make_matches(X_t, X_t, self._m+1)
 
 		condvar = np.empty(N)
-		condvar = [Y_c[idx_c[i]].var(ddof=1) for i in xrange(N_c)]
-		condvar = [Y_t[idx_t[i]].var(ddof=1) for i in xrange(N_t)]
+		condvar[c] = [Y_c[idx_c[i]].var(ddof=1) for i in xrange(N_c)]
+		condvar[t] = [Y_t[idx_t[i]].var(ddof=1) for i in xrange(N_t)]
 
 		return condvar
 
@@ -269,7 +269,7 @@ class Matching(Estimator):
 		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
 		D = self._model.D
 
-		condvar = self._compute_cvar()
+		condvar = self._compute_condvar()
 		M = self._count_matches()
 		ate_se = np.sqrt(((1+M)**2 * condvar).sum() / N**2)
 		att_se = np.sqrt(((D - (1-D)*M)**2 * condvar).sum() / N_t**2)

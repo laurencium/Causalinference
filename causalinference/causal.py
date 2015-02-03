@@ -4,11 +4,7 @@ import scipy.linalg
 from .basic import Basic
 from .strata import Stratum, Strata
 from .propensity import Propensity, PropensitySelect
-from .estimators import Estimators
-from .ols import OLS
-from .weighting import Weighting
-from .blocking import Blocking
-from .matching import Matching
+from .estimators import Estimators, Blocking, Matching, Weighting, OLS
 from utils.tools import remove
 
 
