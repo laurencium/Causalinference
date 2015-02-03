@@ -345,15 +345,15 @@ class CausalModel(Basic):
 		-------------
 			wmat: string or matrix, ndarray
 				Weighting matrix to be used in norm calcuation.
-				Acceptable values are None (inverse variance,
-				default), string 'maha' for Mahalanobis	metric,
-				or any arbitrary k-by-k matrix.
+				Acceptable values are 'inv' for inverse
+				variance weighting, 'maha' for Mahalanobis
+				metric, or any arbitrary K-by-K matrix.
 			m: integer
 				The number of units to match to a given
 				subject. Defaults to 1.
 			xbias: Boolean
-				Correct bias resulting from imperfect matches or
-				not; defaults to no correction.
+				Correct bias resulting from imperfect matches
+				or not; defaults to no correction.
 
 		References
 		----------

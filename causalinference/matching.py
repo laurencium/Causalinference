@@ -1,12 +1,15 @@
 import numpy as np
 from itertools import chain
 
-
 from .estimators import Estimator
 
 
 class Matching(Estimator):
 
+	"""
+	Dictionary-like class containing treatment effect estimates. Standard
+	errors are only computed when needed.
+	"""
 
 	def __init__(self, wmat, m, xbias, model):
 
@@ -24,47 +27,16 @@ class Matching(Estimator):
 		super(Matching, self).__init__()
 
 
-	def _compute_est(self):
-
-		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
-		X, X_c, X_t = self._model.X, self._model.X_c, self._model.X_t
-		Y, Y_c, Y_t = self._model.Y, self._model.Y_c, self._model.Y_t
-		c, t = self._model.controls, self._model.treated
-
-		self._idx_t = self._make_matches(X_t, X_c, self._m)
-		self._idx_c = self._make_matches(X_c, X_t, self._m)
-
-		self._ITT = np.empty(N)
-		Yhat_t = [Y_t[self._idx_c[i]].mean() for i in xrange(N_c)]
-		self._ITT[c] = Yhat_t - Y_c
-		Yhat_c = [Y_c[self._idx_t[i]].mean() for i in xrange(N_t)]
-		self._ITT[t] = Y_t - Yhat_c
-
-		if self._xbias:
-			self._ITT[t] -= self._bias(self._idx_t, Y_c, X_c, X_t)
-			self._ITT[c] += self._bias(self._idx_c, Y_t, X_t, X_c)
-
-		ate = self._ITT.mean()
-		att = self._ITT[t].mean()
-		atc = self._ITT[c].mean()
-
-		return (ate, att, atc)
-
-
 	def _norm(self, dX):
 
 		"""
-		Calculates vector of norms given weighting matrix W.
+		Calculates vector of norms using previously specified weighting
+		matrix.
 
 		Expected args
 		-------------
 			dX: array-like
 				Matrix of covariate differences.
-			W: string or matrix, ndarray
-				Weighting matrix to be used in norm calcuation.
-				Acceptable values are string 'inv' for inverse
-				variance weighting, or any arbitrary K-by-K
-				matrix.
 
 		Returns
 		-------
@@ -110,9 +82,9 @@ class Matching(Estimator):
 	def _make_matches(self, X, X_m, m):
 
 		"""
-		Performs nearest-neigborhood matching using specified weighting
-		matrix in measuring distance. Ties are included, so the number
-		of matches for a given unit can be greater than m.
+		Performs nearest-neigborhood matching using previously specified
+		weighting matrix in measuring distance. Ties are included, so
+		the number of matches for a given unit can be greater than m.
 
 		Expected args
 		-------------
@@ -120,11 +92,6 @@ class Matching(Estimator):
 				Observations to find matches for.
 			X_m: matrix, ndarray
 				Pool of potential matches.
-			W: string or matrix, ndarray
-				Weighting matrix to be used in norm calcuation.
-				Acceptable values are string 'inv' for inverse
-				variance weighting, or any arbitrary K-by-K
-				matrix.
 			m: integer
 				The number of units to match to a given subject.
 
@@ -148,6 +115,7 @@ class Matching(Estimator):
 		Estimates bias resulting from imperfect matches using least
 		squares. When estimating ATT, regression should use control
 		units. When estimating ATC, regression should use treated units.
+		See Imbens and Rubin (2015) for details.
 
 		Expected args
 		-------------
@@ -163,6 +131,12 @@ class Matching(Estimator):
 		Returns
 		-------
 			Vector of estimated biases.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences:
+				An Introduction.
 		"""
 
 		flat_idx = list(chain.from_iterable(m_idx))
@@ -176,23 +150,13 @@ class Matching(Estimator):
 		               beta[1:]) for i in xrange(X.shape[0])]
 	
 
-	def _compute_cvar(self):
+	def _compute_condvar(self):
 
 		"""
 		Computes unit-level conditional variances. Estimation is done by
 		matching treated units with treated units, control units with
 		control units, and then calculating sample variances among the
 		matches.
-
-		Expected args
-		-------------
-			W: string or matrix, ndarray
-				Weighting matrix to be used in norm calcuation.
-				Acceptable values are string 'inv' for inverse
-				variance weighting, or any arbitrary K-by-K
-				matrix.
-			m: integer
-				The number of units to match to a given subject.
 		"""
 
 		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
@@ -201,12 +165,14 @@ class Matching(Estimator):
 		c, t = self._model.controls, self._model.treated
 
 		# m+1 since we include the unit itself in matching pool as well
-		idx_t = self._make_matches(X_t, X_t, self._m+1)
 		idx_c = self._make_matches(X_c, X_c, self._m+1)
+		idx_t = self._make_matches(X_t, X_t, self._m+1)
 
-		self._cvar = np.empty(N)
-		self._cvar[t] = [Y_t[idx_t[i]].var(ddof=1) for i in xrange(N_t)]
-		self._cvar[c] = [Y_c[idx_c[i]].var(ddof=1) for i in xrange(N_c)]
+		condvar = np.empty(N)
+		condvar = [Y_c[idx_c[i]].var(ddof=1) for i in xrange(N_c)]
+		condvar = [Y_t[idx_t[i]].var(ddof=1) for i in xrange(N_t)]
+
+		return condvar
 
 
 	def _count_matches(self):
@@ -215,24 +181,16 @@ class Matching(Estimator):
 		Calculates each unit's contribution in being used as a matching
 		unit.
 
-		Expected args
-		-------------
-			idx_t: list
-				List of indices of control units that are
-				matched to each treated	unit. 
-			idx_c:
-				List of indices of treated units that are
-				matched to each control unit.
-
 		Returns
 		-------
 			Vector containing each unit's contribution in matching.
 		"""
 
 		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
-		c, t = self._model.controls, self._model.treated
+		controls, treated = self._model.controls, self._model.treated
 
 		count = np.zeros(N)
+		c, t = np.nonzero(controls)[0], np.nonzero(treated)[0]
 		for i in xrange(N_c):
 			M = len(self._idx_c[i])
 			for j in xrange(M):
@@ -245,16 +203,77 @@ class Matching(Estimator):
 		return count
 
 
+	def _compute_est(self):
+
+		"""
+		Estimates average treatment effects using matching with
+		replacement.
+
+		Returns
+		-------
+			3-tuple of ATE, ATT, and ATC estimates, respectively.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences:
+				An Introduction.
+		"""
+
+		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
+		X, X_c, X_t = self._model.X, self._model.X_c, self._model.X_t
+		Y, Y_c, Y_t = self._model.Y, self._model.Y_c, self._model.Y_t
+		c, t = self._model.controls, self._model.treated
+
+		self._idx_c = self._make_matches(X_c, X_t, self._m)
+		self._idx_t = self._make_matches(X_t, X_c, self._m)
+
+		self._ITT = np.empty(N)
+		Yhat_t = [Y_t[self._idx_c[i]].mean() for i in xrange(N_c)]
+		self._ITT[c] = Yhat_t - Y_c
+		Yhat_c = [Y_c[self._idx_t[i]].mean() for i in xrange(N_t)]
+		self._ITT[t] = Y_t - Yhat_c
+
+		if self._xbias:
+			self._ITT[c] += self._bias(self._idx_c, Y_t, X_t, X_c)
+			self._ITT[t] -= self._bias(self._idx_t, Y_c, X_c, X_t)
+
+		ate = self._ITT.mean()
+		att = self._ITT[t].mean()
+		atc = self._ITT[c].mean()
+
+		return (ate, att, atc)
+
+
 	def _compute_se(self):
+
+		"""
+		Computes standard errors for average treatment effects using
+		the general variance estimator in Imbens and Rubin (2015).
+		This involves first computing estimates of unit-level
+		conditional variances via matching, and then taking an
+		appropriately weighted sum of these estimates.
+
+		Returns
+		-------
+			3-tuple of ATE, ATT, and ATC standard error estimates,
+			respectively.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences:
+				An Introduction.
+		"""
 
 		N, N_c, N_t = self._model.N, self._model.N_c, self._model.N_t
 		D = self._model.D
 
-		self._compute_cvar()
+		condvar = self._compute_cvar()
 		M = self._count_matches()
-		ate_se = np.sqrt(((1+M)**2 * self._cvar).sum() / N**2)
-		att_se = np.sqrt(((D - (1-D)*M)**2 * self._cvar).sum() / N_t**2)
-		atc_se = np.sqrt(((D*M - (1-D))**2 * self._cvar).sum() / N_c**2)
+		ate_se = np.sqrt(((1+M)**2 * condvar).sum() / N**2)
+		att_se = np.sqrt(((D - (1-D)*M)**2 * condvar).sum() / N_t**2)
+		atc_se = np.sqrt(((D*M - (1-D))**2 * condvar).sum() / N_c**2)
 
 		return (ate_se, att_se, atc_se)
 
