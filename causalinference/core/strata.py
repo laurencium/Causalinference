@@ -2,7 +2,7 @@ import numpy as np
 import scipy.linalg
 
 from basic import Basic
-from ..utils.tools import cache_readonly
+from ..utils.tools import cache_readonly, Printer
 
 
 class Stratum(Basic):
@@ -18,12 +18,6 @@ class Stratum(Basic):
 		super(Stratum, self).__init__(Y, D, X)
 		self.pscore = {'fitted': pscore, 'min': pscore.min(),
 		               'mean': pscore.mean(), 'max': pscore.max()}
-		
-
-	def keys(self):
-
-		return ['N', 'N_c', 'N_t', 'K', 'covariates', 'pscore',
-		        'within', 'se']
 
 
 	@cache_readonly
@@ -102,5 +96,33 @@ class Strata(object):
 
 	def __str__(self):
 
-		return "Print summary for all strata in one table."
+		p = Printer()
+
+		entries = ('', 'Propensity score', '', 'Ave. p-score')
+		span = [1, 2, 2, 2]
+		etype = ['string'] * 4
+		output = '\n'
+		output += p.print_row(entries, span, etype)
+
+		entries = ('Stratum', 'Min.', 'Max.', 'N_c', 'N_t',
+		           'Controls', 'Treated')
+		span = [1] * 7
+		etype = ['string'] * 7
+		output += p.print_row(entries, span, etype)
+		output += p.print_row('-'*p.table_width, [1], ['string'])
+
+		strata = self._strata
+		etype = ['integer', 'float', 'float', 'integer', 'integer',
+		         'float', 'float']
+		for i in xrange(len(strata)):
+
+			c, t = strata[i].controls, strata[i].treated
+			entries = (i+1, strata[i].pscore['min'],
+			           strata[i].pscore['max'], strata[i].N_c,
+				   strata[i].N_t,
+				   strata[i].pscore['fitted'][c].mean(),
+				   strata[i].pscore['fitted'][t].mean())
+			output += p.print_row(entries, span, etype)
+
+		return output
 
