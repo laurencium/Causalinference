@@ -28,5 +28,5 @@ class Basic(object):
 	@cache_readonly
 	def covariates(self):
 
-		return Covariates(self.X_c, self.X_t)
+		return Covariates(self)
 

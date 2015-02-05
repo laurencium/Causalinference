@@ -16,9 +16,6 @@ class Propensity(object):
 
 		if lin == 'all':
 			lin = range(X.shape[1])
-		else:
-			lin = self._change_base(lin, base=0)
-		qua = self._change_base(qua, pair=True, base=0)
 
 		mat = self._form_matrix(X, lin, qua)
 		self._dict = self._compute_pscore(D, mat) 
@@ -215,33 +212,6 @@ class Propensity(object):
 		return mat
 
 
-	def _change_base(self, l, pair=False, base=0):
-
-		"""
-		Changes input index to zero or one-based.
-
-		Expected args
-		-------------
-			l: list
-				List of numbers or pairs of numbers.
-			pair: Boolean
-				Anticipates list of pairs if True. Defaults to
-				False.
-			base: integer
-				Converts to zero-based if 0, one-based if 1.
-
-		Returns
-		-------
-			Input index with base changed.
-		"""
-
-		offset = 2*base - 1
-		if pair:
-			return [(p[0]+offset, p[1]+offset) for p in l]
-		else:
-			return [e+offset for e in l]
-
-
 class PropensitySelect(Propensity):
 
 	"""
@@ -253,7 +223,6 @@ class PropensitySelect(Propensity):
 
 	def __init__(self, D, X, lin_B, C_lin, C_qua):
 
-		lin_B = self._change_base(lin_B, base=0)
 		if C_lin == np.inf:  # inf threshold, so include basic only
 			lin = lin_B
 		elif C_lin == 0:  # min threshold, so include everything

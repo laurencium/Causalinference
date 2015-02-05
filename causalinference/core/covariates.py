@@ -1,5 +1,7 @@
 import numpy as np
 
+from ..utils.tools import Printer
+
 
 class Covariates(object):
 
@@ -18,11 +20,11 @@ class Covariates(object):
 	balance.
 	"""
 
-	def __init__(self, X_c, X_t):
+	def __init__(self, model):
 
-		self._dict = {}
-		self._dict['mean_c'] = X_c.mean(0)
-		self._dict['mean_t'] = X_t.mean(0)
+		self._model = model
+		X_c, X_t = self._model.X_c, self._model.X_t
+		self._dict = {'mean_c': X_c.mean(0), 'mean_t': X_t.mean(0)}
 		self._dict['sd_c'] = np.sqrt(X_c.var(0))
 		self._dict['sd_t'] = np.sqrt(X_t.var(0))
 		mean_diff = self._dict['mean_t'] - self._dict['mean_c']
@@ -37,8 +39,35 @@ class Covariates(object):
 
 	def __str__(self):
 
-		return "Print covariate summaries in table."
+		p = Printer()
+		N_c, N_t = self._model.N_c, self._model.N_t
+		K = self._model.K
+		mean_c, mean_t = self._dict['mean_c'], self._dict['mean_t']
+		sd_c, sd_t = self._dict['sd_c'], self._dict['sd_t']
+		ndiff = self._dict['ndiff']
+		varnames = ["X"+str(i) for i in xrange(K)]
+		
+		entries = ('', 'Controls (N_c='+str(N_c)+')',
+		           'Treated (N_t='+str(N_t)+')', '')
+		span = [1, 2, 2, 1]
+		etype = ['string'] * 4
+		output = '\n'
+		output += p.print_row(entries, span, etype)
 
+		entries = ("Covariates", "Mean", "S.d.", "Mean", "S.d.", "Nor-diff")
+		span = [1] * 6
+		etype = ['string'] * 6
+		output += p.print_row(entries, span, etype)
+		output += p.print_row('-'*p.table_width, [1], ['string'])
+		
+		etype = ['string'] + ['float']*5
+		for i in xrange(K):
+			entries = (varnames[i], mean_c[i], sd_c[i], mean_t[i],
+			           sd_t[i], ndiff[i])
+			output += p.print_row(entries, span, etype)
+
+		return output
+			
 
 	def keys(self):
 
