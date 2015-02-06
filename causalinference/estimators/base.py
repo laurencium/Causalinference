@@ -106,7 +106,13 @@ class Estimators(object):
 
 	def __str__(self):
 
-		return "Print all estimates in table here."
+		output = '\n'
+		for method in self._dict.keys():
+			output += method.upper()
+			output += self._dict[method].__str__()
+			output += '\n'
+			
+		return output
 
 
 	def keys(self):
