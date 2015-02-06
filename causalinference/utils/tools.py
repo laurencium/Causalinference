@@ -41,16 +41,10 @@ class Printer(object):
 				etype[i] = 's'
 			elif etype[i] == 'float':
 				etype[i] = '.3f'
-			else:
+			elif etype[i] == 'integer':
 				etype[i] = '.0f'
 
 		line = ['%'+str(span[i])+etype[i] for i in xrange(k)]
-		print ''.join(line) % entries
 
-
-	def print_table(self, entries, span, etype):
-
-		n = len(entries)
-		for i in xrange(n):
-			self.print_row(entries[i], span[i], etype[i])
+		return (''.join(line) % entries) + '\n'
 

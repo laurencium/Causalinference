@@ -1,3 +1,7 @@
+import numpy as np
+from scipy.stats import norm
+
+from ..utils.tools import Printer
 
 
 class Estimator(object):
@@ -26,7 +30,35 @@ class Estimator(object):
 
 	def __str__(self):
 
-		return "Print estimates in table here."
+		if self._dict['ate_se'] is None:
+			ate_se, att_se, atc_se = self._compute_se()
+			self._store_se(ate_se, att_se, atc_se)
+
+		p = Printer()
+		est = ['ATE', 'ATT', 'ATC']
+		se = [self._dict['ate_se'], self._dict['att_se'],
+		      self._dict['atc_se']]
+
+		entries = ('', 'Est.', 'S.e.', 'z', 'P>|z|',
+		           '[95% Conf. int.]')
+		span = [1]*5 + [2]
+		etype = ['string']*7
+		output = '\n'
+		output += p.print_row(entries, span, etype)
+		output += p.print_row('-'*p.table_width, [1], ['string'])
+
+		span = [1] * 7
+		etype = ['string'] + ['float']*6
+		for i in xrange(len(est)):
+			coef = self._dict[est[i].lower()]
+			z = coef / se[i]
+			pval = 1 - norm.cdf(np.abs(z))
+			lw = coef - 1.96*se[i]
+			up = coef + 1.96*se[i]
+			entries = (est[i], coef, se[i], z, pval, lw, up)
+			output += p.print_row(entries, span, etype)
+
+		return output
 
 
 	def __getitem__(self, key):
