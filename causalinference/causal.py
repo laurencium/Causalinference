@@ -52,12 +52,12 @@ class CausalModel(Basic):
 		Expected args
 		-------------
 			lin: string, list
-				Column numbers (one-based) of the original
+				Column numbers (zero-based) of the original
 				covariate matrix X to include linearly. Defaults
 				to the string 'all', which uses whole covariate
 				matrix.
 			qua: list
-				Column numbers (one-based) of the original
+				Column numbers (zero-based) of the original
 				covariate matrix X to include as quadratic
 				terms. E.g., [1,3] will include squares of the
 				1st and 3rd columns, and the product of these
@@ -78,7 +78,7 @@ class CausalModel(Basic):
 		Expected args
 		-------------
 			lin_B: list
-				Column numbers (one-based) of the original
+				Column numbers (zero-based) of the original
 				covariate matrix X that should be included as
 				linear terms regardless. Defaults to empty list,
 				meaning every column of X is subjected to the

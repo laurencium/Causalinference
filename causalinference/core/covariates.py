@@ -45,16 +45,18 @@ class Covariates(object):
 		mean_c, mean_t = self._dict['mean_c'], self._dict['mean_t']
 		sd_c, sd_t = self._dict['sd_c'], self._dict['sd_t']
 		ndiff = self._dict['ndiff']
-		varnames = ["X"+str(i) for i in xrange(K)]
+		varnames = ['X'+str(i) for i in xrange(K)]
 		
+		output = '\n'
+		output += 'Covariates Summary\n\n'
+
 		entries = ('', 'Controls (N_c='+str(N_c)+')',
 		           'Treated (N_t='+str(N_t)+')', '')
 		span = [1, 2, 2, 1]
 		etype = ['string']*4
-		output = '\n'
 		output += p.write_row(entries, span, etype)
 
-		entries = ("Covariates", "Mean", "S.d.", "Mean", "S.d.", "Nor-diff")
+		entries = ('Covariate', 'Mean', 'S.d.', 'Mean', 'S.d.', 'Nor-diff')
 		span = [1]*6
 		etype = ['string']*6
 		output += p.write_row(entries, span, etype)

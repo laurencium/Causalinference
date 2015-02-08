@@ -46,7 +46,6 @@ class Propensity(object):
 					"assignment")
 
 
-
 	def __str__(self):
 
 		if self._dict['se'] is None:
@@ -56,11 +55,13 @@ class Propensity(object):
 		se = self._dict['se']
 		p = Printer()
 
+		output = '\n'
+		output += 'Estimated Parameters of Propensity Score\n\n'
+
 		entries = ('', 'Coef.', 'S.e.', 'z', 'P>|z|',
 		           '[95% Conf. int.]')
 		span = [1]*5 + [2]
 		etype = ['string']*6
-		output = '\n'
 		output += p.write_row(entries, span, etype)
 		output += p.write_row('-'*p.table_width, [1], ['string'])
 
@@ -72,14 +73,14 @@ class Propensity(object):
 		lin = self._dict['lin']
 		for i in xrange(len(lin)):
 			entries = p._reg_entries('X'+str(lin[i]),
-			                         coef[1+i], se[i+1])
+			                         coef[1+i], se[1+i])
 			output += p.write_row(entries, span, etype)
 
 		qua = self._dict['qua']
 		for i in xrange(len(qua)):
 			name = 'X'+str(qua[i][0])+'*X'+str(qua[i][1])
 			entries = p._reg_entries(name, coef[1+len(lin)+i],
-			                         se[1+len(lin)+1])
+			                         se[1+len(lin)+i])
 			output += p.write_row(entries, span, etype)
 
 		return output

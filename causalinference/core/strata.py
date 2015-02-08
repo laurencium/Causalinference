@@ -98,10 +98,12 @@ class Strata(object):
 
 		p = Printer()
 
+		output = '\n'
+		output += 'Stratification Summary\n\n'
+
 		entries = ('', 'Propensity score', '', 'Ave. p-score', 'Within')
 		span = [1, 2, 2, 2, 1]
 		etype = ['string']*5
-		output = '\n'
 		output += p.write_row(entries, span, etype)
 
 		entries = ('Stratum', 'Min.', 'Max.', 'N_c', 'N_t',

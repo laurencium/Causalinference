@@ -100,8 +100,13 @@ class Estimators(object):
 	def __str__(self):
 
 		output = '\n'
+		output += 'Treatment Effect Estimates\n\n'
+
 		for method in self._dict.keys():
-			output += method.upper()
+			if method == 'ols':
+				output += method.upper()
+			else:
+				output += method.title()
 			output += self._dict[method].__str__()
 			output += '\n'
 			
