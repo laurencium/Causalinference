@@ -23,9 +23,13 @@ class Propensity(object):
 		mat = self._form_matrix(X, lin, qua)
 		self._dict = self._compute_pscore(mat) 
 		self._dict['lin'], self._dict['qua'] = lin, qua
+		self._dict['se'] = None
 
 
 	def __getitem__(self, key):
+
+		if key == 'se' and self._dict['se'] is None:
+			self._dict['se'] = self._compute_se()
 
 		return self._dict[key]
 
@@ -41,6 +45,9 @@ class Propensity(object):
 
 
 	def __str__(self):
+
+		if self._dict['se'] is None:
+			self._dict['se'] = self._compute_se()
 
 		return 'Propensity class string placeholder.'
 
@@ -185,6 +192,9 @@ class Propensity(object):
 
 		Expected args
 		-------------
+			X: matrix, ndarray
+				Matrix of original covariates to form a matrix
+				out of.
 			lin: list
 				Column numbers (zero-based) of the original
 				covariate matrix to include linearly.
@@ -197,9 +207,8 @@ class Propensity(object):
 
 		Returns
 		-------
-			mat: matrix, ndarray
-				Covariate matrix formed based on requirements on
-				linear and quadratic terms.
+			Covariate matrix formed based on requirements on linear
+			and quadratic terms.
 		"""
 
 		mat = np.empty((X.shape[0], 1+len(lin)+len(qua)))
@@ -217,6 +226,16 @@ class Propensity(object):
 
 
 	def _compute_se(self):
+
+		"""
+		Computes standard errors for the coefficient estimates of the
+		logistic regression used to estimate propensity scores.
+
+		Returns
+		-------
+			Vector of standard errors, same dimension as vector
+			of coefficient estimates.
+		"""
 
 		lin, qua = self._dict['lin'], self._dict['qua']
 		mat = self._form_matrix(self._model.X, lin, qua)
@@ -259,9 +278,13 @@ class PropensitySelect(Propensity):
 		mat = self._form_matrix(X, lin, qua)
 		self._dict = self._compute_pscore(mat)
 		self._dict['lin'], self._dict['qua'] = lin, qua
+		self._dict['se'] = None
 		
 
 	def __str__(self):
+
+		if self._dict['se'] is None:
+			self._dict['se'] = self._compute_se()
 
 		return 'PropensitySelect class string placeholder.'
 
