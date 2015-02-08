@@ -98,22 +98,22 @@ class Strata(object):
 
 		p = Printer()
 
-		entries = ('', 'Propensity score', '', 'Ave. p-score')
-		span = [1, 2, 2, 2]
-		etype = ['string'] * 4
+		entries = ('', 'Propensity score', '', 'Ave. p-score', 'Within')
+		span = [1, 2, 2, 2, 1]
+		etype = ['string'] * 5
 		output = '\n'
 		output += p.print_row(entries, span, etype)
 
 		entries = ('Stratum', 'Min.', 'Max.', 'N_c', 'N_t',
-		           'Controls', 'Treated')
-		span = [1] * 7
-		etype = ['string'] * 7
+		           'Controls', 'Treated', 'Est.')
+		span = [1] * 8
+		etype = ['string'] * 8
 		output += p.print_row(entries, span, etype)
 		output += p.print_row('-'*p.table_width, [1], ['string'])
 
 		strata = self._strata
 		etype = ['integer', 'float', 'float', 'integer', 'integer',
-		         'float', 'float']
+		         'float', 'float', 'float']
 		for i in xrange(len(strata)):
 
 			c, t = strata[i].controls, strata[i].treated
@@ -121,7 +121,8 @@ class Strata(object):
 			           strata[i].pscore['max'], strata[i].N_c,
 				   strata[i].N_t,
 				   strata[i].pscore['fitted'][c].mean(),
-				   strata[i].pscore['fitted'][t].mean())
+				   strata[i].pscore['fitted'][t].mean(),
+				   strata[i].within)
 			output += p.print_row(entries, span, etype)
 
 		return output
