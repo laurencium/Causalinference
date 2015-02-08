@@ -65,7 +65,7 @@ class CausalModel(Basic):
 				quadratic terms.
 		"""
 
-		self.pscore = Propensity(self.D, self.X, lin, qua)
+		self.pscore = Propensity(lin, qua, self)
 		self._post_pscore_init()
 
 
@@ -102,8 +102,7 @@ class CausalModel(Basic):
 				Introduction.
 		"""
 
-		self.pscore = PropensitySelect(self.D, self.X,
-		                               lin_B, C_lin, C_qua)
+		self.pscore = PropensitySelect(lin_B, C_lin, C_qua, self)
 		self._post_pscore_init()
 
 
