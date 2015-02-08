@@ -2,6 +2,8 @@ import numpy as np
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
 
+from ..utils.tools import Printer
+
 
 class Propensity(object):
 
@@ -44,12 +46,43 @@ class Propensity(object):
 					"assignment")
 
 
+
 	def __str__(self):
 
 		if self._dict['se'] is None:
 			self._dict['se'] = self._compute_se()
 
-		return 'Propensity class string placeholder.'
+		coef = self._dict['coef']
+		se = self._dict['se']
+		p = Printer()
+
+		entries = ('', 'Coef.', 'S.e.', 'z', 'P>|z|',
+		           '[95% Conf. int.]')
+		span = [1]*5 + [2]
+		etype = ['string']*6
+		output = '\n'
+		output += p.write_row(entries, span, etype)
+		output += p.write_row('-'*p.table_width, [1], ['string'])
+
+		entries = p._reg_entries('Intercept', coef[0], se[0])
+		span = [1]*7
+		etype = ['string'] + ['float']*6
+		output += p.write_row(entries, span, etype)
+
+		lin = self._dict['lin']
+		for i in xrange(len(lin)):
+			entries = p._reg_entries('X'+str(lin[i]),
+			                         coef[1+i], se[i+1])
+			output += p.write_row(entries, span, etype)
+
+		qua = self._dict['qua']
+		for i in xrange(len(qua)):
+			name = 'X'+str(qua[i][0])+'*X'+str(qua[i][1])
+			entries = p._reg_entries(name, coef[1+len(lin)+i],
+			                         se[1+len(lin)+1])
+			output += p.write_row(entries, span, etype)
+
+		return output
 
 
 	def keys(self):
@@ -280,14 +313,6 @@ class PropensitySelect(Propensity):
 		self._dict['lin'], self._dict['qua'] = lin, qua
 		self._dict['se'] = None
 		
-
-	def __str__(self):
-
-		if self._dict['se'] is None:
-			self._dict['se'] = self._compute_se()
-
-		return 'PropensitySelect class string placeholder.'
-
 
 	def _select_terms(self, cur, pot, crit, lin=[]):
 	

@@ -50,21 +50,21 @@ class Covariates(object):
 		entries = ('', 'Controls (N_c='+str(N_c)+')',
 		           'Treated (N_t='+str(N_t)+')', '')
 		span = [1, 2, 2, 1]
-		etype = ['string'] * 4
+		etype = ['string']*4
 		output = '\n'
-		output += p.print_row(entries, span, etype)
+		output += p.write_row(entries, span, etype)
 
 		entries = ("Covariates", "Mean", "S.d.", "Mean", "S.d.", "Nor-diff")
-		span = [1] * 6
-		etype = ['string'] * 6
-		output += p.print_row(entries, span, etype)
-		output += p.print_row('-'*p.table_width, [1], ['string'])
+		span = [1]*6
+		etype = ['string']*6
+		output += p.write_row(entries, span, etype)
+		output += p.write_row('-'*p.table_width, [1], ['string'])
 		
 		etype = ['string'] + ['float']*5
 		for i in xrange(K):
 			entries = (varnames[i], mean_c[i], sd_c[i], mean_t[i],
 			           sd_t[i], ndiff[i])
-			output += p.print_row(entries, span, etype)
+			output += p.write_row(entries, span, etype)
 
 		return output
 			

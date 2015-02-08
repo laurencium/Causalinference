@@ -1,3 +1,7 @@
+import numpy as np
+from scipy.stats import norm
+
+
 def cache_readonly(func):
 
 	def try_cache(*args):
@@ -24,12 +28,60 @@ class Printer(object):
 		self.table_width = 80
 
 
-	def print_row(self, entries, span, etype):
+	def _reg_entries(self, name, coef, se):
 
 		"""
+			Constructs a tuple of derived entries given regression
+			coefficient estimates.
+
+		Expected args
+		-------------
+			name: string
+				Variable name associated with the estimated
+				coefficient.
+			coef: float
+				Estimated coefficient.
+			se: float
+				Standard error associated with the estimated
+				coefficient.
+
+		Returns
+		-------
+			Tuple containing name, coefficient estimate, standard
+			error, z-statistic, p-value, and lower and upper limit
+			of the corresponding 95% confidence interval.
+		"""
+
+		z = coef / se
+		p = 1 - norm.cdf(np.abs(z))
+		lw = coef - 1.96*se
+		up = coef + 1.96*se
+
+		return (name, coef, se, z, p, lw, up)
+
+
+	def write_row(self, entries, span, etype):
+
+		"""
+		Constructs string for a row in a table given desired entries
+		in the row, and formatting options as specified by the other
+		arguments.
+
 		Expected args
 		-------------
 			entries: tuple
+				Entries in the row to print.
+			span: list
+				Corresponding to each entry, the number of
+				columns the entry should span.
+			etype: list
+				Corresponding to each entry, the type of
+				entry (e.g., 'string', 'float', or 'integer').
+
+		Returns
+		-------
+			String containing the entries with the right format
+			as specified by the other arguments.
 		"""
 
 		k = len(span)

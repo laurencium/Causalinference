@@ -1,6 +1,3 @@
-import numpy as np
-from scipy.stats import norm
-
 from ..utils.tools import Printer
 
 
@@ -42,21 +39,17 @@ class Estimator(object):
 		entries = ('', 'Est.', 'S.e.', 'z', 'P>|z|',
 		           '[95% Conf. int.]')
 		span = [1]*5 + [2]
-		etype = ['string']*7
+		etype = ['string']*6
 		output = '\n'
-		output += p.print_row(entries, span, etype)
-		output += p.print_row('-'*p.table_width, [1], ['string'])
+		output += p.write_row(entries, span, etype)
+		output += p.write_row('-'*p.table_width, [1], ['string'])
 
-		span = [1] * 7
+		span = [1]*7
 		etype = ['string'] + ['float']*6
 		for i in xrange(len(est)):
 			coef = self._dict[est[i].lower()]
-			z = coef / se[i]
-			pval = 1 - norm.cdf(np.abs(z))
-			lw = coef - 1.96*se[i]
-			up = coef + 1.96*se[i]
-			entries = (est[i], coef, se[i], z, pval, lw, up)
-			output += p.print_row(entries, span, etype)
+			entries = p._reg_entries(est[i], coef, se[i])
+			output += p.write_row(entries, span, etype)
 
 		return output
 
