@@ -1,4 +1,6 @@
 *.pyc
 *.swp
+dist
+*.egg-info
 interactive.py
 

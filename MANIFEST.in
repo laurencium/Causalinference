@@ -1,0 +1,8 @@
+global-include *.py
+include *.txt
+include MANIFEST.in
+include README.rst
+
+exclude interactive.py
+global-exclude *.swp *.pyc
+
