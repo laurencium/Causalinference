@@ -37,6 +37,11 @@ class Covariates(object):
 		return self._dict[key]
 
 
+	def __iter__(self):
+
+		return iter(self._dict)
+
+
 	def __str__(self):
 
 		p = Printer()

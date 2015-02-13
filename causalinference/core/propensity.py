@@ -46,6 +46,11 @@ class Propensity(object):
 					"assignment")
 
 
+	def __iter__(self):
+
+		return iter(self._dict)
+
+
 	def __str__(self):
 
 		if self._dict['se'] is None:

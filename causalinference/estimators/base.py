@@ -16,6 +16,11 @@ class Estimator(object):
 		              'ate_se': None, 'att_se': None, 'atc_se': None}
 
 	
+	def __iter__(self):
+
+		return iter(self._dict)
+
+
 	def __repr__(self):
 
 		if self._dict['ate_se'] is None:
@@ -95,6 +100,11 @@ class Estimators(object):
 	def __setitem__(self, key, value):
 
 		self._dict[key] = value
+
+
+	def __iter__(self):
+
+		return iter(self._dict)
 
 
 	def __str__(self):
