@@ -170,12 +170,18 @@ class CausalModel(Basic):
 		self.cutoff = 0.5 - np.sqrt(0.25-1/g[order[h.argmin()]])
 
 	
-	def trim_s(self):
+	def trim_s(self, select_only=False):
 
 		"""
 		Trims data based on propensity score using cutoff selected using
 		algorithm suggested by Crump, Hotz, Imbens, and Mitnik (2008).
 		Algorithm is of order O(N).
+
+		Expected args
+		-------------
+			select_only: Boolean
+				If True, only perform cutoff selection, but
+				not the actual trimming. Defaults to False.
 
 		References
 		----------
@@ -187,7 +193,8 @@ class CausalModel(Basic):
 		self._check_prereq('pscore')
 
 		self._select_cutoff()
-		self.trim()
+		if not select_only:
+			self.trim()
 
 
 	def stratify(self):
@@ -279,12 +286,19 @@ class CausalModel(Basic):
 		       self._select_blocks(e, l, mid, e[right].max())
 
 
-	def stratify_s(self):
+	def stratify_s(self, select_only=False):
 
 		"""
 		Stratifies the sample based on propensity score using bin
 		selection algorithm suggested by Imbens and Rubin (2015).
 		Algorithm is of order O(N log N).
+
+		Expected args
+		-------------
+			select_only: Boolean
+				If True, only perform bin selection, but
+				not the actual stratification. Defaults to
+				False.
 
 		References
 		----------
@@ -301,7 +315,8 @@ class CausalModel(Basic):
 		e_max = phat.max()
 		self.blocks = list(set(self._select_blocks(phat, l,
 		                                           e_min, e_max)))
-		self.stratify()
+		if not select_only:
+			self.stratify()
 
 
 	def blocking(self):
