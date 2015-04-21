@@ -5,9 +5,11 @@ CausalInference is a Python implementation of statistical and econometric
 methods in the field variously known as Causal Inference, Program Evaluation, 
 and Treatment Effect Analysis.
 
-The project was started in early 2015 by Laurence Wong as a personal side
-project, and is still in early development stage. It is distributed under
-the 3-Clause BSD license.
+Work on CausalInference started in 2014 by Laurence Wong as a personal side
+project. It is distributed under the 3-Clause BSD license.
+
+The most current development version is hosted on GitHub at:
+https://github.com/laurencium/causalinference
 
 Main Features
 =============
@@ -16,6 +18,11 @@ Main Features
 * Assessment of overlap in covariate distributions
 * Improvement of covariate balance through trimming
 * Subclassification on propensity score
-* Estimation of treatment effects via matching, blocking, weighting, and
-least squares
+* Estimation of treatment effects via matching, blocking, weighting, and least squares
+
+Dependencies
+============
+
+* NumPy: 1.8.2 or higher
+* SciPy: 0.13.3 or higher
 

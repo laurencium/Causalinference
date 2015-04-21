@@ -15,7 +15,7 @@ class Basic(object):
 
 	def __init__(self, Y, D, X):
 
-		self.Y, self.D, self.X = Y, D, X
+		self.Y, self.D, self.X = Y, D.astype(int), X
 		self.N, self.K = self.X.shape
 		self.controls, self.treated = (self.D==0), (self.D==1)
 		self.Y_c, self.Y_t = self.Y[self.controls], self.Y[self.treated]
