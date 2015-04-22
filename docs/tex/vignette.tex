@@ -1,0 +1,93 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass[12pt]{article}
+
+
+\usepackage{amsmath, amsthm, amssymb, setspace, fullpage, apacite, enumitem, listings}
+\usepackage[english]{babel}
+
+
+\renewcommand{\qedsymbol}{$\scriptstyle \blacksquare$}
+\renewcommand{\vec}[1]{\mbox{\boldmath$#1$}}
+\newcommand{\dto}{\overset{d}{\to}}
+\newcommand{\pto}{\overset{p}{\to}}
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\F}{\mathfrak{F}}
+\newcommand{\I}{\mathrm{I}}
+\newcommand{\M}{\mathfrak{M}}
+\newcommand{\N}{\mathrm{N}}
+\newcommand{\diag}{\mathrm{diag}}
+\renewcommand{\P}{\mathrm{P}}
+\newcommand{\Q}{\mathrm{Q}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\betav}{\vec{\beta}}
+\newcommand{\betahat}{\hat{\vec{\beta}}}
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+\newcommand{\argmin}{\operatornamewithlimits{argmin}}
+\newcommand{\plim}{\operatornamewithlimits{plim}}
+\newcommand{\interior}{\operatornamewithlimits{int}}
+
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\setbox0\hbox{$#1#2$}%
+\copy0\kern-\wd0\mkern4mu\box0}}  % statistical independence symbol
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{corollary}[thm]{Corollary}
+\newtheorem{lemma}[thm]{Lemma}
+\newtheorem{axiom}[thm]{Axiom}
+
+\theoremstyle{definition}
+\newtheorem{defn}[thm]{Definition}
+
+\theoremstyle{definition}
+\newtheorem{example}[thm]{Example}
+
+\theoremstyle{definition}
+\newtheorem{assumption}[thm]{Assumption}
+
+\theoremstyle{remark}
+\newtheorem{remark}[thm]{Remark}
+
+
+\onehalfspace
+\setlength{\parskip}{1ex}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Installation}
+
+CausalInference can be installed using \texttt{pip}, and will run provided the necessary dependencies are in place. On Ubuntu systems, the following commands should take care of all the essential steps if you are starting from scratch:
+\begin{verbatim}
+  $ sudo apt-get update
+  $ sudo apt-get install python-pip python-numpy python-scipy
+  $ sudo pip install causalinference
+\end{verbatim}
+
+\section*{Minimal Example}
+
+\begin{verbatim}
+  >>> import numpy as np
+  >>> from causalinference import *
+  >>> Y = np.random.rand(1000)
+  >>> D = np.random.randint(0, 2, 1000)
+  >>> X = np.random.rand(1000, 3)
+  >>> causal = CausalModel(Y, D, X)
+\end{verbatim}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

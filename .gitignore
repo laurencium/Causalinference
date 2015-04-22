@@ -1,5 +1,7 @@
 *.pyc
 *.swp
+*.log
+*.aux
 dist
 *.egg-info
 interactive.py
