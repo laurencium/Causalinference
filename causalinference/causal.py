@@ -173,8 +173,8 @@ class CausalModel(Basic):
 	def trim_s(self, select_only=False):
 
 		"""
-		Trims data based on propensity score using cutoff selected using
-		algorithm suggested by Crump, Hotz, Imbens, and Mitnik (2008).
+		Trims data based on propensity score using the cutoff selected
+		by the procedure of Crump, Hotz, Imbens, and Mitnik (2008).
 		Algorithm is of order O(N).
 
 		Expected args
@@ -289,8 +289,8 @@ class CausalModel(Basic):
 	def stratify_s(self, select_only=False):
 
 		"""
-		Stratifies the sample based on propensity score using bin
-		selection algorithm suggested by Imbens and Rubin (2015).
+		Stratifies the sample based on propensity score using the
+		bin selection procedure suggested by Imbens and Rubin (2015).
 		Algorithm is of order O(N log N).
 
 		Expected args
@@ -322,7 +322,7 @@ class CausalModel(Basic):
 	def blocking(self):
 
 		"""
-		Computes average treatment effects using regression within
+		Estimates average treatment effects using regression within
 		blocks. Sample must be stratified first.
 		"""
 
@@ -378,7 +378,7 @@ class CausalModel(Basic):
 	def weighting(self):
 
 		"""
-		Computes treatment effects using the Horvitz-Thompson weighting
+		Estimates treatment effects using the Horvitz-Thompson weighting
 		estimator modified to incorporate covariates. Estimator
 		possesses the so-called 'double robustness' property. See
 		Lunceford and Davidian (2004) for details.

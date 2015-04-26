@@ -66,6 +66,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\title{Causal Inference in Python: A Vignette}
+\author{Laurence Wong}
+\maketitle
+
 \section*{Installation}
 
 CausalInference can be installed using \texttt{pip}, and will run provided the necessary dependencies are in place. On Ubuntu systems, the following commands should take care of all the essential steps if you are starting from scratch:
@@ -77,6 +81,8 @@ CausalInference can be installed using \texttt{pip}, and will run provided the n
 
 \section*{Minimal Example}
 
+The main object of interest in CausalInference is the class \texttt{CausalModel}. It takes as inputs three NumPy arrays: \texttt{Y}, an $N$-vector of observed outcomes; \texttt{D}, an $N$-vector of treatment status indicators; and \texttt{X}, an $N$-by-$K$ matrix of covariates. The following code snippet illustrates how the class can be invoked using random data simulated from NumPy's \texttt{random} module.
+
 \begin{verbatim}
   >>> import numpy as np
   >>> from causalinference import *
@@ -86,6 +92,63 @@ CausalInference can be installed using \texttt{pip}, and will run provided the n
   >>> causal = CausalModel(Y, D, X)
 \end{verbatim}
 
+\section*{Class Attributes and Methods}
+
+Once an instance of the class \texttt{CausalModel} has been created, it will contain a number of attributes and methods that are relevant for conducting a causal analysis. Tables \ref{tab.a} and \ref{tab.b} contain a brief description of these attributes and methods. \\
+
+\begin{table}[h]
+\begin{center}\begin{tabular}{ll}
+Attribute & Description \\
+\texttt{N, N\_c, N\_t, K} & Integers indicating sample sizes and number of covariates. \\
+\texttt{covariates} & Dictionary-like object containing summary statistics for the \\
+& covariate variables. \\
+\texttt{pscore} & Dictionary-like object containing propensity score data, \\
+& including estimated logistic regression coefficients, predicted \\
+& propensity score, maximized log-likelihood, and the lists of the \\
+& linear and quadratic terms that are included in the regression. \\
+\texttt{cutoff} & Floating point number specifying the cutoff point for trimming \\
+& on propensity score.\\
+\texttt{blocks} & Either an integer indicating the number of equal-sized blocks to \\
+& stratify the sample into, or a list of ascending numbers specifying \\
+& the boundaries of the strata. \\
+\texttt{strata} & List-like object containing the list of stratified propensity bins. \\
+\texttt{est} & Dictionary-like object containing treatment effect estimates for \\
+& each estimator used.
+\end{tabular}\end{center}
+\caption{Attributes of the class CausalModel. Invoking \texttt{print} on any of the dictionary- or list-like attribute above yields customized summary tables. Note that some attributes are only created after the relevant methods have been called.}  \label{tab.a}
+\end{table}
+
+
+\begin{table}[h]
+\begin{center}\begin{tabular}{ll}
+Method & Description \\
+\texttt{restart} & Reinitializes data to original inputs, and drop any \\
+& estimated results. \\
+\texttt{propensity} & Estimates via logit the propensity score using specified \\
+& linear and quadratic terms. \\
+\texttt{propensity\_s} & Estimates via logit the propensity score using the \\
+& covariate selection algorithm of Imbens and Rubin (2015). \\
+\texttt{trim} & Trims data based on propensity score using the threshold \\
+& specified by the attribute \texttt{cutoff}. \\
+\texttt{trim\_s} & Trims data based on propensity score using the cutoff \\
+& selected by the procedure of Crump, Hotz, Imbens, \\
+& and Mitnik (2008). \\
+\texttt{stratify} & Stratifies the sample based on propensity score as \\
+& specified by the attribute \texttt{blocks}. \\
+\texttt{stratify\_s} & Stratifies the sample based on propensity score \\
+& using the bin selection procedure suggested by \\
+& Imbens and Rubin (2015). \\
+\texttt{blocking} & Estimates average treatment effects using regression \\
+& within blocks. \\
+\texttt{matching} & Estimates average treatment effects using matching \\
+& with replacement. \\
+\texttt{weighting} & Estimates average treatment effects using the \\
+& Horvitz-Thompson weighting estimator modified to \\
+& incorporate covariates. \\
+\texttt{ols} & Estimates average treatment effects using least squares.
+\end{tabular}\end{center}
+\caption{Methods of the class CausalModel. Invoke \texttt{help} on any of the above methods for more detailed documentation.}  \label{tab.b}
+\end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
