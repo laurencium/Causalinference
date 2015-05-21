@@ -8,6 +8,7 @@
 
 
 \usepackage{amsmath, amsthm, amssymb, setspace, fullpage, apacite, enumitem, listings}
+\usepackage[margin=0.7in]{geometry}
 \usepackage[english]{babel}
 
 
@@ -149,6 +150,78 @@ Method & Description \\
 \end{tabular}\end{center}
 \caption{Methods of the class CausalModel. Invoke \texttt{help} on any of the above methods for more detailed documentation.}  \label{tab.b}
 \end{table}
+
+\section*{Using CausalInference Interactively}
+
+\begin{verbatim}
+  >>> print causal.covariates
+  Covariates Summary
+                         Controls (N_c=267)         Treated (N_t=233)
+        Covariate         Mean         S.d.         Mean         S.d.     Nor-diff
+  --------------------------------------------------------------------------------
+               X0       -0.507        0.936        0.390        0.907        0.972
+               X1       -0.295        0.902        0.380        0.905        0.748
+               X2       -0.514        0.950        0.367        0.871        0.967
+\end{verbatim}
+
+Estimate propensity score.
+
+\begin{verbatim}
+  >>> causal.propensity_s()
+  >>> print causal.pscore
+  Estimated Parameters of Propensity Score
+                      Coef.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+       Intercept     -0.018      0.136     -0.133      0.447     -0.284      0.248
+              X0      1.785      0.192      9.305      0.000      1.409      2.161
+              X2      1.789      0.195      9.177      0.000      1.407      2.171
+              X1      1.765      0.203      8.678      0.000      1.366      2.163
+\end{verbatim}
+
+Trimming based on propensity score.
+
+\begin{verbatim}
+  >>> causal.trim_s()
+  >>> causal.N, causal.N_c, causal.N_t
+  (281, 143, 138)
+  >>> print causal.covariates
+  Covariates Summary
+                         Controls (N_c=143)         Treated (N_t=138)             
+        Covariate         Mean         S.d.         Mean         S.d.     Nor-diff
+  --------------------------------------------------------------------------------
+               X0       -0.171        0.770        0.163        0.893        0.401
+               X1       -0.046        0.848        0.066        0.765        0.139
+               X2       -0.178        0.780        0.125        0.802        0.383
+\end{verbatim}
+
+Stratifying sample based on propensity score.
+
+\begin{verbatim}
+  >>> causal.stratify_s()
+  >>> print causal.strata
+  Stratification Summary
+                Propensity score                            Ave. p-score    Within
+     Stratum      Min.      Max.       N_c       N_t  Controls   Treated      Est.
+  --------------------------------------------------------------------------------
+           1     0.085     0.513       104        37     0.230     0.267     2.274
+           2     0.518     0.631        18        17     0.570     0.589     2.996
+           3     0.632     0.753         7        28     0.678     0.699     3.447
+           4     0.757     0.915        14        56     0.835     0.842     3.367
+\end{verbatim}
+
+Computing the blocking estimator.
+
+\begin{verbatim}
+>>> causal.blocking()
+>>> print causal.est
+  Treatment Effect Estimates
+  Blocking
+                       Est.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+             ATE      2.782      0.127     21.941      0.000      2.534      3.031
+             ATT      3.045      0.152     20.046      0.000      2.747      3.342
+             ATC      2.530      0.134     18.925      0.000      2.268      2.792
+\end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

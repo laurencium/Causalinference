@@ -201,7 +201,7 @@ class CausalModel(Basic):
 
 		"""
 		Stratifies the sample based on propensity score. If the class
-		attribute blocks is a number, then equal-sized bins will be
+		attribute blocks is an integer, then equal-sized bins will be
 		created. Otherwise if blocks is a list of bin boundaries then
 		the bins will be created accordingly.
 		"""
