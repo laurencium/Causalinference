@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
@@ -17,83 +18,14 @@ class Propensity(object):
 	def __init__(self, lin, qua, model):
 
 		self._model = model
-		D, X = self._model.D, self._model.X
 
 		if lin == 'all':
-			lin = range(X.shape[1])
+			lin = range(self._model.X.shape[1])
 
-		mat = self._form_matrix(X, lin, qua)
+		mat = self._form_matrix(self._model.X, lin, qua)
 		self._dict = self._compute_pscore(mat) 
 		self._dict['lin'], self._dict['qua'] = lin, qua
 		self._dict['se'] = None
-
-
-	def __getitem__(self, key):
-
-		if key == 'se' and self._dict['se'] is None:
-			self._dict['se'] = self._compute_se()
-
-		return self._dict[key]
-
-
-	def __setitem__(self, key, value):
-
-		if key == 'fitted':
-			self._dict[key] = value
-		else:
-			raise TypeError("'" + self.__class__.__name__ +
-			                "' object does not support item " +
-					"assignment")
-
-
-	def __iter__(self):
-
-		return iter(self._dict)
-
-
-	def __str__(self):
-
-		if self._dict['se'] is None:
-			self._dict['se'] = self._compute_se()
-
-		coef = self._dict['coef']
-		se = self._dict['se']
-		p = Printer()
-
-		output = '\n'
-		output += 'Estimated Parameters of Propensity Score\n\n'
-
-		entries = ('', 'Coef.', 'S.e.', 'z', 'P>|z|',
-		           '[95% Conf. int.]')
-		span = [1]*5 + [2]
-		etype = ['string']*6
-		output += p.write_row(entries, span, etype)
-		output += p.write_row('-'*p.table_width, [1], ['string'])
-
-		entries = p._reg_entries('Intercept', coef[0], se[0])
-		span = [1]*7
-		etype = ['string'] + ['float']*6
-		output += p.write_row(entries, span, etype)
-
-		lin = self._dict['lin']
-		for i in xrange(len(lin)):
-			entries = p._reg_entries('X'+str(lin[i]),
-			                         coef[1+i], se[1+i])
-			output += p.write_row(entries, span, etype)
-
-		qua = self._dict['qua']
-		for i in xrange(len(qua)):
-			name = 'X'+str(qua[i][0])+'*X'+str(qua[i][1])
-			entries = p._reg_entries(name, coef[1+len(lin)+i],
-			                         se[1+len(lin)+i])
-			output += p.write_row(entries, span, etype)
-
-		return output
-
-
-	def keys(self):
-
-		return self._dict.keys()
 
 
 	def _sigmoid(self, x):
@@ -126,10 +58,15 @@ class Propensity(object):
 
 		Returns
 		-------
-			Vector or scalar log(1+exp(-x)), depending on input x.
+			Vector of log(1+exp(-x)) values.
 		"""
 
-		return np.log(1 + np.exp(-x))
+		values = np.empty(x.shape[0])
+		bigexp = (x < -100)  # exp(-x) is large
+		values[bigexp] = -x[bigexp]
+		values[~bigexp] = np.log(1 + np.exp(-x[~bigexp]))
+
+		return values
 
 
 	def _neg_loglike(self, beta, X_c, X_t):
@@ -282,6 +219,74 @@ class Propensity(object):
 		H = np.dot(p*(1-p)*mat.T,mat)
 		
 		return np.sqrt(np.diag(np.linalg.inv(H)))
+
+
+	def __getitem__(self, key):
+
+		if key == 'se' and self._dict['se'] is None:
+			self._dict['se'] = self._compute_se()
+
+		return self._dict[key]
+
+
+	def __setitem__(self, key, value):
+
+		if key == 'fitted':
+			self._dict[key] = value
+		else:
+			raise TypeError("'" + self.__class__.__name__ +
+			                "' object does not support item " +
+					"assignment")
+
+
+	def __iter__(self):
+
+		return iter(self._dict)
+
+
+	def __str__(self):
+
+		if self._dict['se'] is None:
+			self._dict['se'] = self._compute_se()
+
+		coef = self._dict['coef']
+		se = self._dict['se']
+		p = Printer()
+
+		output = '\n'
+		output += 'Estimated Parameters of Propensity Score\n\n'
+
+		entries = ('', 'Coef.', 'S.e.', 'z', 'P>|z|',
+		           '[95% Conf. int.]')
+		span = [1]*5 + [2]
+		etype = ['string']*6
+		output += p.write_row(entries, span, etype)
+		output += p.write_row('-'*p.table_width, [1], ['string'])
+
+		entries = p._reg_entries('Intercept', coef[0], se[0])
+		span = [1]*7
+		etype = ['string'] + ['float']*6
+		output += p.write_row(entries, span, etype)
+
+		lin = self._dict['lin']
+		for i in xrange(len(lin)):
+			entries = p._reg_entries('X'+str(lin[i]),
+			                         coef[1+i], se[1+i])
+			output += p.write_row(entries, span, etype)
+
+		qua = self._dict['qua']
+		for i in xrange(len(qua)):
+			name = 'X'+str(qua[i][0])+'*X'+str(qua[i][1])
+			entries = p._reg_entries(name, coef[1+len(lin)+i],
+			                         se[1+len(lin)+i])
+			output += p.write_row(entries, span, etype)
+
+		return output
+
+
+	def keys(self):
+
+		return self._dict.keys()
 
 
 class PropensitySelect(Propensity):
