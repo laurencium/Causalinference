@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 
 from ..utils.tools import Printer
@@ -23,13 +24,30 @@ class Covariates(object):
 	def __init__(self, model):
 
 		self._model = model
-		X_c, X_t = self._model.X_c, self._model.X_t
-		self._dict = {'mean_c': X_c.mean(0), 'mean_t': X_t.mean(0)}
-		self._dict['sd_c'] = np.sqrt(X_c.var(0))
-		self._dict['sd_t'] = np.sqrt(X_t.var(0))
-		mean_diff = self._dict['mean_t'] - self._dict['mean_c']
-		var_sum = self._dict['sd_c']**2 + self._dict['sd_t']**2
-		self._dict['ndiff'] = mean_diff / np.sqrt(var_sum/2)
+		self._dict = dict()
+
+		self._dict['mean_c'], self._dict['mean_t'] = self._calc_means()
+		self._dict['sd_c'], self._dict['sd_t'] = self._calc_sds()
+		self._dict['ndiff'] = self._calc_ndiff(self._dict['mean_c'],
+		                                       self._dict['mean_t'],
+						       self._dict['sd_c'],
+						       self._dict['sd_t'])
+
+
+	def _calc_means(self):
+
+		return (self._model.X_c.mean(0), self._model.X_t.mean(0))
+
+	
+	def _calc_sds(self):
+
+		return (np.sqrt(self._model.X_c.var(0, ddof=1)),
+		        np.sqrt(self._model.X_t.var(0, ddof=1)))
+
+
+	def _calc_ndiff(self, mean_c, mean_t, sd_c, sd_t):
+
+		return (mean_t - mean_c) / np.sqrt((sd_c**2 + sd_t**2)/2)
 
 
 	def __getitem__(self, key):
