@@ -40,10 +40,18 @@ class Propensity(object):
 
 		Returns
 		-------
-			Vector or scalar 1/(1+exp(-x)), depending on input x.
+			Vector of 1/(1+exp(-x)) values.
 		"""
 
-		return 1/(1+np.exp(-x))
+		def trunc_sigmoid(t):
+			if t >= 100:
+				return 1
+			elif t <= -100:
+				return 0
+			else:
+				return 1/(1+np.exp(-t))
+
+		return np.array(map(trunc_sigmoid, x))
 
 
 	def _log1exp(self, x):
@@ -61,12 +69,15 @@ class Propensity(object):
 			Vector of log(1+exp(-x)) values.
 		"""
 
-		values = np.empty(x.shape[0])
-		bigexp = (x < -100)  # exp(-x) is large
-		values[bigexp] = -x[bigexp]
-		values[~bigexp] = np.log(1 + np.exp(-x[~bigexp]))
+		def trunc_log1exp(t):
+			if t <= -100:
+				return -t
+			elif t >= 100:
+				return 0
+			else:
+				return np.log(1 + np.exp(-t))
 
-		return values
+		return np.array(map(trunc_log1exp, x))
 
 
 	def _neg_loglike(self, beta, X_c, X_t):
