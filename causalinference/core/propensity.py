@@ -28,7 +28,7 @@ class Propensity(object):
 		self._dict['se'] = None
 
 
-	def _sigmoid(self, x):
+	def _sigmoid(self, x, top_threshold=100, bottom_threshold=-100):
 	
 		"""
 		Computes 1/(1+exp(-x)) for input x, to be used in maximum
@@ -37,24 +37,30 @@ class Propensity(object):
 		Expected args
 		-------------
 			x: array-like
+				numpy array, should be shaped (n,).
+			top_threshold: scalar
+				cut-off for large x to avoid evaluting exp(-x).
+			bottom_threshold:
+				cut-off for small x to avoid evaluting exp(-x).
 
 		Returns
 		-------
 			Vector of 1/(1+exp(-x)) values.
 		"""
 
-		def trunc_sigmoid(t):
-			if t >= 100:
-				return 1
-			elif t <= -100:
-				return 0
-			else:
-				return 1/(1+np.exp(-t))
+		high_x = (x >= top_threshold)
+		low_x = (x <= bottom_threshold)
+		mid_x = ~(high_x | low_x)
 
-		return np.array(map(trunc_sigmoid, x))
+		values = np.empty(x.shape[0])
+		values[high_x] = 1.0
+		values[low_x] = 0.0
+		values[mid_x] = 1/(1+np.exp(-x[mid_x]))
+
+		return values
 
 
-	def _log1exp(self, x):
+	def _log1exp(self, x, top_threshold=100, bottom_threshold=-100):
 
 		"""
 		Computes log(1+exp(-x)) for input x, to be used in maximum
@@ -63,21 +69,27 @@ class Propensity(object):
 		Expected args
 		-------------
 			x: array-like
+				numpy array, should be shaped (n,).
+			top_threshold: scalar
+				cut-off for large x to avoid evaluting exp(-x).
+			bottom_threshold:
+				cut-off for small x to avoid evaluting exp(-x).
 
 		Returns
 		-------
 			Vector of log(1+exp(-x)) values.
 		"""
 
-		def trunc_log1exp(t):
-			if t <= -100:
-				return -t
-			elif t >= 100:
-				return 0
-			else:
-				return np.log(1 + np.exp(-t))
+		high_x = (x >= top_threshold)
+		low_x = (x <= bottom_threshold)
+		mid_x = ~(high_x | low_x)
 
-		return np.array(map(trunc_log1exp, x))
+		values = np.empty(x.shape[0])
+		values[high_x] = 0.0
+		values[low_x] = -x[low_x]
+		values[mid_x] = np.log(1 + np.exp(-x[mid_x]))
+
+		return values
 
 
 	def _neg_loglike(self, beta, X_c, X_t):

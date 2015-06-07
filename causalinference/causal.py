@@ -212,7 +212,7 @@ class CausalModel(Basic):
 		phat = self.pscore['fitted']
 		if isinstance(self.blocks, (int, long)):
 			q = np.linspace(0, 100, self.blocks+1)[1:-1]
-			self.blocks = [0] + list(np.percentile(phat, q)) + [1]
+			self.blocks = [0] + np.percentile(phat, list(q)) + [1]
 
 		self.blocks.sort()
 		self.blocks[0] *= 0.99  # adjust to not drop obs w/ min pscore
