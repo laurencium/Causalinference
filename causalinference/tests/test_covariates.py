@@ -11,24 +11,25 @@ Y = np.random.rand(D.shape[0])  # shouldn't matter
 model = CausalModel(Y, D, X)
 covariates = Covariates(model)
 
-def test_calc_means():
+def test_covariates():
 
 	mean_c = np.array([3, 5])
 	mean_t = np.array([6, 4])
-	assert np.array_equal(covariates._calc_means()[0], mean_c)
-	assert np.array_equal(covariates._calc_means()[1], mean_t)
+	sd_c = np.sqrt([8, 8])
+	sd_t = np.sqrt([8, 8])
+	ndiff = np.array([3/(2*np.sqrt(2)), -1/(2*np.sqrt(2))])
+	keys = set(['mean_c', 'mean_t', 'sd_c', 'sd_t', 'ndiff'])
 
+	assert np.array_equal(covariates['mean_c'], mean_c)
+	assert np.array_equal(covariates['mean_t'], mean_t)
+	assert np.array_equal(covariates['sd_c'], sd_c)
+	assert np.array_equal(covariates['sd_t'], sd_t)
+	assert np.array_equal(covariates['ndiff'], ndiff)
+	assert set(covariates.keys()) == keys
 
-def test_calc_sds():
-
-	sd = np.sqrt([8, 8])
-	assert np.array_equal(covariates._calc_sds()[0], sd)
-	assert np.array_equal(covariates._calc_sds()[1], sd)
-	
 
 def test_calc_ndiff():
 
 	ans = -1/np.sqrt(2.5)
 	assert_equal(covariates._calc_ndiff(4, 3, 2, 1), ans)
-
 

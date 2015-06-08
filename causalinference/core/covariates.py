@@ -26,23 +26,14 @@ class Covariates(object):
 		self._model = model
 		self._dict = dict()
 
-		self._dict['mean_c'], self._dict['mean_t'] = self._calc_means()
-		self._dict['sd_c'], self._dict['sd_t'] = self._calc_sds()
+		self._dict['mean_c'] = self._model.X_c.mean(0)
+		self._dict['mean_t'] = self._model.X_t.mean(0)
+		self._dict['sd_c'] = np.sqrt(self._model.X_c.var(0, ddof=1))
+		self._dict['sd_t'] = np.sqrt(self._model.X_t.var(0, ddof=1))
 		self._dict['ndiff'] = self._calc_ndiff(self._dict['mean_c'],
 		                                       self._dict['mean_t'],
 						       self._dict['sd_c'],
 						       self._dict['sd_t'])
-
-
-	def _calc_means(self):
-
-		return (self._model.X_c.mean(0), self._model.X_t.mean(0))
-
-	
-	def _calc_sds(self):
-
-		return (np.sqrt(self._model.X_c.var(0, ddof=1)),
-		        np.sqrt(self._model.X_t.var(0, ddof=1)))
 
 
 	def _calc_ndiff(self, mean_c, mean_t, sd_c, sd_t):
