@@ -18,13 +18,16 @@ class Propensity(object):
 	def __init__(self, lin, qua, model):
 
 		self._model = model
+		X = self._form_matrix(lin, qua)
+		X_c, X_t = X[self._model.controls], X[self._model.treated]
 
-		if lin == 'all':
-			lin = range(self._model.X.shape[1])
+		beta = self._calc_coef(X_c, X_t)
 
-		mat = self._form_matrix(self._model.X, lin, qua)
-		self._dict = self._compute_pscore(mat) 
+		self._dict = dict()
 		self._dict['lin'], self._dict['qua'] = lin, qua
+		self._dict['coef'] = beta
+		self._dict['loglike'] = -self._neg_loglike(beta, X_c, X_t)
+		self._dict['fitted'] = self._sigmoid(X.dot(beta))
 		self._dict['se'] = None
 
 
@@ -145,45 +148,36 @@ class Propensity(object):
 		       (self._sigmoid(-X_t.dot(beta))*X_t.T).sum(1)
 
 
-	def _compute_pscore(self, X):
+	def _calc_coef(self, X_c, X_t):
 
 		"""
-		Estimates via logit the propensity score based on input
-		covariate matrix X. Uses BFGS algorithm for optimization.
+		Estimates propensity score model via logistic regression. Uses
+		BFGS algorithm for optimization.
 
 		Expected args
 		-------------
-			X: matrix, ndarray
-				Covariate matrix to estimate propensity score on.
+			X_c: matrix, ndarray
+				Covariate matrix of the control units.
+			X_t: matrix, ndarray
+				Covariate matrix of the treated units.
 
 		Returns
 		-------
-			pscore: dict containing
-				'coef': Estimated coefficients.
-				'loglike': Maximized log-likelihood value.
-				'fitted': Vector of estimated propensity scores.
+			Estimated logistic regression coefficients.
 		"""
 
-		c, t = self._model.controls, self._model.treated
-		X_c, X_t = X[c], X[t]
-		N, K = X.shape
+		K = X_c.shape[1]
 
-		neg_loglike = lambda x: self._neg_loglike(x, X_c, X_t)
-		neg_gradient = lambda x: self._neg_gradient(x, X_c, X_t)
+		neg_loglike = lambda b: self._neg_loglike(b, X_c, X_t)
+		neg_gradient = lambda b: self._neg_gradient(b, X_c, X_t)
 
 		logit = fmin_bfgs(neg_loglike, np.zeros(K), neg_gradient,
 		                  full_output=True, disp=False)
 
-		pscore = {}
-		pscore['coef'], pscore['loglike'] = logit[0], -logit[1]
-		pscore['fitted'] = np.empty(N)
-		pscore['fitted'][c] = self._sigmoid(X_c.dot(pscore['coef']))
-		pscore['fitted'][t] = self._sigmoid(X_t.dot(pscore['coef']))
-
-		return pscore
+		return logit[0]  # coefficient estimates
 
 
-	def _form_matrix(self, X, lin, qua):
+	def _form_matrix(self, lin, qua):
 
 		"""
 		Forms covariate matrix for use in propensity score estimation,
@@ -191,12 +185,11 @@ class Propensity(object):
 
 		Expected args
 		-------------
-			X: matrix, ndarray
-				Matrix of original covariates to form a matrix
-				out of.
-			lin: list
+			lin: string, list
 				Column numbers (zero-based) of the original
-				covariate matrix to include linearly.
+				covariate matrix X to include linearly. Can
+				alternatively be a string equal to 'all', which
+				results in using whole covariate matrix.
 			qua: list
 				Tuples indicating which columns of the original
 				covariate matrix to multiply and include. E.g.,
@@ -210,11 +203,19 @@ class Propensity(object):
 			and quadratic terms.
 		"""
 
-		mat = np.empty((X.shape[0], 1+len(lin)+len(qua)))
+		X, N, K = self._model.X, self._model.N, self._model.K
 
+		if lin == 'all':
+			mat = np.empty((N, 1+K+len(qua)))
+		else:
+			mat = np.empty((N, 1+len(lin)+len(qua)))
 		mat[:, 0] = 1  # constant term
+
 		current_col = 1
-		if lin:
+		if lin == 'all':
+			mat[:, current_col:current_col+K] = X
+			current_col += K
+		elif lin:
 			mat[:, current_col:current_col+len(lin)] = X[:, lin]
 			current_col += len(lin)
 		for term in qua:
@@ -224,7 +225,7 @@ class Propensity(object):
 		return mat
 
 
-	def _compute_se(self):
+	def _calc_se(self):
 
 		"""
 		Computes standard errors for the coefficient estimates of the
@@ -237,7 +238,7 @@ class Propensity(object):
 		"""
 
 		lin, qua = self._dict['lin'], self._dict['qua']
-		mat = self._form_matrix(self._model.X, lin, qua)
+		mat = self._form_matrix(lin, qua)
  		p = self._dict['fitted']
 		H = np.dot(p*(1-p)*mat.T,mat)
 		
@@ -247,7 +248,7 @@ class Propensity(object):
 	def __getitem__(self, key):
 
 		if key == 'se' and self._dict['se'] is None:
-			self._dict['se'] = self._compute_se()
+			self._dict['se'] = self._calc_se()
 
 		return self._dict[key]
 
@@ -270,7 +271,7 @@ class Propensity(object):
 	def __str__(self):
 
 		if self._dict['se'] is None:
-			self._dict['se'] = self._compute_se()
+			self._dict['se'] = self._calc_se()
 
 		coef = self._dict['coef']
 		se = self._dict['se']
@@ -291,7 +292,10 @@ class Propensity(object):
 		etype = ['string'] + ['float']*6
 		output += p.write_row(entries, span, etype)
 
-		lin = self._dict['lin']
+		if self._dict['lin'] == 'all':
+			lin = range(self._model.X.shape[1])
+		else:
+			lin = self._dict['lin']
 		for i in xrange(len(lin)):
 			entries = p._reg_entries('X'+str(lin[i]),
 			                         coef[1+i], se[1+i])
@@ -312,6 +316,10 @@ class Propensity(object):
 		return self._dict.keys()
 
 
+class PropensitySelect(Propensity):
+	def __init__(self, lin_B, C_lin, C_qua, model):
+		pass
+'''
 class PropensitySelect(Propensity):
 
 	"""
@@ -343,7 +351,7 @@ class PropensitySelect(Propensity):
 			qua = self._select_terms([], pot, C_qua, lin)
 
 		mat = self._form_matrix(X, lin, qua)
-		self._dict = self._compute_pscore(mat)
+		self._dict = self._calc_coef(mat)
 		self._dict['lin'], self._dict['qua'] = lin, qua
 		self._dict['se'] = None
 		
@@ -387,22 +395,22 @@ class PropensitySelect(Propensity):
 		# calculate log-likelihood under null of no additional terms
 		if not lin:  # lin is empty, so linear terms not yet decided
 			mat = self._form_matrix(X, cur, [])
-			ll_null = self._compute_pscore(mat)['loglike']
+			ll_null = self._calc_coef(mat)['loglike']
 		else:  # lin is not empty, so linear terms are already fixed
 			mat = self._form_matrix(X, lin, cur)
-			ll_null = self._compute_pscore(mat)['loglike']
+			ll_null = self._calc_coef(mat)['loglike']
 
 		# calculate LR stat after including each additional term
 		lr = np.empty(len(pot))
 		if not lin:
 			for i in xrange(len(pot)):
 				mat = self._form_matrix(X, cur+[pot[i]], [])
-				ll = self._compute_pscore(mat)['loglike']
+				ll = self._calc_coef(mat)['loglike']
 				lr[i] = 2*(ll - ll_null)
 		else:
 			for i in xrange(len(pot)):
 				mat = self._form_matrix(X, lin, cur+[pot[i]])
-				ll = self._compute_pscore(mat)['loglike']
+				ll = self._calc_coef(mat)['loglike']
 				lr[i] = 2*(ll - ll_null)
 
 		argmax = np.argmax(lr)
@@ -413,4 +421,5 @@ class PropensitySelect(Propensity):
 			new_term = pot.pop(argmax)
 			return self._select_terms(cur+[new_term],
 			                          pot, crit, lin)
+'''
 
