@@ -3,6 +3,7 @@ import numpy as np
 
 from ..causal import CausalModel
 from ..core.propensity import Propensity
+from tools import random_data_base
 
 
 def test_form_matrix():
@@ -97,24 +98,28 @@ def test_calc_se():
 	assert np.allclose(propensity._calc_se(Z, p), ans)
 
 
-# coefficient estimates, fitted values, and standard errors obtained from R
+# coefficients, fitted values, log-likelihood, standard errors obtained from R
 def test_propensity():
 
-	Y = np.random.rand(4)  # shouldn't matter
+	Y = random_data(D=False, X=False)  # shouldn't matter
 	D = np.array([0, 0, 1, 1])
 	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])
 
 	model = CausalModel(Y, D, X)
 	propensity = Propensity('all', [], model)
 	coef = np.array([-2.1505403, -0.3671654, 0.8392352])
+	loglike = -2.567814
 	fitted = np.array([0.3016959, 0.6033917, 0.6983041, 0.3966083])
 	se = np.array([3.8953529, 0.6507885, 1.3595614])
+	keys = set(['lin', 'qua', 'coef', 'loglike', 'fitted', 'se'])
 	
 	assert_equal(propensity['lin'], 'all')
 	assert_equal(propensity['qua'], [])
 	assert np.allclose(propensity['coef'], coef)
+	assert np.allclose(propensity['loglike'], loglike)
 	assert np.allclose(propensity['fitted'], fitted)
 	assert np.allclose(propensity['se'], se)
+	assert_equal(set(propensity.keys()), keys)
 
 
 # constants used in helper functions
@@ -127,18 +132,7 @@ DEFAULT_QUA = []
 # helper function
 def random_data(Y=True, D=True, X=True):
 
-	data = []
-	if Y:
-		Y_data = np.random.rand(DEFAULT_N)
-		data.append(Y_data)
-	if D:
-		D_data = np.random.random_integers(0, 1, DEFAULT_N)
-		data.append(D_data)
-	if X:
-		X_data = np.random.rand(DEFAULT_N, DEFAULT_K)
-		data.append(X_data)
-
-	return data
+	return random_data_base(DEFAULT_N, DEFAULT_K, Y, D, X)
 
 
 # helper function
