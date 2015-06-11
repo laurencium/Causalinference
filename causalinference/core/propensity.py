@@ -28,7 +28,55 @@ class Propensity(object):
 		self._dict['coef'] = beta
 		self._dict['loglike'] = -self._neg_loglike(beta, X_c, X_t)
 		self._dict['fitted'] = self._sigmoid(X.dot(beta))
-		self._dict['se'] = None
+		self._dict['se'] = None  # only compute on request
+
+
+	def _form_matrix(self, lin, qua):
+
+		"""
+		Forms covariate matrix for use in propensity score estimation,
+		based on requirements on linear and quadratic terms.
+
+		Expected args
+		-------------
+			lin: string, list
+				Column numbers (zero-based) of the original
+				covariate matrix X to include linearly. Can
+				alternatively be a string equal to 'all', which
+				results in using whole covariate matrix.
+			qua: list
+				Tuples indicating which columns of the original
+				covariate matrix to multiply and include. E.g.,
+				[(1,1), (2,3)] indicates squaring the 1st column
+				and including the product of the 2nd and 3rd
+				columns.
+
+		Returns
+		-------
+			Covariate matrix formed based on requirements on linear
+			and quadratic terms.
+		"""
+
+		X, N, K = self._model.X, self._model.N, self._model.K
+
+		if lin == 'all':
+			mat = np.empty((N, 1+K+len(qua)))
+		else:
+			mat = np.empty((N, 1+len(lin)+len(qua)))
+		mat[:, 0] = 1  # constant term
+
+		current_col = 1
+		if lin == 'all':
+			mat[:, current_col:current_col+K] = X
+			current_col += K
+		elif lin:
+			mat[:, current_col:current_col+len(lin)] = X[:, lin]
+			current_col += len(lin)
+		for term in qua:
+			mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
+			current_col += 1
+
+		return mat
 
 
 	def _sigmoid(self, x, top_threshold=100, bottom_threshold=-100):
@@ -177,59 +225,23 @@ class Propensity(object):
 		return logit[0]  # coefficient estimates
 
 
-	def _form_matrix(self, lin, qua):
+	def _calc_se(self, X, p):
 
 		"""
-		Forms covariate matrix for use in propensity score estimation,
-		based on requirements on linear and quadratic terms.
+		Computes standard errors for the coefficient estimates of a
+		logistic regression, given matrix of independent variables
+		and fitted values from the regression.
 
 		Expected args
 		-------------
-			lin: string, list
-				Column numbers (zero-based) of the original
-				covariate matrix X to include linearly. Can
-				alternatively be a string equal to 'all', which
-				results in using whole covariate matrix.
-			qua: list
-				Tuples indicating which columns of the original
-				covariate matrix to multiply and include. E.g.,
-				[(1,1), (2,3)] indicates squaring the 1st column
-				and including the product of the 2nd and 3rd
-				columns.
-
-		Returns
-		-------
-			Covariate matrix formed based on requirements on linear
-			and quadratic terms.
-		"""
-
-		X, N, K = self._model.X, self._model.N, self._model.K
-
-		if lin == 'all':
-			mat = np.empty((N, 1+K+len(qua)))
-		else:
-			mat = np.empty((N, 1+len(lin)+len(qua)))
-		mat[:, 0] = 1  # constant term
-
-		current_col = 1
-		if lin == 'all':
-			mat[:, current_col:current_col+K] = X
-			current_col += K
-		elif lin:
-			mat[:, current_col:current_col+len(lin)] = X[:, lin]
-			current_col += len(lin)
-		for term in qua:
-			mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
-			current_col += 1
-
-		return mat
-
-
-	def _calc_se(self):
-
-		"""
-		Computes standard errors for the coefficient estimates of the
-		logistic regression used to estimate propensity scores.
+			X: matrix, ndarray
+				Matrix of independent variables used in the
+				logistic regression. If a constant term was
+				included, this matrix should include a column
+				of ones.
+			p: array-like
+				Vector of fitted values from the logistic
+				regression.
 
 		Returns
 		-------
@@ -237,18 +249,23 @@ class Propensity(object):
 			of coefficient estimates.
 		"""
 
-		lin, qua = self._dict['lin'], self._dict['qua']
-		mat = self._form_matrix(lin, qua)
- 		p = self._dict['fitted']
-		H = np.dot(p*(1-p)*mat.T,mat)
+		H = np.dot(p*(1-p)*X.T, X)
 		
 		return np.sqrt(np.diag(np.linalg.inv(H)))
+
+
+	def _store_se(self):
+
+		lin, qua = self._dict['lin'], self._dict['qua']
+		X = self._form_matrix(lin, qua)
+		p = self._dict['fitted']
+		self._dict['se'] = self._calc_se(X, p)
 
 
 	def __getitem__(self, key):
 
 		if key == 'se' and self._dict['se'] is None:
-			self._dict['se'] = self._calc_se()
+			self._store_se()
 
 		return self._dict[key]
 
@@ -271,7 +288,7 @@ class Propensity(object):
 	def __str__(self):
 
 		if self._dict['se'] is None:
-			self._dict['se'] = self._calc_se()
+			self._store_se()
 
 		coef = self._dict['coef']
 		se = self._dict['se']
