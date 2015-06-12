@@ -102,8 +102,8 @@ def test_calc_se():
 def test_propensity():
 
 	Y = random_data(D=False, X=False)  # shouldn't matter
-	D = np.array([0, 0, 1, 1])
-	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])
+	D = np.array([0, 0, 1, 1])  # this matters
+	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])  # this matters
 
 	model = CausalModel(Y, D, X)
 	propensity = Propensity('all', [], model)

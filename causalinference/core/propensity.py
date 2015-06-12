@@ -334,8 +334,80 @@ class Propensity(object):
 
 
 class PropensitySelect(Propensity):
+
+
 	def __init__(self, lin_B, C_lin, C_qua, model):
-		pass
+
+		self._model = model
+
+
+	def _get_excluded_lin(self, included):
+
+		K = self._model.X.shape[1]
+		included_set = set(included)
+
+		return [term for term in xrange(K) if term not in included_set]
+
+
+	def _get_excluded_qua(self, lin, included):
+
+		whole_set = list(combinations_with_replacement(lin, 2))
+		included_set = set(included)
+
+		return [term for term in whole_set if term not in included_set]
+
+
+	def _calc_loglike(self, lin, qua):
+
+		X = self._form_matrix(lin, qua)
+		X_c, X_t = X[self._model.controls], X[self._model.treated]
+		beta = self._calc_coef(X_c, X_t)
+
+		return -self._neg_loglike(beta, X_c, X_t)
+
+
+	def _pick_lin(self, lin_B, C_lin):
+
+		excluded = self._get_excluded_lin(lin_B)
+		if excluded == []:
+			return lin_B
+
+		ll_null = self._calc_loglike(lin_B, [])
+
+		def lr_stat_lin(lin_term):
+			ll_alt = self._calc_loglike(lin_B+[lin_term], [])
+			return 2 * (ll_alt - ll_null)
+
+		lr_stats = map(lr_stat_lin, excluded)
+		max_lr, argmax_lr = lr_stats.max(), lr_stats.argmax()
+
+		if max_lr < C_lin:
+			return lin_B
+		else:
+			self._select_lin(lin_B+[excluded[argmax_lr]], C_lin)
+
+
+	def _pick_qua(self, lin, qua_B, C_qua):
+
+		excluded = self._get_excluded_qua(lin, qua_B)
+		if excluded == []:
+			return qua_B
+
+		ll_null = self._calc_loglike(lin, qua_B)
+
+		def lr_stat_qua(qua_term):
+			ll_alt = self._calc_loglike(lin, qua_B+[qua_term])
+			return 2 * (ll_alt - ll_null)
+
+		lr_stats = map(lr_stat_qua, excluded)
+		max_lr, argmax_lr = lr_stats.max(), lr_stats.argmax()
+
+		if max_lr < C_qua:
+			return qua_B
+		else:
+			self._pick_qua(lin, qua_B+[excluded[argmax_lr]], C_qua)
+
+
 '''
 class PropensitySelect(Propensity):
 
