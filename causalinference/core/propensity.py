@@ -366,10 +366,10 @@ class PropensitySelect(Propensity):
 		return -self._neg_loglike(beta, X_c, X_t)
 
 
-	def _pick_lin(self, lin_B, C_lin):
+	def _test_lin(self, lin_B, C_lin):
 
-		excluded = self._get_excluded_lin(lin_B)
-		if excluded == []:
+		excl = self._get_excluded_lin(lin_B)
+		if excl == []:
 			return lin_B
 
 		ll_null = self._calc_loglike(lin_B, [])
@@ -378,13 +378,23 @@ class PropensitySelect(Propensity):
 			ll_alt = self._calc_loglike(lin_B+[lin_term], [])
 			return 2 * (ll_alt - ll_null)
 
-		lr_stats = map(lr_stat_lin, excluded)
-		max_lr, argmax_lr = lr_stats.max(), lr_stats.argmax()
+		lr_stats = np.array(map(lr_stat_lin, excl))
+		argmax_lr = lr_stats.argmax()
 
-		if max_lr < C_lin:
+		if lr_stats[argmax_lr] < C_lin:
 			return lin_B
 		else:
-			self._select_lin(lin_B+[excluded[argmax_lr]], C_lin)
+			return self._test_lin(lin_B+[excl[argmax_lr]], C_lin)
+
+
+	def _select_lin_terms(self, lin_B, C_lin):
+
+		if C_lin <= 0:
+			return lin_B + self._get_excluded_lin(lin_B)
+		elif C_lin == np.inf:
+			return lin_B
+		else:
+			return self._test_lin(lin_B, C_lin)
 
 
 	def _pick_qua(self, lin, qua_B, C_qua):
