@@ -18,15 +18,15 @@ class Propensity(object):
 	def __init__(self, lin, qua, model):
 
 		self._model = model
-		lin = self._parse_lin_terms(lin)
-		qua = self._parse_qua_terms(qua)
-		X = self._form_matrix(lin, qua)
+		lin_parsed = self._parse_lin_terms(lin)
+		qua_parsed = self._parse_qua_terms(qua)
+		X = self._form_matrix(lin_parsed, qua_parsed)
 		X_c, X_t = X[self._model.controls], X[self._model.treated]
 
 		beta = self._calc_coef(X_c, X_t)
 
 		self._dict = dict()
-		self._dict['lin'], self._dict['qua'] = lin, qua
+		self._dict['lin'], self._dict['qua'] = lin_parsed, qua_parsed
 		self._dict['coef'] = beta
 		self._dict['loglike'] = -self._neg_loglike(beta, X_c, X_t)
 		self._dict['fitted'] = self._sigmoid(X.dot(beta))
@@ -35,6 +35,24 @@ class Propensity(object):
 
 	def _parse_lin_terms(self, lin):
 
+		"""
+		Converts, if necessary, specification of linear terms given in
+		strings to list of column numbers of the original covariate
+		matrix.
+
+		Expected args
+		-------------
+			lin: string, list
+				Strings, such as 'all', or list of column
+				numbers, that specifies which covariates to
+				include as linear terms.
+
+		Returns
+		-------
+			List of column numbers of covariate matrix specifying
+			which variables to include linearly.
+		"""
+
 		if lin == 'all':
 			return range(self._model.K)
 		else:
@@ -42,6 +60,24 @@ class Propensity(object):
 
 
 	def _parse_qua_terms(self, qua):
+
+		"""
+		Converts, if necessary, specification of quadratic terms given
+		in strings to list of tuples of column numbers of the original
+		covariate matrix.
+
+		Expected args
+		-------------
+			qua: string, list
+				Strings, such as 'all', or list of paris of
+				column numbers, that specifies which covariates
+				to include as quadratic terms.
+
+		Returns
+		-------
+			List of tuples of column numbers of covariate matrix
+			specifying which terms to include quadratically.
+		"""
 
 		if qua == 'all':
 			lin_terms = xrange(self._model.K)
@@ -58,16 +94,14 @@ class Propensity(object):
 
 		Expected args
 		-------------
-			lin: string, list
+			lin: list
 				Column numbers (zero-based) of the original
-				covariate matrix X to include linearly. Can
-				alternatively be a string equal to 'all', which
-				results in using whole covariate matrix.
+				covariate matrix to include linearly.
 			qua: list
 				Tuples indicating which columns of the original
 				covariate matrix to multiply and include. E.g.,
-				[(1,1), (2,3)] indicates squaring the 1st column
-				and including the product of the 2nd and 3rd
+				[(1,1), (2,3)] indicates squaring the 2nd column
+				and including the product of the 3rd and 4th
 				columns.
 
 		Returns
@@ -348,18 +382,40 @@ class Propensity(object):
 
 class PropensitySelect(Propensity):
 
+	"""
+	Dictionary-like class containing propensity score data, including
+	estimated logistic regression coefficients, predicted propensity score,
+	maximized log-likelihood, and lists of the linear and quadratic terms
+	that are included in the regression.
+	"""
 
 	def __init__(self, lin_B, C_lin, C_qua, model):
 
 		self._model = model
-		lin_B = self._parse_lin_terms(lin_B)
-		lin = self._select_lin_terms(lin_B, C_lin)
+		lin_B_parsed = self._parse_lin_terms(lin_B)
+		lin = self._select_lin_terms(lin_B_parsed, C_lin)
 		qua = self._select_qua_terms(lin, C_qua)
 
 		super(PropensitySelect, self).__init__(lin, qua, self._model)
 
 
 	def _get_excluded_lin(self, included):
+
+		"""
+		Finds excluded linear terms given a list of included ones.
+
+		Expected args
+		-------------
+			included: list
+				Column numbers (zero-based) of the original
+				covariate matrix that have been included
+				linearly.
+
+		Returns
+		-------
+			List of column numbers of the original covariate matrix
+			corresponding to the excluded linear terms.
+		"""
 
 		K = self._model.X.shape[1]
 		included_set = set(included)
@@ -369,6 +425,32 @@ class PropensitySelect(Propensity):
 
 	def _get_excluded_qua(self, lin, included):
 
+		"""
+		Finds excluded quadratic terms given a list of base linear
+		terms and a list of included quadratic terms.
+
+		Expected args
+		-------------
+			lin : list
+				Column numbers (zero-based) of the original
+				covariate matrix that have been included
+				linearly. Quadratic terms considered are
+				constructed out of these linear terms.
+			included: list
+				Tuples indicating pairs of columns of the
+				original covariate matrix that have been
+				included as quadratic terms. E.g.,
+				[(1,1), (2,3)] indicates squaring the 2nd column
+				and including the product of the 3rd and 4th
+				columns.
+
+		Returns
+		-------
+			List of tuples of column numbers of the original
+			covariate matrix corresponding to the excluded
+			quadratic terms.
+		"""
+
 		whole_set = list(combinations_with_replacement(lin, 2))
 		included_set = set(included)
 
@@ -376,6 +458,27 @@ class PropensitySelect(Propensity):
 
 
 	def _calc_loglike(self, lin, qua):
+
+		"""
+		Calculates log-likelihood given linear and quadratic terms to
+		include in the logistic regression.
+
+		Expected args
+		-------------
+			lin : list
+				Column numbers (zero-based) of the original
+				covariate matrix to include.
+			included: list
+				Tuples indicating pairs of columns of the
+				original covariate matrix to include. E.g.,
+				[(1,1), (2,3)] indicates squaring the 2nd column
+				and including the product of the 3rd and 4th
+				columns.
+
+		Returns
+		-------
+			Maximized log-likelihood value.
+		"""
 
 		X = self._form_matrix(lin, qua)
 		X_c, X_t = X[self._model.controls], X[self._model.treated]
@@ -385,6 +488,35 @@ class PropensitySelect(Propensity):
 
 
 	def _test_lin(self, lin_B, C_lin):
+
+		"""
+		Selects, through a sequence of likelihood ratio tests, the
+		variables that should be included linearly in propensity
+		score estimation. The covariate selection algorithm is
+		described in Imbens and Rubin (2015).
+
+		Expected args
+		-------------
+			lin_B: list
+				Column numbers (zero-based) of the original
+				covariate matrix that should be included as
+				linear terms regardless.
+			C_lin: scalar
+				Critical value used in likelihood ratio test
+				to decide whether candidate linear terms should
+				be included.
+
+		Returns
+		-------
+			List of column numbers of the original covariate matrix
+			to include linearly as decided by the LR tests.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences: An
+				Introduction.
+		"""
 
 		excluded = self._get_excluded_lin(lin_B)
 		if excluded == []:
@@ -408,6 +540,28 @@ class PropensitySelect(Propensity):
 
 	def _select_lin_terms(self, lin_B, C_lin):
 
+		"""
+		Selects the variables that should be included linearly in
+		propensity score estimation. Mostly a wrapper around function
+		_test_lin to handle cases that require little computation.
+		
+		Expected args
+		-------------
+			lin_B: list
+				Column numbers (zero-based) of the original
+				covariate matrix that should be included as
+				linear terms regardless.
+			C_lin: scalar
+				Critical value used in likelihood ratio test
+				to decide whether candidate linear terms should
+				be included.
+
+		Returns
+		-------
+			List of column numbers of the original covariate matrix
+			selected to be included linearly.
+		"""
+
 		if C_lin <= 0:
 			return lin_B + self._get_excluded_lin(lin_B)
 		elif C_lin == np.inf:
@@ -417,6 +571,41 @@ class PropensitySelect(Propensity):
 
 
 	def _test_qua(self, lin, qua_B, C_qua):
+
+		"""
+		Selects, through a sequence of likelihood ratio tests, the
+		variables that should be included quadratically in propensity
+		score estimation. The covariate selection algorithm is
+		described in Imbens and Rubin (2015).
+
+		Expected args
+		-------------
+			lin: list
+				Column numbers (zero-based) of the original
+				covariate matrix that have been included
+				linearly. Quadratic terms considered are
+				constructed out of these linear terms.
+			qua_B: list
+				Tuples of column numbers of the original
+				covariate matrix that have already passed the
+				test.
+			C_qua: scalar
+				Critical value used in likelihood ratio test
+				to decide whether candidate quadratic terms
+				should be included.
+
+		Returns
+		-------
+			List of tuples of column numbers of the original
+			covariate matrix to include quadratically as decided by
+			the LR tests.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences: An
+				Introduction.
+		"""
 
 		excluded = self._get_excluded_qua(lin, qua_B)
 		if excluded == []:
@@ -440,6 +629,29 @@ class PropensitySelect(Propensity):
 
 	def _select_qua_terms(self, lin, C_qua):
 
+		"""
+		Selects the variables that should be included quadratically in
+		propensity score estimation. Mostly a wrapper around function
+		_test_qua to handle cases that require little computation.
+		
+		Expected args
+		-------------
+			lin: list
+				Column numbers (zero-based) of the original
+				covariate matrix that have been included
+				linearly. Quadratic terms considered are
+				constructed out of these linear terms.
+			C_qua: scalar
+				Critical value used in likelihood ratio test
+				to decide whether candidate quadratic terms
+				should be included.
+
+		Returns
+		-------
+			List of tuples of column numbers of the original
+			covariate matrix selected to be included quadratically.
+		"""
+
 		if lin == []:
 			return []
 		if C_qua <= 0:
@@ -448,109 +660,4 @@ class PropensitySelect(Propensity):
 			return []
 		else:
 			return self._test_qua(lin, [], C_qua)
-
-
-'''
-class PropensitySelect(Propensity):
-
-	"""
-	Dictionary-like class containing propensity score data, including
-	estimated logistic regression coefficients, predicted propensity score,
-	maximized log-likelihood, and lists of the linear and quadratic terms
-	that are included in the regression.
-	"""
-
-	def __init__(self, lin_B, C_lin, C_qua, model):
-
-		self._model = model
-		D, X = self._model.D, self._model.X
-
-		if C_lin == np.inf:  # inf threshold, so include basic only
-			lin = lin_B
-		elif C_lin == 0:  # min threshold, so include everything
-			lin = range(X.shape[1])
-		else:
-			pot = list(set(xrange(X.shape[1])) - set(lin_B))
-			lin = self._select_terms(lin_B, pot, C_lin)
-
-		if C_qua == np.inf:  # inf threshold, so include nothing
-			qua = []
-		elif C_qua == 0:  # min threshold, so include everything
-			qua = list(combinations_with_replacement(lin, 2))
-		else:
-			pot = list(combinations_with_replacement(lin, 2))
-			qua = self._select_terms([], pot, C_qua, lin)
-
-		mat = self._form_matrix(X, lin, qua)
-		self._dict = self._calc_coef(mat)
-		self._dict['lin'], self._dict['qua'] = lin, qua
-		self._dict['se'] = None
-		
-
-	def _select_terms(self, cur, pot, crit, lin=[]):
-	
-		"""
-		Estimates via logit the propensity score using Imbens and
-		Rubin's covariate selection algorithm.
-
-		Expected args
-		-------------
-			cur: list
-				List containing terms that are currently
-				included in the logistic regression.
-			pot: list
-				List containing candidate terms to be iterated
-				through.
-			crit: scalar
-				Critical value used in likelihood ratio test
-				to decide whether candidate terms should be
-				included.
-			lin: list
-				List containing linear terms that have been
-				decided on. If non-empty, then cur and pot
-				should be containing candidate quadratic terms.
-				If empty, then those two lists should be
-				containing candidate linear terms.
-
-		Returns
-		-------
-			List containing terms that the algorithm has settled on
-			for inclusion.
-		"""
-
-		if not pot:
-			return cur
-			
-		D, X = self._model.D, self._model.X
-
-		# calculate log-likelihood under null of no additional terms
-		if not lin:  # lin is empty, so linear terms not yet decided
-			mat = self._form_matrix(X, cur, [])
-			ll_null = self._calc_coef(mat)['loglike']
-		else:  # lin is not empty, so linear terms are already fixed
-			mat = self._form_matrix(X, lin, cur)
-			ll_null = self._calc_coef(mat)['loglike']
-
-		# calculate LR stat after including each additional term
-		lr = np.empty(len(pot))
-		if not lin:
-			for i in xrange(len(pot)):
-				mat = self._form_matrix(X, cur+[pot[i]], [])
-				ll = self._calc_coef(mat)['loglike']
-				lr[i] = 2*(ll - ll_null)
-		else:
-			for i in xrange(len(pot)):
-				mat = self._form_matrix(X, lin, cur+[pot[i]])
-				ll = self._calc_coef(mat)['loglike']
-				lr[i] = 2*(ll - ll_null)
-
-		argmax = np.argmax(lr)
-		if lr[argmax] < crit:
-			return cur  # stop including additional terms
-		else:
-			# include new term and recurse on remaining
-			new_term = pot.pop(argmax)
-			return self._select_terms(cur+[new_term],
-			                          pot, crit, lin)
-'''
 
