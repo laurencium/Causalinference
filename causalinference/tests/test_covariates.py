@@ -3,12 +3,12 @@ import numpy as np
 
 from ..causal import CausalModel
 from ..core.covariates import Covariates
-from tools import random_data_base
+from tools import random_data
 
 
 def test_calc_ndiff():
 
-	Y, D, X = random_data()  # shouldn't matter
+	Y, D, X = random_data()
 	covariates = covariates_wrapper(Y, D, X)
 
 	ans = -1/np.sqrt(2.5)
@@ -17,9 +17,9 @@ def test_calc_ndiff():
 
 def test_covariates():
 
-	Y = random_data(D=False, X=False)  # shouldn't matter
-	D = np.array([0, 0, 1, 1])  # this matters
-	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])  # this matters
+	D = np.array([0, 0, 1, 1])
+	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])
+	Y = random_data(D_cur=D, X_cur=X)
 	covariates = covariates_wrapper(Y, D, X)
 
 	mean_c = np.array([3, 5])
@@ -35,17 +35,6 @@ def test_covariates():
 	assert np.array_equal(covariates['sd_t'], sd_t)
 	assert np.array_equal(covariates['ndiff'], ndiff)
 	assert_equal(set(covariates.keys()), keys)
-
-
-# constants used in helper functions
-DEFAULT_N = 4
-DEFAULT_K = 2
-
-
-# helper function
-def random_data(Y=True, D=True, X=True):
-
-	return random_data_base(DEFAULT_N, DEFAULT_K, Y, D, X)
 
 
 # help function

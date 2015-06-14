@@ -3,13 +3,13 @@ import numpy as np
 
 from ..causal import CausalModel
 from ..core.propensity import Propensity
-from tools import random_data_base
+from tools import random_data
 
 
 def test_form_matrix():
 
-	Y, D = random_data(X=False)  # shouldn't matter
 	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])  # this matters
+	Y, D = random_data(X_cur=X)
 	propensity = propensity_wrapper(Y, D, X)
 
 	ans0 = np.column_stack((np.ones(4), X))
@@ -36,7 +36,7 @@ def test_form_matrix():
 
 def test_sigmoid():
 
-	Y, D, X = random_data()  # shouldn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	x = np.array([0, 10000, -10000, 5])
@@ -46,7 +46,7 @@ def test_sigmoid():
 
 def test_log1exp():
 
-	Y, D, X = random_data()  # shouldn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	x = np.array([0, 10000, -10000, 5])
@@ -56,7 +56,7 @@ def test_log1exp():
 
 def test_neg_loglike():
 
-	Y, D, X = random_data()  # shouldn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	beta = np.array([1, 2])
@@ -68,7 +68,7 @@ def test_neg_loglike():
 
 def test_neg_gradient():
 
-	Y, D, X = random_data()  # shouldn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	beta = np.array([2, -1])
@@ -78,10 +78,9 @@ def test_neg_gradient():
 	assert np.array_equal(propensity._neg_gradient(beta, X_c, X_t), ans)
 
 
-# coefficient estimates obtained from R
 def test_calc_coef():
 
-	Y, D, X = random_data()  # shouldn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	X_c = np.array([[1, 1, 8], [1, 8, 5]])
@@ -91,10 +90,9 @@ def test_calc_coef():
 	assert np.allclose(propensity._calc_coef(X_c, X_t), ans)
 
 
-# standard errors obtained from R
 def test_calc_se():
 
-	Y, D, X = random_data()  # shouldn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	Z = np.array([[1, 64, 188], [1, 132, 59], [1, 106, 72], [1, 86, 154]])
@@ -104,12 +102,11 @@ def test_calc_se():
 	assert np.allclose(propensity._calc_se(Z, p), ans)
 
 
-# coefficients, fitted values, log-likelihood, standard errors obtained from R
 def test_propensity():
 
-	Y = random_data(D=False, X=False)  # shouldn't matter
-	D = np.array([0, 0, 1, 1])  # this matters
-	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])  # this matters
+	D = np.array([0, 0, 1, 1])
+	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])
+	Y = random_data(D_cur=D, X_cur=X)
 
 	model = CausalModel(Y, D, X)
 	propensity = Propensity('all', [], model)
@@ -129,16 +126,8 @@ def test_propensity():
 
 
 # constants used in helper functions
-DEFAULT_N = 4
-DEFAULT_K = 2
 DEFAULT_LIN = 'all'
 DEFAULT_QUA = []
-
-
-# helper function
-def random_data(Y=True, D=True, X=True):
-
-	return random_data_base(DEFAULT_N, DEFAULT_K, Y, D, X)
 
 
 # helper function

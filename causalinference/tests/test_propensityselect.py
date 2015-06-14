@@ -3,14 +3,12 @@ import numpy as np
 
 from ..causal import CausalModel
 from ..core.propensity import PropensitySelect
-from tools import random_data_base
+from tools import random_data
 
 
 def test_get_excluded_lin():
 
-	N = np.random.random_integers(4, 10, 1)  # doesn't matter
-	K = 4  # this matters
-	Y, D, X = random_data_base(N, K)
+	Y, D, X = random_data(K=4)
 	propensity = propensity_wrapper(Y, D, X)
 
 	included1 = []
@@ -28,7 +26,7 @@ def test_get_excluded_lin():
 
 def test_get_excluded_qua():
 
-	Y, D, X = random_data()  # doesn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin1 = [0, 2, 3]
@@ -49,9 +47,9 @@ def test_get_excluded_qua():
 
 def test_calc_loglike():
 
-	Y = random_data(D=False, X=False)  # shouldn't matter
 	D = np.array([0, 0, 1, 1])  # this matters
 	X = np.array([[1, 2], [3, 7], [1, 4], [3, 6]])  # this matters
+	Y = random_data(D_cur=D, X_cur=X)
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin = [1]
@@ -62,9 +60,7 @@ def test_calc_loglike():
 
 def test_test_lin():
 
-	N = np.random.random_integers(4, 10, 1)  # doesn't matter
-	K = 4  # this matters
-	Y, D, X = random_data_base(N, K)  # data doesn't matter
+	Y, D, X = random_data(K=4)
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin1 = [0, 1, 2, 3]
@@ -72,9 +68,9 @@ def test_test_lin():
 	ans1 = [0, 1, 2, 3]
 	assert_equal(propensity._test_lin(lin1, C1), ans1)
 
-	Y = random_data(D=False, X=False)  # shouldn't matter
 	D = np.array([0, 0, 1, 1])  # this matters
 	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])  # this matters
+	Y = random_data(D_cur=D, X_cur=X)
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin2 = []
@@ -100,9 +96,7 @@ def test_test_lin():
 
 def test_select_lin_terms():
 
-	N = np.random.random_integers(4, 10, 1)  # doesn't matter
-	K = 4  # this matters
-	Y, D, X = random_data_base(N, K)  # data doesn't matter
+	Y, D, X = random_data(K=4)
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin1 = [3, 0, 1]
@@ -125,9 +119,9 @@ def test_select_lin_terms():
 	ans4 = [3, 1, 0, 2]
 	assert_equal(propensity._select_lin_terms(lin4, C4), ans4)
 
-	Y = random_data(D=False, X=False)  # shouldn't matter
 	D = np.array([0, 0, 1, 1])  # this matters
 	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])  # this matters
+	Y = random_data(D_cur=D, X_cur=X)
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin5 = []
@@ -138,7 +132,7 @@ def test_select_lin_terms():
 
 def test_test_qua():
 
-	Y, D, X = random_data()  # doesn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin1 = [1, 0]
@@ -153,9 +147,9 @@ def test_test_qua():
 	ans2 = [(1, 1)]
 	assert_equal(propensity._test_qua(lin2, qua2, C2), ans2)
 
-	Y = random_data_base(N=6, K=2, D=False, X=False)  # doesn't matter
 	D = np.array([0, 0, 0, 1, 1, 1])
 	X = np.array([[7, 8], [3, 10], [7, 10], [4, 7], [5, 10], [9, 8]])
+	Y = random_data(D_cur=D, X_cur=X)
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin3 = [0, 1]
@@ -197,7 +191,7 @@ def test_test_qua():
 
 def test_select_qua_terms():
 
-	Y, D, X = random_data()  # doesn't matter
+	Y, D, X = random_data()
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin1 = [0, 1]
@@ -220,9 +214,9 @@ def test_select_qua_terms():
 	ans4 = []
 	assert_equal(propensity._select_qua_terms(lin4, C4), ans4)
 
-	Y = random_data_base(N=6, K=2, D=False, X=False)  # doesn't matter
 	D = np.array([0, 0, 0, 1, 1, 1])
 	X = np.array([[7, 8], [3, 10], [7, 10], [4, 7], [5, 10], [9, 8]])
+	Y = random_data(D_cur=D, X_cur=X)
 	propensity = propensity_wrapper(Y, D, X)
 
 	lin5 = [0, 1]
@@ -232,18 +226,22 @@ def test_select_qua_terms():
 	assert_equal(propensity._test_qua(lin5, qua5, C5), ans5)
 
 
+'''
 # constants used in helper functions
 DEFAULT_N = 4
 DEFAULT_K = 2
+'''
 DEFAULT_LIN_B = []
 DEFAULT_C_LIN = 0
 DEFAULT_C_QUA = np.inf
 
 
+'''
 # helper function
 def random_data(Y=True, D=True, X=True):
 
 	return random_data_base(DEFAULT_N, DEFAULT_K, Y, D, X)
+'''
 
 
 # helper function
