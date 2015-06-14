@@ -21,11 +21,17 @@ def test_form_matrix():
 	                 [1, 8, 48, 36], [1, 4, 8, 4]])
 	assert np.array_equal(propensity._form_matrix(lin1, qua1), ans1)
 
-	lin2 = 'all'
-	qua2 = [(0, 0)]
-	ans2 = np.array([[1, 1, 3, 1], [1, 5, 7, 25],
-	                 [1, 8, 6, 64], [1, 4, 2, 16]])
+	lin2 = [0]
+	qua2 = [(1, 0), (1, 1)]
+	ans2 = np.array([[1, 1, 3, 9], [1, 5, 35, 49],
+	                 [1, 8, 48, 36], [1, 4, 8, 4]])
 	assert np.array_equal(propensity._form_matrix(lin2, qua2), ans2)
+
+	lin3 = 'all'
+	qua3 = [(0, 0)]
+	ans3 = np.array([[1, 1, 3, 1], [1, 5, 7, 25],
+	                 [1, 8, 6, 64], [1, 4, 2, 16]])
+	assert np.array_equal(propensity._form_matrix(lin3, qua3), ans3)
 
 
 def test_sigmoid():

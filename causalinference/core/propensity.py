@@ -339,6 +339,10 @@ class PropensitySelect(Propensity):
 	def __init__(self, lin_B, C_lin, C_qua, model):
 
 		self._model = model
+		lin = self._select_lin_terms(lin_B, C_lin)
+		qua = self._select_qua_terms(lin, C_qua)
+
+		super(PropensitySelect, self).__init__(lin, qua, self._model)
 
 
 	def _get_excluded_lin(self, included):
@@ -368,8 +372,8 @@ class PropensitySelect(Propensity):
 
 	def _test_lin(self, lin_B, C_lin):
 
-		excl = self._get_excluded_lin(lin_B)
-		if excl == []:
+		excluded = self._get_excluded_lin(lin_B)
+		if excluded == []:
 			return lin_B
 
 		ll_null = self._calc_loglike(lin_B, [])
@@ -378,13 +382,14 @@ class PropensitySelect(Propensity):
 			ll_alt = self._calc_loglike(lin_B+[lin_term], [])
 			return 2 * (ll_alt - ll_null)
 
-		lr_stats = np.array(map(lr_stat_lin, excl))
+		lr_stats = np.array(map(lr_stat_lin, excluded))
 		argmax_lr = lr_stats.argmax()
 
 		if lr_stats[argmax_lr] < C_lin:
 			return lin_B
 		else:
-			return self._test_lin(lin_B+[excl[argmax_lr]], C_lin)
+			new_term = [excluded[argmax_lr]]
+			return self._test_lin(lin_B+new_term, C_lin)
 
 
 	def _select_lin_terms(self, lin_B, C_lin):
@@ -397,7 +402,7 @@ class PropensitySelect(Propensity):
 			return self._test_lin(lin_B, C_lin)
 
 
-	def _pick_qua(self, lin, qua_B, C_qua):
+	def _test_qua(self, lin, qua_B, C_qua):
 
 		excluded = self._get_excluded_qua(lin, qua_B)
 		if excluded == []:
@@ -409,13 +414,26 @@ class PropensitySelect(Propensity):
 			ll_alt = self._calc_loglike(lin, qua_B+[qua_term])
 			return 2 * (ll_alt - ll_null)
 
-		lr_stats = map(lr_stat_qua, excluded)
-		max_lr, argmax_lr = lr_stats.max(), lr_stats.argmax()
+		lr_stats = np.array(map(lr_stat_qua, excluded))
+		argmax_lr = lr_stats.argmax()
 
-		if max_lr < C_qua:
+		if lr_stats[argmax_lr] < C_qua:
 			return qua_B
 		else:
-			self._pick_qua(lin, qua_B+[excluded[argmax_lr]], C_qua)
+			new_term = [excluded[argmax_lr]]
+			return self._test_qua(lin, qua_B+new_term, C_qua)
+
+
+	def _select_qua_terms(self, lin, C_qua):
+
+		if lin == []:
+			return []
+		if C_qua <= 0:
+			return self._get_excluded_qua(lin, [])
+		elif C_qua == np.inf:
+			return []
+		else:
+			return self._test_qua(lin, [], C_qua)
 
 
 '''
