@@ -303,6 +303,13 @@ class Propensity(object):
 
 	def _store_se(self):
 
+		"""
+		Computes and stores standard errors of coefficient
+		estimates. Only invoked when client calls a function that
+		requires using or displaying standard errors, as standard
+		error computation can be expensive.
+		"""
+
 		lin, qua = self._dict['lin'], self._dict['qua']
 		X = self._form_matrix(lin, qua)
 		p = self._dict['fitted']
@@ -330,6 +337,14 @@ class Propensity(object):
 	def __iter__(self):
 
 		return iter(self._dict)
+
+
+	def __repr__(self):
+
+		if self._dict['se'] is None:
+			self._store_se()
+
+		return self._dict.__repr__()
 
 
 	def __str__(self):
