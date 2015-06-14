@@ -6,6 +6,12 @@ from ..core.propensity import PropensitySelect
 from tools import random_data
 
 
+# set parameters that won't be important
+def propensity_wrapper(Y, D, X):
+
+	return PropensitySelect([], 0, np.inf, CausalModel(Y, D, X))
+
+
 def test_get_excluded_lin():
 
 	Y, D, X = random_data(K=4)
@@ -226,27 +232,45 @@ def test_select_qua_terms():
 	assert_equal(propensity._test_qua(lin5, qua5, C5), ans5)
 
 
-'''
-# constants used in helper functions
-DEFAULT_N = 4
-DEFAULT_K = 2
-'''
-DEFAULT_LIN_B = []
-DEFAULT_C_LIN = 0
-DEFAULT_C_QUA = np.inf
+def test_propensityselect():
+
+	D = np.array([0, 0, 0, 1, 1, 1])
+	X = np.array([[7, 8], [3, 10], [7, 10], [4, 7], [5, 10], [9, 8]])
+	Y = random_data(D_cur=D, X_cur=X)
+	model = CausalModel(Y, D, X)
+
+	propensity1 = PropensitySelect([], 1, 2.71, model)
+	lin1 = [1]
+	qua1 = []
+	coef1 = np.array([6.5424027, -0.7392041])
+	loglike1 = -3.627939
+	fitted1 = np.array([0.6522105, 0.2995088, 0.2995088,
+	                   0.7970526, 0.2995088, 0.6522105])
+	se1 = np.array([6.8455179, 0.7641445])
+	keys = set(['lin', 'qua', 'coef', 'loglike', 'fitted', 'se'])
+	
+	assert_equal(propensity1['lin'], lin1)
+	assert_equal(propensity1['qua'], qua1)
+	assert np.allclose(propensity1['coef'], coef1)
+	assert np.allclose(propensity1['loglike'], loglike1)
+	assert np.allclose(propensity1['fitted'], fitted1)
+	assert np.allclose(propensity1['se'], se1)
+	assert_equal(set(propensity1.keys()), keys)
 
 
-'''
-# helper function
-def random_data(Y=True, D=True, X=True):
+	propensity2 = PropensitySelect('all', 1, 2.71, model)
+	lin2 = [0, 1]
+	qua2 = []
+	coef2 = np.array([6.8066090, -0.0244874, -0.7524939])
+	loglike2 = -3.626517
+	fitted2 = np.array([0.6491366, 0.3117840, 0.2911631,
+	                    0.8086407, 0.3013733, 0.6379023])
+	se2 = np.array([8.5373779, 0.4595191, 0.8106499])
 
-	return random_data_base(DEFAULT_N, DEFAULT_K, Y, D, X)
-'''
-
-
-# helper function
-def propensity_wrapper(Y, D, X):
-
-	return PropensitySelect(DEFAULT_LIN_B, DEFAULT_C_LIN, DEFAULT_C_QUA,
-	                        CausalModel(Y, D, X))
+	assert_equal(propensity2['lin'], lin2)
+	assert_equal(propensity2['qua'], qua2)
+	assert np.allclose(propensity2['coef'], coef2)
+	assert np.allclose(propensity2['loglike'], loglike2)
+	assert np.allclose(propensity2['fitted'], fitted2)
+	assert np.allclose(propensity2['se'], se2)
 

@@ -37,7 +37,6 @@ def test_covariates():
 	assert_equal(set(covariates.keys()), keys)
 
 
-# help function
 def covariates_wrapper(Y, D, X):
 
 	return Covariates(CausalModel(Y, D, X))

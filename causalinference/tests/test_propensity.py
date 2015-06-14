@@ -6,6 +6,48 @@ from ..core.propensity import Propensity
 from tools import random_data
 
 
+# set parameters that won't be important
+def propensity_wrapper(Y, D, X):
+
+	return Propensity('all', [], CausalModel(Y, D, X))
+
+
+def test_parse_lin_terms():
+
+	Y, D, X = random_data(K=2)
+	propensity = propensity_wrapper(Y, D, X)
+
+	lin1 = 'all'
+	ans1 = [0, 1]
+	assert_equal(propensity._parse_lin_terms(lin1), ans1)
+
+	lin2 = [1]
+	ans2 = [1]
+	assert_equal(propensity._parse_lin_terms(lin2), ans2)
+
+	lin3 = []
+	ans3 = []
+	assert_equal(propensity._parse_lin_terms(lin3), ans3)
+
+
+def test_parse_qua_terms():
+
+	Y, D, X = random_data(K=2)
+	propensity = propensity_wrapper(Y, D, X)
+
+	qua1 = 'all'
+	ans1 = [(0, 0), (0, 1), (1, 1)]
+	assert_equal(propensity._parse_qua_terms(qua1), ans1)
+
+	qua2 = [(0, 1)]
+	ans2 = [(0, 1)]
+	assert_equal(propensity._parse_qua_terms(qua2), ans2)
+
+	qua3 = []
+	ans3 = []
+	assert_equal(propensity._parse_qua_terms(qua3), ans3)
+
+
 def test_form_matrix():
 
 	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])  # this matters
@@ -13,7 +55,7 @@ def test_form_matrix():
 	propensity = propensity_wrapper(Y, D, X)
 
 	ans0 = np.column_stack((np.ones(4), X))
-	assert np.array_equal(propensity._form_matrix('all', []), ans0)
+	assert np.array_equal(propensity._form_matrix([0, 1], []), ans0)
 
 	lin1 = [0]
 	qua1 = [(0, 1), (1, 1)]
@@ -27,7 +69,7 @@ def test_form_matrix():
 	                 [1, 8, 48, 36], [1, 4, 8, 4]])
 	assert np.array_equal(propensity._form_matrix(lin2, qua2), ans2)
 
-	lin3 = 'all'
+	lin3 = [0, 1]
 	qua3 = [(0, 0)]
 	ans3 = np.array([[1, 1, 3, 1], [1, 5, 7, 25],
 	                 [1, 8, 6, 64], [1, 4, 2, 16]])
@@ -110,28 +152,19 @@ def test_propensity():
 
 	model = CausalModel(Y, D, X)
 	propensity = Propensity('all', [], model)
+	lin = [0, 1]
+	qua = []
 	coef = np.array([-2.1505403, -0.3671654, 0.8392352])
 	loglike = -2.567814
 	fitted = np.array([0.3016959, 0.6033917, 0.6983041, 0.3966083])
 	se = np.array([3.8953529, 0.6507885, 1.3595614])
 	keys = set(['lin', 'qua', 'coef', 'loglike', 'fitted', 'se'])
 	
-	assert_equal(propensity['lin'], 'all')
-	assert_equal(propensity['qua'], [])
+	assert_equal(propensity['lin'], lin)
+	assert_equal(propensity['qua'], qua)
 	assert np.allclose(propensity['coef'], coef)
 	assert np.allclose(propensity['loglike'], loglike)
 	assert np.allclose(propensity['fitted'], fitted)
 	assert np.allclose(propensity['se'], se)
 	assert_equal(set(propensity.keys()), keys)
-
-
-# constants used in helper functions
-DEFAULT_LIN = 'all'
-DEFAULT_QUA = []
-
-
-# helper function
-def propensity_wrapper(Y, D, X):
-
-	return Propensity(DEFAULT_LIN, DEFAULT_QUA, CausalModel(Y, D, X))
 

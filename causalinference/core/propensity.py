@@ -18,6 +18,8 @@ class Propensity(object):
 	def __init__(self, lin, qua, model):
 
 		self._model = model
+		lin = self._parse_lin_terms(lin)
+		qua = self._parse_qua_terms(qua)
 		X = self._form_matrix(lin, qua)
 		X_c, X_t = X[self._model.controls], X[self._model.treated]
 
@@ -29,6 +31,23 @@ class Propensity(object):
 		self._dict['loglike'] = -self._neg_loglike(beta, X_c, X_t)
 		self._dict['fitted'] = self._sigmoid(X.dot(beta))
 		self._dict['se'] = None  # only compute on request
+
+
+	def _parse_lin_terms(self, lin):
+
+		if lin == 'all':
+			return range(self._model.K)
+		else:
+			return lin
+
+
+	def _parse_qua_terms(self, qua):
+
+		if qua == 'all':
+			lin_terms = xrange(self._model.K)
+			return list(combinations_with_replacement(lin_terms, 2))
+		else:
+			return qua
 
 
 	def _form_matrix(self, lin, qua):
@@ -59,17 +78,11 @@ class Propensity(object):
 
 		X, N, K = self._model.X, self._model.N, self._model.K
 
-		if lin == 'all':
-			mat = np.empty((N, 1+K+len(qua)))
-		else:
-			mat = np.empty((N, 1+len(lin)+len(qua)))
+		mat = np.empty((N, 1+len(lin)+len(qua)))
 		mat[:, 0] = 1  # constant term
 
 		current_col = 1
-		if lin == 'all':
-			mat[:, current_col:current_col+K] = X
-			current_col += K
-		elif lin:
+		if lin:
 			mat[:, current_col:current_col+len(lin)] = X[:, lin]
 			current_col += len(lin)
 		for term in qua:
@@ -339,6 +352,7 @@ class PropensitySelect(Propensity):
 	def __init__(self, lin_B, C_lin, C_qua, model):
 
 		self._model = model
+		lin_B = self._parse_lin_terms(lin_B)
 		lin = self._select_lin_terms(lin_B, C_lin)
 		qua = self._select_qua_terms(lin, C_qua)
 
