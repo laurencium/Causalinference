@@ -1,3 +1,4 @@
+from data import Data
 from covariates import Covariates
 from basic import Basic
 from strata import Stratum, Strata

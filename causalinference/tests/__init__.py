@@ -1,3 +1,4 @@
+from test_data import *
 from test_covariates import *
 from test_propensity import *
 from test_propensityselect import *
