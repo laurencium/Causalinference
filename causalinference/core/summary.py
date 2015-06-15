@@ -29,41 +29,10 @@ class Summary(object):
 		self._dict['X_t_mean'] = data['X_t'].mean(0)
 		self._dict['X_c_sd'] = np.sqrt(data['X_c'].var(0, ddof=1))
 		self._dict['X_t_sd'] = np.sqrt(data['X_t'].var(0, ddof=1))
-		self._dict['ndiff'] = self._calc_ndiff(self['X_c_mean'],
-		                                       self['X_t_mean'],
-						       self['X_c_sd'],
-						       self['X_t_sd'])
-
-
-	def _calc_ndiff(self, mean_c, mean_t, sd_c, sd_t):
-	
-		"""
-		Computes the normalized covariate differences between control
-		and treatment groups. Unlike the t-statistic, normalized
-		differences do not, in expectation, increase with sample size,
-		and thus are more appropriate for assessing balance.
-
-		Expected args
-		-------------
-			mean_c: array-like
-				Vector of covariate sample means for the
-				control group.
-			mean_t: array-like
-				Vector of covariate sample means for the
-				treatment group.
-			sd_c: array-like
-				Vector of covariate sample standard
-				deviations for the control group.
-			sd_t: array-like
-				Vector of covariate sample standard
-				deviations for the treatment group.
-
-		Returns
-		-------
-			Vector of normalized differences between covariates.
-		"""
-
-		return (mean_t-mean_c) / np.sqrt((sd_c**2+sd_t**2)/2)
+		self._dict['ndiff'] = calc_ndiff(self['X_c_mean'],
+		                                 self['X_t_mean'],
+						 self['X_c_sd'],
+						 self['X_t_sd'])
 
 
 	def __getitem__(self, key):
@@ -118,4 +87,35 @@ class Summary(object):
 	def keys(self):
 
 		return self._dict.keys()
+
+
+def calc_ndiff(mean_c, mean_t, sd_c, sd_t):
+
+	"""
+	Computes the normalized covariate differences between control
+	and treatment groups. Unlike the t-statistic, normalized
+	differences do not, in expectation, increase with sample size,
+	and thus are more appropriate for assessing balance.
+
+	Expected args
+	-------------
+		mean_c: array-like
+			Vector of covariate sample means for the
+			control group.
+		mean_t: array-like
+			Vector of covariate sample means for the
+			treatment group.
+		sd_c: array-like
+			Vector of covariate sample standard
+			deviations for the control group.
+		sd_t: array-like
+			Vector of covariate sample standard
+			deviations for the treatment group.
+
+	Returns
+	-------
+		Vector of normalized differences between covariates.
+	"""
+
+	return (mean_t-mean_c) / np.sqrt((sd_c**2+sd_t**2)/2)
 
