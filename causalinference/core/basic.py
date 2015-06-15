@@ -1,6 +1,6 @@
 import numpy as np
 
-from covariates import Covariates
+from summary import Summary
 from ..utils.tools import cache_readonly
 from ..utils.tools import remove
 
@@ -28,5 +28,5 @@ class Basic(object):
 	@cache_readonly
 	def covariates(self):
 
-		return Covariates(self)
+		return Summary(self)
 
