@@ -1,147 +1,127 @@
 from nose.tools import *
 import numpy as np
 
-from ..causal import CausalModel
-from ..core.propensity import Propensity
+from ..core.data import Data
+from ..core.propensity import *
 from tools import random_data
 
 
 # set parameters that won't be important
 def propensity_wrapper(Y, D, X):
 
-	return Propensity('all', [], CausalModel(Y, D, X))
+	return Propensity('all', [], Data(Y, D, X))
 
 
 def test_parse_lin_terms():
 
-	Y, D, X = random_data(K=2)
-	propensity = propensity_wrapper(Y, D, X)
-
+	K1 = 2
 	lin1 = 'all'
 	ans1 = [0, 1]
-	assert_equal(propensity._parse_lin_terms(lin1), ans1)
+	assert_equal(parse_lin_terms(K1, lin1), ans1)
 
+	K2 = 2
 	lin2 = [1]
 	ans2 = [1]
-	assert_equal(propensity._parse_lin_terms(lin2), ans2)
+	assert_equal(parse_lin_terms(K2, lin2), ans2)
 
+	K3 = 2
 	lin3 = []
 	ans3 = []
-	assert_equal(propensity._parse_lin_terms(lin3), ans3)
+	assert_equal(parse_lin_terms(K3, lin3), ans3)
 
 
 def test_parse_qua_terms():
 
-	Y, D, X = random_data(K=2)
-	propensity = propensity_wrapper(Y, D, X)
-
+	K1 = 2
 	qua1 = 'all'
 	ans1 = [(0, 0), (0, 1), (1, 1)]
-	assert_equal(propensity._parse_qua_terms(qua1), ans1)
+	assert_equal(parse_qua_terms(K1, qua1), ans1)
 
+	K2 = 2
 	qua2 = [(0, 1)]
 	ans2 = [(0, 1)]
-	assert_equal(propensity._parse_qua_terms(qua2), ans2)
+	assert_equal(parse_qua_terms(K2, qua2), ans2)
 
+	K3 = 2
 	qua3 = []
 	ans3 = []
-	assert_equal(propensity._parse_qua_terms(qua3), ans3)
+	assert_equal(parse_qua_terms(K3, qua3), ans3)
 
 
 def test_form_matrix():
 
 	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])  # this matters
-	Y, D = random_data(X_cur=X)
-	propensity = propensity_wrapper(Y, D, X)
 
 	ans0 = np.column_stack((np.ones(4), X))
-	assert np.array_equal(propensity._form_matrix([0, 1], []), ans0)
+	assert np.array_equal(form_matrix(X, [0, 1], []), ans0)
 
 	lin1 = [0]
 	qua1 = [(0, 1), (1, 1)]
 	ans1 = np.array([[1, 1, 3, 9], [1, 5, 35, 49],
 	                 [1, 8, 48, 36], [1, 4, 8, 4]])
-	assert np.array_equal(propensity._form_matrix(lin1, qua1), ans1)
+	assert np.array_equal(form_matrix(X, lin1, qua1), ans1)
 
 	lin2 = [0]
 	qua2 = [(1, 0), (1, 1)]
 	ans2 = np.array([[1, 1, 3, 9], [1, 5, 35, 49],
 	                 [1, 8, 48, 36], [1, 4, 8, 4]])
-	assert np.array_equal(propensity._form_matrix(lin2, qua2), ans2)
+	assert np.array_equal(form_matrix(X, lin2, qua2), ans2)
 
 	lin3 = [0, 1]
 	qua3 = [(0, 0)]
 	ans3 = np.array([[1, 1, 3, 1], [1, 5, 7, 25],
 	                 [1, 8, 6, 64], [1, 4, 2, 16]])
-	assert np.array_equal(propensity._form_matrix(lin3, qua3), ans3)
+	assert np.array_equal(form_matrix(X, lin3, qua3), ans3)
 
 
 def test_sigmoid():
 
-	Y, D, X = random_data()
-	propensity = propensity_wrapper(Y, D, X)
-
 	x = np.array([0, 10000, -10000, 5])
 	ans = np.array([0.5, 1.0, 0.0, 1/(1+np.exp(-5))])
-	assert np.array_equal(propensity._sigmoid(x), ans)
+	assert np.array_equal(sigmoid(x), ans)
 
 
 def test_log1exp():
 
-	Y, D, X = random_data()
-	propensity = propensity_wrapper(Y, D, X)
-
 	x = np.array([0, 10000, -10000, 5])
 	ans = np.array([np.log(2), 0.0, 10000, np.log(1+np.exp(-5))])
-	assert np.array_equal(propensity._log1exp(x), ans)
+	assert np.array_equal(log1exp(x), ans)
 
 
 def test_neg_loglike():
-
-	Y, D, X = random_data()
-	propensity = propensity_wrapper(Y, D, X)
 
 	beta = np.array([1, 2])
 	X_c = np.array([[100, 50], [-2, 1], [-500, -1300], [1, 0]])
 	X_t = np.array([[0, 0], [50, 25], [-50, -75], [0, -0.5]])
 	ans = 2 * (200 + np.log(2) + np.log(1+np.e))
-	assert_equal(propensity._neg_loglike(beta, X_c, X_t), ans)
+	assert_equal(neg_loglike(beta, X_c, X_t), ans)
 
 
 def test_neg_gradient():
-
-	Y, D, X = random_data()
-	propensity = propensity_wrapper(Y, D, X)
 
 	beta = np.array([2, -1])
 	X_c = np.array([[1, 2], [125, 50]])
 	X_t = np.array([[50, 0], [2.5, 4]])
 	ans = np.array([125.5 - 2.5/(1+np.e), 51 - 4/(1+np.e)])
-	assert np.array_equal(propensity._neg_gradient(beta, X_c, X_t), ans)
+	assert np.array_equal(neg_gradient(beta, X_c, X_t), ans)
 
 
 def test_calc_coef():
-
-	Y, D, X = random_data()
-	propensity = propensity_wrapper(Y, D, X)
 
 	X_c = np.array([[1, 1, 8], [1, 8, 5]])
 	X_t = np.array([[1, 10, 2], [1, 5, 8]])
 	ans = np.array([-6.9441137, 0.6608454, 0.4900669])
 
-	assert np.allclose(propensity._calc_coef(X_c, X_t), ans)
+	assert np.allclose(calc_coef(X_c, X_t), ans)
 
 
 def test_calc_se():
-
-	Y, D, X = random_data()
-	propensity = propensity_wrapper(Y, D, X)
 
 	Z = np.array([[1, 64, 188], [1, 132, 59], [1, 106, 72], [1, 86, 154]])
 	p = np.array([0.5101151, 0.3062871, 0.8566664, 0.3269315])
 	ans = np.array([25.56301220, 0.16572624, 0.07956535])
 
-	assert np.allclose(propensity._calc_se(Z, p), ans)
+	assert np.allclose(calc_se(Z, p), ans)
 
 
 def test_propensity():
@@ -150,8 +130,8 @@ def test_propensity():
 	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])
 	Y = random_data(D_cur=D, X_cur=X)
 
-	model = CausalModel(Y, D, X)
-	propensity = Propensity('all', [], model)
+	data = Data(Y, D, X)
+	propensity = Propensity('all', [], data)
 	lin = [0, 1]
 	qua = []
 	coef = np.array([-2.1505403, -0.3671654, 0.8392352])
