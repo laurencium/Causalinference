@@ -1,11 +1,98 @@
 import numpy as np
 import scipy.linalg
+from itertools import combinations_with_replacement
 
-from core import Basic, Stratum, Strata, Propensity, PropensitySelect
-from estimators import Estimators, Blocking, Matching, Weighting, OLS
-from utils.tools import remove
+# from core import Basic, Stratum, Strata, Propensity, PropensitySelect
+# from estimators import Estimators, Blocking, Matching, Weighting, OLS
+# from utils.tools import remove
+from core import Data, Summary, Propensity, PropensitySelect
 
 
+class CausalModel(object):
+
+	def __init__(self, Y, D, X):
+
+		self.data = Data(Y, D, X)
+		self.summary = Summary(self.data)
+
+
+	def propensity(self, lin='all', qua=None):
+
+		lin_terms = self._parse_lin_terms(self.data['K'], lin)
+		qua_terms = self._parse_qua_terms(self.data['K'], qua)
+		self.pscore = Propensity(lin_terms, qua_terms, self.data)
+
+
+	def propensity_s(self, lin_B=None, C_lin=1, C_qua=2.71):
+	
+		lin_basic = self._parse_lin_terms(self.data['K'], lin_B)
+		self.pscore = PropensitySelect(lin_basic, C_lin,
+		                               C_qua, self.data)
+
+
+	@staticmethod
+	def _parse_lin_terms(K, lin):
+
+		"""
+		Converts, if necessary, specification of linear terms given in
+		strings to list of column numbers of the original covariate
+		matrix.
+
+		Expected args
+		-------------
+			K: int
+				Number of covariates, to infer all linear terms.
+			lin: string, list
+				Strings, such as 'all', or list of column
+				numbers, that specifies which covariates to
+				include as linear terms.
+
+		Returns
+		-------
+			List of column numbers of covariate matrix specifying
+			which variables to include linearly.
+		"""
+
+		if lin is None:
+			return []
+		elif lin == 'all':
+			return range(K)
+		else:
+			return lin
+
+
+	@staticmethod
+	def _parse_qua_terms(K, qua):
+
+		"""
+		Converts, if necessary, specification of quadratic terms given
+		in strings to list of tuples of column numbers of the original
+		covariate matrix.
+
+		Expected args
+		-------------
+			K: int
+				Number of covariates, to infer all quadratic terms.
+			qua: string, list
+				Strings, such as 'all', or list of paris of
+				column numbers, that specifies which covariates
+				to include as quadratic terms.
+
+		Returns
+		-------
+			List of tuples of column numbers of covariate matrix
+			specifying which terms to include quadratically.
+		"""
+
+		if qua is None:
+			return []
+		elif qua == 'all':
+			return list(combinations_with_replacement(xrange(K), 2))
+		else:
+			return qua
+
+
+'''
 class CausalModel(Basic):
 
 
@@ -412,3 +499,4 @@ class CausalModel(Basic):
 
 		self.est['ols'] = OLS(self)
 
+'''

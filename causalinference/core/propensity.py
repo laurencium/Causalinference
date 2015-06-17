@@ -17,15 +17,13 @@ class Propensity(object):
 
 	def __init__(self, lin, qua, data):
 
-		lin_parsed = parse_lin_terms(data['K'], lin)
-		qua_parsed = parse_qua_terms(data['K'], qua)
-		Z = form_matrix(data['X'], lin_parsed, qua_parsed)
+		Z = form_matrix(data['X'], lin, qua)
 		Z_c, Z_t = Z[data['controls']], Z[data['treated']]
 		beta = calc_coef(Z_c, Z_t)
 
 		self._data = data
 		self._dict = dict()
-		self._dict['lin'], self._dict['qua'] = lin_parsed, qua_parsed
+		self._dict['lin'], self._dict['qua'] = lin, qua
 		self._dict['coef'] = beta
 		self._dict['loglike'] = -neg_loglike(beta, Z_c, Z_t)
 		self._dict['fitted'] = sigmoid(Z.dot(beta))
@@ -122,69 +120,11 @@ class PropensitySelect(Propensity):
 
 	def __init__(self, lin_B, C_lin, C_qua, data):
 
-		X_c, X_t, K = data['X_c'], data['X_t'], data['K']
-
-		lin_B_parsed = parse_lin_terms(K, lin_B)
-		lin = select_lin_terms(X_c, X_t, lin_B_parsed, C_lin)
+		X_c, X_t = data['X_c'], data['X_t']
+		lin = select_lin_terms(X_c, X_t, lin_B, C_lin)
 		qua = select_qua_terms(X_c, X_t, lin, C_qua)
 
 		super(PropensitySelect, self).__init__(lin, qua, data)
-
-
-def parse_lin_terms(K, lin):
-
-	"""
-	Converts, if necessary, specification of linear terms given in
-	strings to list of column numbers of the original covariate
-	matrix.
-
-	Expected args
-	-------------
-		K: int
-			Number of covariates, to infer all linear terms.
-		lin: string, list
-			Strings, such as 'all', or list of column
-			numbers, that specifies which covariates to
-			include as linear terms.
-
-	Returns
-	-------
-		List of column numbers of covariate matrix specifying
-		which variables to include linearly.
-	"""
-
-	if lin == 'all':
-		return range(K)
-	else:
-		return lin
-
-
-def parse_qua_terms(K, qua):
-
-	"""
-	Converts, if necessary, specification of quadratic terms given
-	in strings to list of tuples of column numbers of the original
-	covariate matrix.
-
-	Expected args
-	-------------
-		K: int
-			Number of covariates, to infer all quadratic terms.
-		qua: string, list
-			Strings, such as 'all', or list of paris of
-			column numbers, that specifies which covariates
-			to include as quadratic terms.
-
-	Returns
-	-------
-		List of tuples of column numbers of covariate matrix
-		specifying which terms to include quadratically.
-	"""
-
-	if qua == 'all':
-		return list(combinations_with_replacement(xrange(K), 2))
-	else:
-		return qua
 
 
 def form_matrix(X, lin, qua):

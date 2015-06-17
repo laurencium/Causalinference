@@ -243,7 +243,7 @@ def test_propensityselect():
 	assert_equal(set(propensity1.keys()), keys)
 
 
-	propensity2 = p.PropensitySelect('all', 1, 2.71, data)
+	propensity2 = p.PropensitySelect([0, 1], 1, 2.71, data)
 	lin2 = [0, 1]
 	qua2 = []
 	coef2 = np.array([6.8066090, -0.0244874, -0.7524939])

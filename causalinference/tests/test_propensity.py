@@ -12,42 +12,6 @@ def propensity_wrapper(Y, D, X):
 	return p.Propensity('all', [], d.Data(Y, D, X))
 
 
-def test_parse_lin_terms():
-
-	K1 = 2
-	lin1 = 'all'
-	ans1 = [0, 1]
-	assert_equal(p.parse_lin_terms(K1, lin1), ans1)
-
-	K2 = 2
-	lin2 = [1]
-	ans2 = [1]
-	assert_equal(p.parse_lin_terms(K2, lin2), ans2)
-
-	K3 = 2
-	lin3 = []
-	ans3 = []
-	assert_equal(p.parse_lin_terms(K3, lin3), ans3)
-
-
-def test_parse_qua_terms():
-
-	K1 = 2
-	qua1 = 'all'
-	ans1 = [(0, 0), (0, 1), (1, 1)]
-	assert_equal(p.parse_qua_terms(K1, qua1), ans1)
-
-	K2 = 2
-	qua2 = [(0, 1)]
-	ans2 = [(0, 1)]
-	assert_equal(p.parse_qua_terms(K2, qua2), ans2)
-
-	K3 = 2
-	qua3 = []
-	ans3 = []
-	assert_equal(p.parse_qua_terms(K3, qua3), ans3)
-
-
 def test_form_matrix():
 
 	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])  # this matters
@@ -131,7 +95,7 @@ def test_propensity():
 	Y = random_data(D_cur=D, X_cur=X)
 
 	data = d.Data(Y, D, X)
-	propensity = p.Propensity('all', [], data)
+	propensity = p.Propensity([0, 1], [], data)
 	lin = [0, 1]
 	qua = []
 	coef = np.array([-2.1505403, -0.3671654, 0.8392352])

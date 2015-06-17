@@ -1,3 +1,4 @@
+from test_causal import *
 from test_data import *
 from test_summary import *
 from test_propensity import *
