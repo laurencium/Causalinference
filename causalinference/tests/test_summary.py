@@ -1,14 +1,14 @@
 from nose.tools import *
 import numpy as np
 
-from ..core.data import Data
-from ..core.summary import *
+import causalinference.core.data as d
+import causalinference.core.summary as s
 
 
 def test_calc_ndiff():
 
 	ans = -1/np.sqrt(2.5)
-	assert_equal(calc_ndiff(4, 3, 2, 1), ans)
+	assert_equal(s.calc_ndiff(4, 3, 2, 1), ans)
 
 
 def test_summary():
@@ -16,8 +16,8 @@ def test_summary():
 	Y = np.array([1, 2, 3, 4])
 	D = np.array([0, 0, 1, 1])
 	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])
-	data = Data(Y, D, X)
-	summary = Summary(data)
+	data = d.Data(Y, D, X)
+	summary = s.Summary(data)
 
 	Y_c_mean = 1.5
 	Y_t_mean = 3.5

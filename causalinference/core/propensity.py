@@ -19,16 +19,16 @@ class Propensity(object):
 
 		lin_parsed = parse_lin_terms(data['K'], lin)
 		qua_parsed = parse_qua_terms(data['K'], qua)
-		X = form_matrix(data['X'], lin_parsed, qua_parsed)
-		X_c, X_t = X[data['controls']], X[data['treated']]
-		beta = calc_coef(X_c, X_t)
+		Z = form_matrix(data['X'], lin_parsed, qua_parsed)
+		Z_c, Z_t = Z[data['controls']], Z[data['treated']]
+		beta = calc_coef(Z_c, Z_t)
 
 		self._data = data
 		self._dict = dict()
 		self._dict['lin'], self._dict['qua'] = lin_parsed, qua_parsed
 		self._dict['coef'] = beta
-		self._dict['loglike'] = -neg_loglike(beta, X_c, X_t)
-		self._dict['fitted'] = sigmoid(X.dot(beta))
+		self._dict['loglike'] = -neg_loglike(beta, Z_c, Z_t)
+		self._dict['fitted'] = sigmoid(Z.dot(beta))
 		self._dict['se'] = None  # only compute on request
 
 
@@ -41,10 +41,8 @@ class Propensity(object):
 		error computation can be expensive.
 		"""
 
-		lin, qua = self['lin'], self['qua']
-		X = form_matrix(self._data['X'], lin, qua)
-		p = self['fitted']
-		self._dict['se'] = calc_se(X, p)
+		Z = form_matrix(self._data['X'], self['lin'], self['qua'])
+		self._dict['se'] = calc_se(Z, self['fitted'])
 
 
 	def __getitem__(self, key):
@@ -142,6 +140,8 @@ def parse_lin_terms(K, lin):
 
 	Expected args
 	-------------
+		K: int
+			Number of covariates, to infer all linear terms.
 		lin: string, list
 			Strings, such as 'all', or list of column
 			numbers, that specifies which covariates to
@@ -168,6 +168,8 @@ def parse_qua_terms(K, qua):
 
 	Expected args
 	-------------
+		K: int
+			Number of covariates, to infer all quadratic terms.
 		qua: string, list
 			Strings, such as 'all', or list of paris of
 			column numbers, that specifies which covariates
@@ -187,42 +189,45 @@ def parse_qua_terms(K, qua):
 
 def form_matrix(X, lin, qua):
 
-		"""
-		Forms covariate matrix for use in propensity score estimation,
-		based on requirements on linear and quadratic terms.
+	"""
+	Forms covariate matrix for use in propensity score estimation,
+	based on requirements on linear and quadratic terms.
 
-		Expected args
-		-------------
-			lin: list
-				Column numbers (zero-based) of the original
-				covariate matrix to include linearly.
-			qua: list
-				Tuples indicating which columns of the original
-				covariate matrix to multiply and include. E.g.,
-				[(1,1), (2,3)] indicates squaring the 2nd column
-				and including the product of the 3rd and 4th
-				columns.
+	Expected args
+	-------------
+		X: matrix, ndarray
+			Matrix from which columns are selected to form
+			covariate matrix for propensity score estimation.
+		lin: list
+			Column numbers (zero-based) of the original
+			covariate matrix to include linearly.
+		qua: list
+			Tuples indicating which columns of the original
+			covariate matrix to multiply and include. E.g.,
+			[(1,1), (2,3)] indicates squaring the 2nd column
+			and including the product of the 3rd and 4th
+			columns.
 
-		Returns
-		-------
-			Covariate matrix formed based on requirements on linear
-			and quadratic terms.
-		"""
+	Returns
+	-------
+		Covariate matrix formed based on requirements on linear
+		and quadratic terms.
+	"""
 
-		N, K = X.shape
+	N, K = X.shape
 
-		mat = np.empty((N, 1+len(lin)+len(qua)))
-		mat[:, 0] = 1  # constant term
+	mat = np.empty((N, 1+len(lin)+len(qua)))
+	mat[:, 0] = 1  # constant term
 
-		current_col = 1
-		if lin:
-			mat[:, current_col:current_col+len(lin)] = X[:, lin]
-			current_col += len(lin)
-		for term in qua:
-			mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
-			current_col += 1
+	current_col = 1
+	if lin:
+		mat[:, current_col:current_col+len(lin)] = X[:, lin]
+		current_col += len(lin)
+	for term in qua:
+		mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
+		current_col += 1
 
-		return mat
+	return mat
 
 
 def sigmoid(x, top_threshold=100, bottom_threshold=-100):
@@ -311,8 +316,7 @@ def neg_loglike(beta, X_c, X_t):
 		Negative log likelihood evaluated at input values.
 	"""
 
-	return log1exp(X_t.dot(beta)).sum() + \
-	       log1exp(-X_c.dot(beta)).sum()
+	return log1exp(X_t.dot(beta)).sum() + log1exp(-X_c.dot(beta)).sum()
 
 
 def neg_gradient(beta, X_c, X_t):
@@ -407,6 +411,8 @@ def get_excluded_lin(K, included):
 
 	Expected args
 	-------------
+		K: int
+			Number of covariates, to infer all linear terms.
 		included: list
 			Column numbers (zero-based) of the original
 			covariate matrix that have been included
@@ -420,7 +426,7 @@ def get_excluded_lin(K, included):
 
 	included_set = set(included)
 
-	return [term for term in xrange(K) if term not in included_set]
+	return filter(lambda x: x not in included_set, xrange(K))
 
 
 def get_excluded_qua(lin, included):
@@ -454,7 +460,7 @@ def get_excluded_qua(lin, included):
 	whole_set = list(combinations_with_replacement(lin, 2))
 	included_set = set(included)
 
-	return [term for term in whole_set if term not in included_set]
+	return filter(lambda x: x not in included_set, whole_set)
 
 
 def calc_loglike(X_c, X_t, lin, qua):
@@ -465,6 +471,10 @@ def calc_loglike(X_c, X_t, lin, qua):
 
 	Expected args
 	-------------
+		X_c: matrix, ndarray
+			Original covariate matrix for the control units.
+		X_t: matrix, ndarray
+			Original covariate matrix for the treated units.
 		lin : list
 			Column numbers (zero-based) of the original
 			covariate matrix to include.
@@ -497,6 +507,10 @@ def select_lin(X_c, X_t, lin_B, C_lin):
 
 	Expected args
 	-------------
+		X_c: matrix, ndarray
+			Original covariate matrix for the control units.
+		X_t: matrix, ndarray
+			Original covariate matrix for the treated units.
 		lin_B: list
 			Column numbers (zero-based) of the original
 			covariate matrix that should be included as
@@ -548,6 +562,10 @@ def select_lin_terms(X_c, X_t, lin_B, C_lin):
 	
 	Expected args
 	-------------
+		X_c: matrix, ndarray
+			Original covariate matrix for the control units.
+		X_t: matrix, ndarray
+			Original covariate matrix for the treated units.
 		lin_B: list
 			Column numbers (zero-based) of the original
 			covariate matrix that should be included as
@@ -582,6 +600,10 @@ def select_qua(X_c, X_t, lin, qua_B, C_qua):
 
 	Expected args
 	-------------
+		X_c: matrix, ndarray
+			Original covariate matrix for the control units.
+		X_t: matrix, ndarray
+			Original covariate matrix for the treated units.
 		lin: list
 			Column numbers (zero-based) of the original
 			covariate matrix that have been included
@@ -600,7 +622,7 @@ def select_qua(X_c, X_t, lin, qua_B, C_qua):
 	-------
 		List of tuples of column numbers of the original
 		covariate matrix to include quadratically as decided by
-		the LR tests.
+		the likelihood ratio tests.
 
 	References
 	----------
@@ -638,6 +660,10 @@ def select_qua_terms(X_c, X_t, lin, C_qua):
 	
 	Expected args
 	-------------
+		X_c: matrix, ndarray
+			Original covariate matrix for the control units.
+		X_t: matrix, ndarray
+			Original covariate matrix for the treated units.
 		lin: list
 			Column numbers (zero-based) of the original
 			covariate matrix that have been included

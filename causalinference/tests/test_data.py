@@ -1,7 +1,7 @@
 from nose.tools import *
 import numpy as np
 
-from ..core.data import Data
+import causalinference.core.data as d
 
 
 def test_data():
@@ -9,7 +9,7 @@ def test_data():
 	Y = np.array([1.2, 3.45, -6, 78.90])
 	D = np.array([0, 1, 0, 1.0])
 	X = np.array([[-1, 2], [3, -4], [-5.6, -7], [8.9, 0.0]])
-	data = Data(Y, D, X)
+	data = d.Data(Y, D, X)
 
 	ans1 = np.array([1.2, 3.45, -6, 78.9])
 	assert np.array_equal(data['Y'], ans1)
