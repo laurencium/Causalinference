@@ -29,9 +29,8 @@ def test_summary():
 	X_c_sd = np.sqrt([8, 8])
 	X_t_sd = np.sqrt([8, 8])
 	ndiff = np.array([3/(2*np.sqrt(2)), -1/(2*np.sqrt(2))])
-	keys = set(['N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
-	            'X_c_mean', 'X_t_mean', 'X_c_sd', 'X_t_sd',
-		    'rdiff', 'ndiff'])
+	keys = {'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
+	        'X_c_mean', 'X_t_mean', 'X_c_sd', 'X_t_sd', 'rdiff', 'ndiff'}
 
 	assert_equal(summary['Y_c_mean'], Y_c_mean)
 	assert_equal(summary['Y_t_mean'], Y_t_mean)

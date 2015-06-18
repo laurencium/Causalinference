@@ -53,7 +53,7 @@ def test_data():
 	ans14 = 'int'
 	assert_equal(data['D'].dtype, ans14)
 
-	ans15 = set(['Y', 'D', 'X', 'N', 'K', 'controls', 'treated',
-	             'Y_c', 'Y_t', 'X_c', 'X_t', 'N_c', 'N_t'])
+	ans15 = {'Y', 'D', 'X', 'N', 'K', 'controls', 'treated',
+	         'Y_c', 'Y_t', 'X_c', 'X_t', 'N_c', 'N_t'}
 	assert_equal(set(data.keys()), ans15)
 

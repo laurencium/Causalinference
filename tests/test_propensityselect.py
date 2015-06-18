@@ -232,7 +232,7 @@ def test_propensityselect():
 	fitted1 = np.array([0.6522105, 0.2995088, 0.2995088,
 	                   0.7970526, 0.2995088, 0.6522105])
 	se1 = np.array([6.8455179, 0.7641445])
-	keys = set(['lin', 'qua', 'coef', 'loglike', 'fitted', 'se'])
+	keys = {'lin', 'qua', 'coef', 'loglike', 'fitted', 'se'}
 	
 	assert_equal(propensity1['lin'], lin1)
 	assert_equal(propensity1['qua'], qua1)

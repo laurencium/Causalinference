@@ -102,7 +102,7 @@ def test_propensity():
 	loglike = -2.567814
 	fitted = np.array([0.3016959, 0.6033917, 0.6983041, 0.3966083])
 	se = np.array([3.8953529, 0.6507885, 1.3595614])
-	keys = set(['lin', 'qua', 'coef', 'loglike', 'fitted', 'se'])
+	keys = {'lin', 'qua', 'coef', 'loglike', 'fitted', 'se'}
 	
 	assert_equal(propensity['lin'], lin)
 	assert_equal(propensity['qua'], qua)
