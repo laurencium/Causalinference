@@ -19,6 +19,7 @@ class Summary(object):
 
 		self._dict = dict()
 
+		self._dict['N'] = data['N']
 		self._dict['N_c'], self._dict['N_t'] = data['N_c'], data['N_t']
 		self._dict['Y_c_mean'] = data['Y_c'].mean()
 		self._dict['Y_t_mean'] = data['Y_t'].mean()

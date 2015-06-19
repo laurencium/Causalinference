@@ -12,22 +12,22 @@ class CausalModel(object):
 
 	def __init__(self, Y, D, X):
 
-		self.data = Data(Y, D, X)
-		self.summary = Summary(self.data)
+		self.raw_data = Data(Y, D, X)
+		self.summary_stats = Summary(self.raw_data)
 
 
-	def propensity(self, lin='all', qua=None):
+	def est_propensity(self, lin='all', qua=None):
 
-		lin_terms = self._parse_lin_terms(self.data['K'], lin)
-		qua_terms = self._parse_qua_terms(self.data['K'], qua)
-		self.pscore = Propensity(lin_terms, qua_terms, self.data)
+		lin_terms = self._parse_lin_terms(self.raw_data['K'], lin)
+		qua_terms = self._parse_qua_terms(self.raw_data['K'], qua)
+		self.pscore = Propensity(lin_terms, qua_terms, self.raw_data)
 
 
-	def propensity_s(self, lin_B=None, C_lin=1, C_qua=2.71):
+	def est_propensity_s(self, lin_B=None, C_lin=1, C_qua=2.71):
 	
-		lin_basic = self._parse_lin_terms(self.data['K'], lin_B)
-		self.pscore = PropensitySelect(lin_basic, C_lin,
-		                               C_qua, self.data)
+		lin_basic = self._parse_lin_terms(self.raw_data['K'], lin_B)
+		self.pscore = PropensitySelect(lin_basic, C_lin, C_qua,
+		                               self.raw_data)
 
 
 	@staticmethod

@@ -19,6 +19,9 @@ def test_summary():
 	data = d.Data(Y, D, X)
 	summary = s.Summary(data)
 
+	N = 4
+	N_c = 2
+	N_t = 2
 	Y_c_mean = 1.5
 	Y_t_mean = 3.5
 	Y_c_sd = 0.5
@@ -29,9 +32,12 @@ def test_summary():
 	X_c_sd = np.sqrt([8, 8])
 	X_t_sd = np.sqrt([8, 8])
 	ndiff = np.array([3/(2*np.sqrt(2)), -1/(2*np.sqrt(2))])
-	keys = {'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
+	keys = {'N', 'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
 	        'X_c_mean', 'X_t_mean', 'X_c_sd', 'X_t_sd', 'rdiff', 'ndiff'}
 
+	assert_equal(summary['N'], N)
+	assert_equal(summary['N_c'], N_c)
+	assert_equal(summary['N_t'], N_t)
 	assert_equal(summary['Y_c_mean'], Y_c_mean)
 	assert_equal(summary['Y_t_mean'], Y_t_mean)
 	assert_equal(summary['Y_c_sd'], Y_c_sd)
