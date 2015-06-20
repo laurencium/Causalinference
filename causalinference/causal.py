@@ -12,36 +12,49 @@ class CausalModel(object):
 
 	def __init__(self, Y, D, X):
 
-		self.raw_data = Data(Y, D, X)
-		self.old_data = self.raw_data
+		self.old_data = Data(Y, D, X)
+		self.reset()
+
+
+	def reset(self):
+
+		self.raw_data = self.old_data
 		self.summary_stats = Summary(self.raw_data)
+		self.propensity = None
+		self.cutoff = None
 
 
 	def est_propensity(self, lin='all', qua=None):
 
 		lin_terms = self._parse_lin_terms(self.raw_data['K'], lin)
 		qua_terms = self._parse_qua_terms(self.raw_data['K'], qua)
+
 		self.propensity = Propensity(lin_terms, qua_terms, self.raw_data)
+		self.raw_data._dict['pscore'] = self.propensity['fitted']
+		self.cutoff = 0.1
 
 
 	def est_propensity_s(self, lin_B=None, C_lin=1, C_qua=2.71):
 	
 		lin_basic = self._parse_lin_terms(self.raw_data['K'], lin_B)
+
 		self.propensity = PropensitySelect(lin_basic, C_lin, C_qua,
 		                                   self.raw_data)
+		self.raw_data._dict['pscore'] = self.propensity['fitted']
+		self.cutoff = 0.1
 
 
 	def trim(self):
 
 		if 0 < self.cutoff <= 0.5:
-			pscore = self.propensity['fitted']
+			pscore = self.raw_data['pscore']
 			keep = (pscore >= self.cutoff) & (pscore <= 1-self.cutoff)
 			Y_trimmed = self.raw_data['Y'][keep]
 			D_trimmed = self.raw_data['D'][keep]
 			X_trimmed = self.raw_data['X'][keep]
 			self.raw_data = Data(Y_trimmed, D_trimmed, X_trimmed)
 			self.summary_stats = Summary(self.raw_data)
-			self.propensity['fitted'] = pscore[keep]
+			self.raw_data._dict['pscore'] = pscore[keep]
 		elif self.cutoff == 0:
 			pass
 		else:

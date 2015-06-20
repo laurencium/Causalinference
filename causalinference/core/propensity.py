@@ -51,15 +51,6 @@ class Propensity(object):
 		return self._dict[key]
 
 
-	def __setitem__(self, key, value):
-
-		if key == 'fitted':
-			self._dict[key] = value
-		else:
-			msg = 'Assigment to ' + key + ' not supported.'
-			raise TypeError(msg)
-
-
 	def __iter__(self):
 
 		return iter(self._dict)

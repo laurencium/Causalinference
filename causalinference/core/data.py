@@ -29,16 +29,6 @@ class Data(object):
 		return self._dict[key]
 
 
-	def __setitem__(self, key, value):
-
-		if key == 'pscore':
-			self._dict[key] = value
-		else:
-			raise TypeError("'" + self.__class__.__name__ +
-			                "' object does not support item " +
-					"assignment")
-
-
 	def __iter__(self):
 
 		return iter(self._dict)
