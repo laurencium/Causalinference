@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 import scipy.linalg
 from itertools import combinations_with_replacement, izip
@@ -71,28 +72,28 @@ class CausalModel(object):
 
 
 	@staticmethod
+	def _sumlessthan(g, sorted_g, cumsum):
+
+		deduped_values = dict(izip(sorted_g, cumsum))
+
+		return np.array([deduped_values[x] for x in g])
+
+
+	@staticmethod
 	def _select_cutoff(g):
 
 		if g.max() <= 2*g.mean():
 			cutoff = 0
 		else:
 			sorted_g = np.sort(g)
-			cumsum_g = np.cumsum(sorted_g)
 			cumsum_1 = xrange(1, len(g)+1)
-			LHS = g * CausalModel._sumlessthan(g, sorted_g, cumsum_g)
-			RHS = 2 * CausalModel._sumlessthan(g, sorted_g, cumsum_1)
+			LHS = g * CausalModel._sumlessthan(g, sorted_g, cumsum_1)
+			cumsum_g = np.cumsum(sorted_g)
+			RHS = 2 * CausalModel._sumlessthan(g, sorted_g, cumsum_g)
 			gamma = np.max(g[LHS <= RHS])
-			cutoff = 0.5 - np.sqrt(0.25 - 1/gamma)
+			cutoff = 0.5 - np.sqrt(0.25 - 1./gamma)
 
 		return cutoff
-
-
-	@staticmethod
-	def _sumlessthan(g, sorted_g, cumsum):
-
-		deduped_values = dict(izip(sorted_g, cumsum))
-
-		return np.array([deduped_values[x] for x in g])
 
 
 	@staticmethod
