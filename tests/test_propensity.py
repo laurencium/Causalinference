@@ -14,7 +14,7 @@ def propensity_wrapper(Y, D, X):
 
 def test_form_matrix():
 
-	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])  # this matters
+	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])
 
 	ans0 = np.column_stack((np.ones(4), X))
 	assert np.array_equal(p.form_matrix(X, [0, 1], []), ans0)
