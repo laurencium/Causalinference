@@ -7,11 +7,12 @@ class Data(object):
 	Dictionary-like class containing basic data.
 	"""
 
-	def __init__(self, Y, D, X):
+	def __init__(self, outcome, treatment, covariates):
 
+		Y, D, X = preprocess(outcome, treatment, covariates)
 		self._dict = dict()
 		self._dict['Y'] = Y
-		self._dict['D'] = D.astype(int)
+		self._dict['D'] = D
 		self._dict['X'] = X
 		self._dict['N'], self._dict['K'] = X.shape
 		self._dict['controls'] = (D==0)
@@ -42,4 +43,23 @@ class Data(object):
 	def keys(self):
 
 		return self._dict.keys()
+
+
+def preprocess(Y, D, X):
+
+	if Y.shape[0] == D.shape[0] == X.shape[0]:
+		N = Y.shape[0]
+	else:
+		raise IndexError('Input data have different number of rows')
+
+	if Y.shape != (N, ):
+		Y.shape = (N, )
+	if D.shape != (N, ):
+		D.shape = (N, )
+	if D.dtype != 'int':
+		D = D.astype(int)
+	if X.shape == (N, ):
+		X.shape = (N, 1)
+
+	return (Y, D, X)
 

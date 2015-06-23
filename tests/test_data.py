@@ -4,6 +4,29 @@ import numpy as np
 import causalinference.core.data as d
 
 
+def test_preprocess():
+
+	Y1 = np.array([[1.2], [3.45], [-6], [78.90]])
+	D1 = np.array([[0], [1], [0.0], [1]])
+	X1 = np.array([-1, 3, -5.6, 8.9])
+	Y_out, D_out, X_out = d.preprocess(Y1, D1, X1)
+
+	ans1 = np.array([1.2, 3.45, -6, 78.9])
+	assert np.array_equal(Y_out, ans1)
+
+	ans2 = np.array([0, 1, 0, 1])
+	assert np.array_equal(D_out, ans2)
+
+	ans3 = np.array([[-1], [3], [-5.6], [8.9]])
+	assert np.array_equal(X_out, ans3)
+
+
+	Y2 = np.array([3, 98])
+	D2 = np.array([[5], [21.9], [-53]])
+	X2 = np.array([1, 3.14])
+	assert_raises(IndexError, d.preprocess, Y2, D2, X2)
+
+
 def test_data():
 
 	Y = np.array([1.2, 3.45, -6, 78.90])
