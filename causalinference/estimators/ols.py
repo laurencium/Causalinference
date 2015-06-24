@@ -1,9 +1,34 @@
+from __future__ import division
 import numpy as np
 import scipy.linalg
 
-from base import Estimator
+
+def add_const(X):
+
+	N, K = X.shape
+	Z = np.empty((N, 1+K))
+	Z[:, 0] = 1
+	Z[:, 1:] = X
+
+	return Z
 
 
+def calc_te(Y_c, Y_t, X_c, X_t):
+
+	coef_c = np.linalg.lstsq(add_const(X_c), Y_c)[0]
+	att = Y_t.mean() - (coef_c[0] + X_t.mean().dot(coef_c[1:]))
+
+	coef_t = np.linalg.lstsq(add_const(X_t), Y_t)[0]
+	atc = Y_c.mean() - (coef_t[0] + X_c.mean().dot(coef_t[1:]))
+
+	N_c, N_t = Y_c.shape[0], Y_t.shape[0]
+	N = N_c + N_t
+	ate = (N_c/N)*atc + (N_t/N)*att
+
+	return (ate, att, atc)
+
+
+'''
 class OLS(Estimator):
 
 	"""
@@ -117,3 +142,4 @@ class OLS(Estimator):
 
 		return (ate_se, att_se, atc_se)
 
+'''
