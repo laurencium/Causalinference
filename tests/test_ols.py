@@ -12,17 +12,35 @@ def test_add_const():
 	assert np.array_equal(o.add_const(X), ans)
 
 
-def test_calc_te():
+def test_calc_atc():
 
-	Y_c = np.array([52, 30, 5])
-	Y_t = np.array([12, 10, 44])
-	X_c = np.array([[1], [3], [9]])
-	X_t = np.array([[5], [4], [2]])
-	ans1, ans2, ans3 = -12.684066, -10.65385, -14.71429
+	Y_c = np.array([52, 30, 5, 29])
+	Y_t = np.array([12, 10, 44, 87])
+	X_c = np.array([[1, 42], [3, 32], [9, 7], [12, 86]])
+	X_t = np.array([[5, 94], [4, 36], [2, 13], [6, 61]])
+	ans = 63.2095
 
-	ate, att, atc = o.calc_te(Y_c, Y_t, X_c, X_t)
+	assert np.allclose(o.calc_atc(Y_c, Y_t, X_c, X_t), ans)
 
-	assert np.allclose(ate, ans1)
-	assert np.allclose(att, ans2)
-	assert np.allclose(atc, ans3)
+
+def test_calc_att():
+
+	Y_c = np.array([52, 30, 5, 29])
+	Y_t = np.array([12, 10, 44, 87])
+	X_c = np.array([[1, 42], [3, 32], [9, 7], [12, 86]])
+	X_t = np.array([[5, 94], [4, 36], [2, 13], [6, 61]])
+	ans = -2.020611
+
+	assert np.allclose(o.calc_att(Y_c, Y_t, X_c, X_t), ans)
+
+
+def test_calc_ate():
+
+	atc = 63.2095
+	att = -2.020611
+	N_c = 4
+	N_t = 4
+	ans = 30.59444
+
+	assert np.allclose(o.calc_ate(atc, att, N_c, N_t), ans)
 

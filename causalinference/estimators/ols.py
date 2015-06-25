@@ -13,19 +13,23 @@ def add_const(X):
 	return Z
 
 
-def calc_te(Y_c, Y_t, X_c, X_t):
+def calc_atc(Y_c, Y_t, X_c, X_t):
 
-	coef_c =  np.linalg.lstsq(add_const(X_c), Y_c)[0]
-	att = Y_t.mean() - (coef_c[0] + np.dot(X_t.mean(0), coef_c[1:]))
+	coef = np.linalg.lstsq(add_const(X_t), Y_t)[0]
 
-	coef_t = np.linalg.lstsq(add_const(X_t), Y_t)[0]
-	atc = (coef_t[0] + np.dot(X_c.mean(0), coef_t[1:])) - Y_c.mean() 
+	return (coef[0] + np.dot(X_c.mean(0), coef[1:])) - Y_c.mean()
 
-	N_c, N_t = Y_c.shape[0], Y_t.shape[0]
-	N = N_c + N_t
-	ate = (N_c/N)*atc + (N_t/N)*att
 
-	return (ate, att, atc)
+def calc_att(Y_c, Y_t, X_c, X_t):
+
+	coef = np.linalg.lstsq(add_const(X_c), Y_c)[0]
+
+	return Y_t.mean() - (coef[0] + np.dot(X_t.mean(0), coef[1:]))
+
+
+def calc_ate(atc, att, N_c, N_t):
+
+	return N_c/(N_c+N_t) * atc + N_t/(N_c+N_t) * att
 
 
 '''
