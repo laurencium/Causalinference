@@ -7,6 +7,7 @@ from itertools import combinations_with_replacement, izip
 # from estimators import Estimators, Blocking, Matching, Weighting, OLS
 # from utils.tools import remove
 from core import Data, Summary, Propensity, PropensitySelect
+from estimators import OLS
 
 
 class CausalModel(object):
@@ -23,6 +24,7 @@ class CausalModel(object):
 		self.summary_stats = Summary(self.raw_data)
 		self.propensity = None
 		self.cutoff = None
+		self.estimates = dict()
 
 
 	def est_propensity(self, lin='all', qua=None):
@@ -69,6 +71,11 @@ class CausalModel(object):
 
 		self.cutoff = CausalModel._select_cutoff(g)
 		self.trim()
+
+
+	def est_via_ols(self):
+
+		self.estimates['ols'] = OLS(self.raw_data)
 
 
 	@staticmethod

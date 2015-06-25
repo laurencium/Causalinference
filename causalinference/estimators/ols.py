@@ -2,6 +2,22 @@ from __future__ import division
 import numpy as np
 import scipy.linalg
 
+from ..core import Dict
+
+
+class OLS(Dict):
+
+	def __init__(self, data):
+
+		Y_c, Y_t = data['Y_c'], data['Y_t']
+		X_c, X_t = data['X_c'], data['X_t']
+		N_c, N_t = data['N_c'], data['N_t']
+
+		self._dict = dict()
+		self._dict['atc'] = calc_atc(Y_c, Y_t, X_c, X_t)
+		self._dict['att'] = calc_att(Y_c, Y_t, X_c, X_t)
+		self._dict['ate'] = calc_ate(self['atc'], self['att'], N_c, N_t)
+
 
 def add_const(X):
 
