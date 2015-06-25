@@ -3,10 +3,11 @@ import numpy as np
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
 
+from data import Dict
 from ..utils.tools import Printer
 
 
-class Propensity(object):
+class Propensity(Dict):
 
 	"""
 	Dictionary-like class containing propensity score data, including
@@ -49,11 +50,6 @@ class Propensity(object):
 			self._calc_and_store_se()
 
 		return self._dict[key]
-
-
-	def __iter__(self):
-
-		return iter(self._dict)
 
 
 	def __repr__(self):
@@ -102,11 +98,6 @@ class Propensity(object):
 			output += p.write_row(entries, span, etype)
 
 		return output
-
-
-	def keys(self):
-
-		return self._dict.keys()
 
 
 class PropensitySelect(Propensity):

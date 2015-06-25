@@ -1,10 +1,11 @@
 from __future__ import division
 import numpy as np
 
+from data import Dict
 from ..utils.tools import Printer
 
 
-class Summary(object):
+class Summary(Dict):
 
 	"""
 	Dictionary-like class containing summary statistics for input data.
@@ -34,21 +35,6 @@ class Summary(object):
 		                                 self['X_t_mean'],
 						 self['X_c_sd'],
 						 self['X_t_sd'])
-
-
-	def __getitem__(self, key):
-
-		return self._dict[key]
-
-
-	def __iter__(self):
-
-		return iter(self._dict)
-
-
-	def __repr__(self):
-
-		return self._dict.__repr__()
 
 
 	def __str__(self):
@@ -84,11 +70,6 @@ class Summary(object):
 
 		return output
 			
-
-	def keys(self):
-
-		return self._dict.keys()
-
 
 def calc_ndiff(mean_c, mean_t, sd_c, sd_t):
 

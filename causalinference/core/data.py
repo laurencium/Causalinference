@@ -1,7 +1,38 @@
 import numpy as np
 
 
-class Data(object):
+class Dict(object):
+
+	"""
+	Dictionary-mimicking class.
+	"""
+
+	def __getitem__(self, key):
+
+		return self._dict[key]
+
+
+	def __iter__(self):
+
+		return iter(self._dict)
+
+	
+	def __repr__(self):
+
+		return self._dict.__repr__()
+
+
+	def keys(self):
+
+		return self._dict.keys()
+
+	
+	def iteritems(self):
+
+		return self._dict.iteritems()
+
+
+class Data(Dict):
 
 	"""
 	Dictionary-like class containing basic data.
@@ -23,26 +54,6 @@ class Data(object):
 		self._dict['X_t'] = X[self._dict['treated']]
 		self._dict['N_t'] = D.sum()
 		self._dict['N_c'] = self._dict['N'] - self._dict['N_t']
-
-
-	def __getitem__(self, key):
-
-		return self._dict[key]
-
-
-	def __iter__(self):
-
-		return iter(self._dict)
-
-
-	def __repr__(self):
-
-		return self._dict.__repr__()
-
-
-	def keys(self):
-
-		return self._dict.keys()
 
 
 def preprocess(Y, D, X):
