@@ -24,6 +24,7 @@ class CausalModel(object):
 		self.summary_stats = Summary(self.raw_data)
 		self.propensity = None
 		self.cutoff = None
+		self.blocks = None
 		self.estimates = dict()
 
 
@@ -76,6 +77,15 @@ class CausalModel(object):
 	def est_via_ols(self):
 
 		self.estimates['ols'] = OLS(self.raw_data)
+
+
+	@staticmethod
+	def _split_equal_bins(pscore, blocks):
+
+		q = np.linspace(0, 100, blocks+1)[1:-1]  # q as in qth centiles
+		centiles = map(lambda x: np.percentile(pscore, x), q)
+
+		return [0] + centiles + [1]
 
 
 	@staticmethod

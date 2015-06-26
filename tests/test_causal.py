@@ -121,6 +121,16 @@ def test_parse_qua_terms():
 	assert_equal(CausalModel._parse_qua_terms(K4, qua4), ans4)
 
 
+def test_split_equal_bins():
+
+	pscore = np.array([0.05, 0.1, 0.2, 0.3, 0.4, 0.5,
+	                   0.6, 0.7, 0.8, 0.9, 0.95])
+	blocks = 5
+	ans = [0, 0.2, 0.4, 0.6, 0.8, 1]
+
+	assert_equal(CausalModel._split_equal_bins(pscore, blocks), ans)
+
+
 def test_sumlessthan():
 
 	g1 = np.array([3, 1, 2, 4, 3, 3])
