@@ -54,6 +54,10 @@ class Data(Dict):
 		self._dict['X_t'] = X[self._dict['treated']]
 		self._dict['N_t'] = D.sum()
 		self._dict['N_c'] = self._dict['N'] - self._dict['N_t']
+		if self._dict['K']+1 > self._dict['N_c']:
+			raise ValueError('Too few control units: N_c < K+1')
+		if self._dict['K']+1 > self._dict['N_t']:
+			raise ValueError('Too few treated units: N_t < K+1')
 
 
 def preprocess(Y, D, X):
