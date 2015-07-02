@@ -14,7 +14,7 @@ def test_preprocess():
 	ans1 = np.array([1.2, 3.45, -6, 78.9])
 	assert np.array_equal(Y_out, ans1)
 
-	ans2 = np.array([0, 1, 0, 1])
+	ans2 = np.array([0, 1.0, -0.0, 1])
 	assert np.array_equal(D_out, ans2)
 
 	ans3 = np.array([[-1], [3], [-5.6], [8.9]])
@@ -29,48 +29,48 @@ def test_preprocess():
 
 def test_data():
 
-	Y = np.array([1.2, 3.45, -6, 78.90])
-	D = np.array([0, 1, 0, 1.0])
-	X = np.array([[-1, 2], [3, -4], [-5.6, -7], [8.9, 0.0]])
-	data = d.Data(Y, D, X)
+	Y1 = np.array([1.2, 3.45, -6, 78.90, -9, 8.7654])
+	D1 = np.array([0, 1, 0, 1.0, 0.0, 1])
+	X1 = np.array([[-1, 2], [3, -4], [-5.6, -7], [8.9, 0.0], [99, 877], [-666, 54321]])
+	data = d.Data(Y1, D1, X1)
 
-	ans1 = np.array([1.2, 3.45, -6, 78.9])
+	ans1 = np.array([1.2, 3.45, -6, 78.9, -9, 8.7654])
 	assert np.array_equal(data['Y'], ans1)
 
-	ans2 = np.array([0, 1, 0, 1])
+	ans2 = np.array([0, 1, 0, 1, 0, 1])
 	assert np.array_equal(data['D'], ans2)
 
-	ans3 = np.array([[-1, 2], [3, -4], [-5.6, -7], [8.9, 0]])
+	ans3 = np.array([[-1, 2], [3, -4], [-5.6, -7], [8.9, 0], [99, 877], [-666, 54321]])
 	assert np.array_equal(data['X'], ans3)
 
-	ans4 = 4
+	ans4 = 6
 	assert_equal(data['N'], ans4)
 
 	ans5 = 2
 	assert_equal(data['K'], ans5)
 
-	ans6 = np.array([True, False, True, False])
+	ans6 = np.array([True, False, True, False, True, False])
 	assert np.array_equal(data['controls'], ans6)
 
-	ans7 = np.array([False, True, False, True])
+	ans7 = np.array([False, True, False, True, False, True])
 	assert np.array_equal(data['treated'], ans7)
 
-	ans8 = np.array([1.2, -6])
+	ans8 = np.array([1.2, -6, -9])
 	assert np.array_equal(data['Y_c'], ans8)
 
-	ans9 = np.array([3.45, 78.9])
+	ans9 = np.array([3.45, 78.9, 8.7654])
 	assert np.array_equal(data['Y_t'], ans9)
 
-	ans10 = np.array([[-1, 2], [-5.6, -7]])
+	ans10 = np.array([[-1, 2], [-5.6, -7], [99, 877]])
 	assert np.array_equal(data['X_c'], ans10)
 
-	ans11 = np.array([[3, -4], [8.9, 0]])
+	ans11 = np.array([[3, -4], [8.9, 0], [-666, 54321]])
 	assert np.array_equal(data['X_t'], ans11)
 
-	ans12 = 2
+	ans12 = 3
 	assert_equal(data['N_t'], ans12)
 
-	ans13 = 2
+	ans13 = 3
 	assert_equal(data['N_c'], ans13)
 
 	ans14 = 'int'
@@ -79,4 +79,9 @@ def test_data():
 	ans15 = {'Y', 'D', 'X', 'N', 'K', 'controls', 'treated',
 	         'Y_c', 'Y_t', 'X_c', 'X_t', 'N_c', 'N_t'}
 	assert_equal(set(data.keys()), ans15)
+
+	Y2 = np.array([[1.2], [3.45], [-6], [78.90]])
+	D2 = np.array([[0], [1], [0.0], [1]])
+	X2 = np.array([[-1, 2], [3, -4], [-5.6, -7], [8.9, 0.0]])
+	assert_raises(ValueError, d.Data, Y2, D2, X2)
 
