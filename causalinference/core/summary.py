@@ -24,8 +24,8 @@ class Summary(Dict):
 		self._dict['N_c'], self._dict['N_t'] = data['N_c'], data['N_t']
 		self._dict['Y_c_mean'] = data['Y_c'].mean()
 		self._dict['Y_t_mean'] = data['Y_t'].mean()
-		self._dict['Y_c_sd'] = data['Y_c'].var(ddof=1)
-		self._dict['Y_t_sd'] = data['Y_t'].var(ddof=1)
+		self._dict['Y_c_sd'] = np.sqrt(data['Y_c'].var(ddof=1))
+		self._dict['Y_t_sd'] = np.sqrt(data['Y_t'].var(ddof=1))
 		self._dict['rdiff'] = self['Y_t_mean'] - self['Y_c_mean']
 		self._dict['X_c_mean'] = data['X_c'].mean(0)
 		self._dict['X_t_mean'] = data['X_t'].mean(0)

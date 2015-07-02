@@ -13,25 +13,25 @@ def test_calc_ndiff():
 
 def test_summary():
 
-	Y = np.array([1, 2, 3, 4])
-	D = np.array([0, 0, 1, 1])
-	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])
+	Y = np.array([1, 2, 3, 4, 6, 5])
+	D = np.array([0, 0, 1, 1, 0, 1])
+	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2], [9, 11], [12, 10]])
 	data = d.Data(Y, D, X)
 	summary = s.Summary(data)
 
-	N = 4
-	N_c = 2
-	N_t = 2
-	Y_c_mean = 1.5
-	Y_t_mean = 3.5
-	Y_c_sd = 0.5
-	Y_t_sd = 0.5
-	rdiff = 2
-	X_c_mean = np.array([3, 5])
-	X_t_mean = np.array([6, 4])
-	X_c_sd = np.sqrt([8, 8])
-	X_t_sd = np.sqrt([8, 8])
-	ndiff = np.array([3/(2*np.sqrt(2)), -1/(2*np.sqrt(2))])
+	N = 6
+	N_c = 3
+	N_t = 3
+	Y_c_mean = 3
+	Y_t_mean = 4
+	Y_c_sd = np.sqrt(7)
+	Y_t_sd = 1
+	rdiff = 1
+	X_c_mean = np.array([5, 7])
+	X_t_mean = np.array([8, 6])
+	X_c_sd = np.array([4, 4])
+	X_t_sd = np.array([4, 4])
+	ndiff = np.array([0.75, -0.25])
 	keys = {'N', 'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
 	        'X_c_mean', 'X_t_mean', 'X_c_sd', 'X_t_sd', 'rdiff', 'ndiff'}
 
