@@ -34,6 +34,7 @@ class CausalModel(object):
 		self.propensity = Propensity(lin_terms, qua_terms, self.raw_data)
 		self.raw_data._dict['pscore'] = self.propensity['fitted']
 		self.cutoff = 0.1
+		self.blocks = 5
 
 
 	def est_propensity_s(self, lin_B=None, C_lin=1, C_qua=2.71):
@@ -44,6 +45,7 @@ class CausalModel(object):
 		                                   self.raw_data)
 		self.raw_data._dict['pscore'] = self.propensity['fitted']
 		self.cutoff = 0.1
+		self.blocks = 5
 
 
 	def trim(self):
@@ -75,12 +77,17 @@ class CausalModel(object):
 	def stratify(self):
 
 		Y, D, X = self.raw_data['Y'], self.raw_data['D'], self.raw_data['X']
-		pscore, blocks = self.raw_data['pscore'], self.blocks
+		pscore = self.raw_data['pscore']
 
-		if isinstance(blocks, (int, long)):
-			self.blocks = CausalModel._split_equal_bins(pscore, blocks)
+		if isinstance(self.blocks, (int, long)):
+			blocks = CausalModel._split_equal_bins(pscore, self.blocks)
 
-		self.strata = Strata(Y, D, X, pscore, self.blocks)
+		def subset(p_low, p_high):
+			return (p_low < pscore) & (pscore <= p_high)
+		subsets = [subset(*ps) for ps in izip(blocks, blocks[1:])]
+		self.strata = [CausalModel(Y[s], D[s], X[s]) for s in subsets]
+		for stratum, subset in izip(self.strata, subsets):
+			stratum.raw_data._dict['pscore'] = pscore[subset]
 
 
 	def est_via_ols(self):
@@ -183,71 +190,6 @@ class CausalModel(object):
 		else:
 			return qua
 
-
-class Strata(object):
-
-	"""
-	List-like object containing the list of stratified propensity bins.
-	"""
-
-	def __init__(self, Y, D, X, pscore, blocks):
-
-		create_stratum_i = partial(create_stratum, Y, D, X, pscore)
-		block_num = len(blocks) - 1
-		self._strata = map(lambda x: create_stratum_i(blocks[x], blocks[x+1]), xrange(block_num))
-
-
-	def __len__(self):
-
-		return len(self._strata)
-
-
-	def __getitem__(self, index):
-
-		return self._strata[index]
-
-
-	def __str__(self):
-
-		p = Printer()
-
-		output = '\n'
-		output += 'Stratification Summary\n\n'
-
-		entries = ('', 'Propensity score', '', 'Ave. p-score', 'Within')
-		span = [1, 2, 2, 2, 1]
-		etype = ['string']*5
-		output += p.write_row(entries, span, etype)
-
-		entries = ('Stratum', 'Min.', 'Max.', 'N_c', 'N_t',
-		           'Controls', 'Treated', 'Est.')
-		span = [1]*8
-		etype = ['string']*8
-		output += p.write_row(entries, span, etype)
-		output += p.write_row('-'*p.table_width, [1], ['string'])
-
-		strata = self._strata
-		etype = ['integer', 'float', 'float', 'integer', 'integer',
-		         'float', 'float', 'float']
-		for i in xrange(len(strata)):
-
-			c, t = strata[i].controls, strata[i].treated
-			entries = (i+1, strata[i].pscore['min'],
-			           strata[i].pscore['max'], strata[i].N_c,
-				   strata[i].N_t,
-				   strata[i].pscore['fitted'][c].mean(),
-				   strata[i].pscore['fitted'][t].mean(),
-				   strata[i].within)
-			output += p.write_row(entries, span, etype)
-
-		return output
-
-
-def create_stratum(Y, D, X, pscore, p_low, p_high):
-
-	subset = (p_low < pscore) & (pscore <= p_high)
-
-	return CausalModel(Y[subset], D[subset], X[subset])
 
 '''
 class CausalModel(Basic):
