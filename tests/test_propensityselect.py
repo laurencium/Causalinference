@@ -6,12 +6,6 @@ import causalinference.core.propensity as p
 from tools import random_data
 
 
-# set parameters that won't be important
-def propensity_wrapper(Y, D, X):
-
-	return p.PropensitySelect([], 0, np.inf, d.Data(Y, D, X))
-
-
 def test_get_excluded_lin():
 
 	K1 = 4

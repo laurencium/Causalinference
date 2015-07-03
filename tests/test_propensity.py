@@ -6,12 +6,6 @@ import causalinference.core.propensity as p
 from tools import random_data
 
 
-# set parameters that won't be important
-def propensity_wrapper(Y, D, X):
-
-	return p.Propensity('all', [], d.Data(Y, D, X))
-
-
 def test_form_matrix():
 
 	X = np.array([[1, 3], [5, 7], [8, 6], [4, 2]])
@@ -90,18 +84,19 @@ def test_calc_se():
 
 def test_propensity():
 
-	D = np.array([0, 0, 1, 1])
-	X = np.array([[1, 2], [9, 7], [1, 4], [9, 6]])
+	D = np.array([0, 0, 0, 1, 1, 1])
+	X = np.array([[7, 8], [3, 10], [7, 10], [4, 7], [5, 10], [9, 8]])
 	Y = random_data(D_cur=D, X_cur=X)
 
 	data = d.Data(Y, D, X)
 	propensity = p.Propensity([0, 1], [], data)
 	lin = [0, 1]
 	qua = []
-	coef = np.array([-2.1505403, -0.3671654, 0.8392352])
-	loglike = -2.567814
-	fitted = np.array([0.3016959, 0.6033917, 0.6983041, 0.3966083])
-	se = np.array([3.8953529, 0.6507885, 1.3595614])
+	coef = np.array([6.8066090, -0.0244874, -0.7524939])
+	loglike = -3.626517
+	fitted = np.array([0.6491366, 0.3117840, 0.2911631,
+	                   0.8086407, 0.3013733, 0.6379023])
+	se = np.array([8.5373779, 0.4595191, 0.8106499])
 	keys = {'lin', 'qua', 'coef', 'loglike', 'fitted', 'se'}
 	
 	assert_equal(propensity['lin'], lin)
