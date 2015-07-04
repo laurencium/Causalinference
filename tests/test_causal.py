@@ -76,6 +76,25 @@ def test_est_propensity_s():
 	assert np.allclose(causal.raw_data['pscore'], fitted2)
 
 
+def test_est_via_ols():
+
+	Y = np.array([52, 30, 5, 29, 12, 10, 44, 87])
+	D = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+	X = np.array([[1, 42], [3, 32], [9, 7], [12, 86],
+	              [5, 94], [4, 36], [2, 13], [6, 61]])
+	causal = c.CausalModel(Y, D, X)
+	causal.est_via_ols()
+	atc = 63.2095
+	att = -2.020611
+	ate = 30.59444
+	keys = {'atc', 'att', 'ate'}
+
+	assert np.allclose(causal.estimates['ols']['atc'], atc)
+	assert np.allclose(causal.estimates['ols']['att'], att)
+	assert np.allclose(causal.estimates['ols']['ate'], ate)
+	assert_equal(set(causal.estimates['ols'].keys()), keys)
+
+
 def test_parse_lin_terms():
 
 	K1 = 4

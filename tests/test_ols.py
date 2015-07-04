@@ -2,6 +2,7 @@ from nose.tools import *
 import numpy as np
 
 import causalinference.estimators.ols as o
+import causalinference.core.data as d
 
 
 def test_add_const():
@@ -43,4 +44,23 @@ def test_calc_ate():
 	ans = 30.59444
 
 	assert np.allclose(o.calc_ate(atc, att, N_c, N_t), ans)
+
+
+def test_ols():
+
+	Y = np.array([52, 30, 5, 29, 12, 10, 44, 87])
+	D = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+	X = np.array([[1, 42], [3, 32], [9, 7], [12, 86],
+	              [5, 94], [4, 36], [2, 13], [6, 61]])
+	data = d.Data(Y, D, X)
+	ols = o.OLS(data)
+	atc = 63.2095
+	att = -2.020611
+	ate = 30.59444
+	keys = {'atc', 'att', 'ate'}
+
+	assert np.allclose(ols['atc'], atc)
+	assert np.allclose(ols['att'], att)
+	assert np.allclose(ols['ate'], ate)
+	assert_equal(set(ols.keys()), keys)
 

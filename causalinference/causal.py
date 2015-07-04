@@ -2,7 +2,6 @@ from __future__ import division
 import numpy as np
 import scipy.linalg
 from itertools import combinations_with_replacement, izip
-from functools import partial
 
 from core import Data, Summary, Propensity, PropensitySelect, Strata
 from estimators import OLS
@@ -81,6 +80,8 @@ class CausalModel(object):
 
 		if isinstance(self.blocks, (int, long)):
 			blocks = split_equal_bins(pscore, self.blocks)
+		else:
+			blocks = self.blocks
 
 		def subset(p_low, p_high):
 			return (p_low < pscore) & (pscore <= p_high)
