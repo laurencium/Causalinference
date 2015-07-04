@@ -87,7 +87,7 @@ def test_est_via_ols():
 	atc = 63.2095
 	att = -2.020611
 	ate = 30.59444
-	keys = {'atc', 'att', 'ate'}
+	keys = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
 
 	assert np.allclose(causal.estimates['ols']['atc'], atc)
 	assert np.allclose(causal.estimates['ols']['att'], att)

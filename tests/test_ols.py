@@ -7,43 +7,59 @@ import causalinference.core.data as d
 
 def test_add_const():
 
-	X = np.array([[1, 2], [3, 4], [-2.4, 2]])
-	ans = np.array([[1, 1, 2], [1, 3, 4], [1, -2.4, 2]])
+	D = np.array([0, 1, 0, 1])
+	X = np.array([[1], [2], [3], [4]])
+	ans = np.array([[1, 0, 0, -1.5], [1, 1, -0.5, -0.5],
+	                [1, 0, 0, 0.5], [1, 1, 1.5, 1.5]])
 
-	assert np.array_equal(o.add_const(X), ans)
-
-
-def test_calc_atc():
-
-	Y_c = np.array([52, 30, 5, 29])
-	Y_t = np.array([12, 10, 44, 87])
-	X_c = np.array([[1, 42], [3, 32], [9, 7], [12, 86]])
-	X_t = np.array([[5, 94], [4, 36], [2, 13], [6, 61]])
-	ans = 63.2095
-
-	assert np.allclose(o.calc_atc(Y_c, Y_t, X_c, X_t), ans)
-
-
-def test_calc_att():
-
-	Y_c = np.array([52, 30, 5, 29])
-	Y_t = np.array([12, 10, 44, 87])
-	X_c = np.array([[1, 42], [3, 32], [9, 7], [12, 86]])
-	X_t = np.array([[5, 94], [4, 36], [2, 13], [6, 61]])
-	ans = -2.020611
-
-	assert np.allclose(o.calc_att(Y_c, Y_t, X_c, X_t), ans)
+	assert np.array_equal(o.form_matrix(D, X), ans)
 
 
 def test_calc_ate():
 
-	atc = 63.2095
-	att = -2.020611
-	N_c = 4
-	N_t = 4
-	ans = 30.59444
+	olscoef = np.array([1, 2, 3, 4])
+	ans = 2
 
-	assert np.allclose(o.calc_ate(atc, att, N_c, N_t), ans)
+	assert_equal(o.calc_ate(olscoef), ans)
+
+
+def test_calc_atx():
+
+	olscoef = np.array([1, 2, 3, 4, 5, 6])
+	meandiff = np.array([7, 8])
+	ans = 55
+
+	assert_equal(o.calc_atx(olscoef, meandiff), ans)
+
+
+def test_calc_subcov():
+
+	Z = np.array([[4, 4, 4, 2, 1, 3], [4, 2, 2, 6, 2, 2],
+	              [3, 4, 2, 1, 3, 1], [2, 3, 0, 0, 1, 2],
+		      [4, 3, 2, 1, 4, 2], [2, 5, 4, 2, 2, 0]])
+	u = np.array([1, 3, 6, 4, 3, 1])
+	ans = np.array([[1.988662, -3.601814, -1.224943],
+	                [-3.601814, 19.817710, 15.136009],
+			[-1.224943, 15.136009, 14.185125]])
+
+	assert np.allclose(o.calc_subcov(Z, u), ans)
+
+
+def test_calc_ate_se():
+
+	subcov = np.array([[9, 8, 7], [6, 5, 4], [3, 2, 1]])
+	ans = 3
+
+	assert_equal(o.calc_ate_se(subcov), ans)
+
+
+def test_calc_atx_se():
+
+	subcov = np.array([[9, 8, 7], [6, 5, 4], [3, 2, 1]])
+	meandiff = np.array([3, 7])
+	ans = 18.46619
+
+	assert np.allclose(o.calc_atx_se(subcov, meandiff), ans)
 
 
 def test_ols():
@@ -57,7 +73,7 @@ def test_ols():
 	atc = 63.2095
 	att = -2.020611
 	ate = 30.59444
-	keys = {'atc', 'att', 'ate'}
+	keys = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
 
 	assert np.allclose(ols['atc'], atc)
 	assert np.allclose(ols['att'], att)
