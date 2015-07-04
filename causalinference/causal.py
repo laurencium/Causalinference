@@ -4,7 +4,7 @@ import scipy.linalg
 from itertools import combinations_with_replacement, izip
 
 from core import Data, Summary, Propensity, PropensitySelect, Strata
-from estimators import OLS
+from estimators import OLS, Blocking
 
 
 class CausalModel(object):
@@ -93,6 +93,11 @@ class CausalModel(object):
 	def est_via_ols(self):
 
 		self.estimates['ols'] = OLS(self.raw_data)
+
+
+	def est_via_blocking(self):
+
+		self.estimates['blocking'] = Blocking(self.strata)
 
 
 def split_equal_bins(pscore, blocks):

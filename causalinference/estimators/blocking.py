@@ -1,66 +1,52 @@
 from __future__ import division
 import numpy as np
 
-from base import Estimator
+from ..core import Dict
 
 
-class Blocking(Estimator):
+class Blocking(Dict):
 
 	"""
-	Dictionary-like class containing treatment effect estimates. Standard
-	errors are only computed when needed.
+	Dictionary-like class containing treatment effect estimates.
 	"""
 
-	def __init__(self, model):
+	def __init__(self, strata):
+	
+		self._dict = dict()
+		for s in strata:
+			s.est_via_ols()
 
-		self._model = model
-		super(Blocking, self).__init__()
+		Ns = [s.raw_data['N'] for s in strata]
+		N_cs = [s.raw_data['N_c'] for s in strata]
+		N_ts = [s.raw_data['N_t'] for s in strata]
+		ates = [s.estimates['ols']['ate'] for s in strata]
+		atcs = [s.estimates['ols']['atc'] for s in strata]
+		atts = [s.estimates['ols']['att'] for s in strata]
 
+		self._dict['ate'] = calc_atx(ates, Ns)
+		self._dict['atc'] = calc_atx(atcs, N_cs)
+		self._dict['att'] = calc_atx(atts, N_ts)
 
-	def _compute_est(self):
+		ate_ses = [s.estimates['ols']['ate_se'] for s in strata]
+		atc_ses = [s.estimates['ols']['atc_se'] for s in strata]
+		att_ses = [s.estimates['ols']['att_se'] for s in strata]
 
-		"""
-		Computes average treatment effects as a weighted average
-		of within-bin regression estimates. Sample must be stratified
-		first.
-
-		Returns
-		-------
-			3-tuple of ATE, ATT, and ATC estimates, respectively.
-		"""
-
-		model = self._model
-		N, N_c, N_t = model.N, model.N_c, model.N_t
-
-		ate = np.sum([s.N/N*s.within for s in model.strata])
-		att = np.sum([s.N_t/N_t*s.within for s in model.strata])
-		atc = np.sum([s.N_c/N_c*s.within for s in model.strata])
-
-		return (ate, att, atc)
+		self._dict['ate_se'] = calc_atx_se(ate_ses, Ns)
+		self._dict['atc_se'] = calc_atx_se(atc_ses, N_cs)
+		self._dict['att_se'] = calc_atx_se(att_ses, N_ts)
 
 
-	def _compute_se(self):
+def calc_atx(atxs, Ns):
 
-		"""
-		Computes standard errors for average treatment effects
-		estimated via regression within blocks.
+	N = sum(Ns)
 
-		Returns
-		-------
-			3-tuple of ATE, ATT, and ATC standard error estimates,
-			respectively.
+	return np.sum(np.array(atxs) * np.array(Ns)) / N
 
-		"""
 
-		model = self._model
-		N, N_c, N_t = model.N, model.N_c, model.N_t
+def calc_atx_se(atx_ses, Ns):
 
-		wvar = [(s.N/N)**2 * s.se**2 for s in model.strata] 
-		wvar_t = [(s.N_t/N_t)**2 * s.se**2 for s in model.strata]
-		wvar_c = [(s.N_c/N_c)**2 * s.se**2 for s in model.strata]
-		ate_se = np.sqrt(np.array(wvar).sum())
-		att_se = np.sqrt(np.array(wvar_t).sum())
-		atc_se = np.sqrt(np.array(wvar_c).sum())
+	N = sum(Ns)
+	var = np.sum(np.array(atx_ses)**2 * np.array(Ns)**2) / N**2
 
-		return (ate_se, att_se, atc_se)
+	return np.sqrt(var)
 
