@@ -28,8 +28,8 @@ class CausalModel(object):
 
 	def est_propensity(self, lin='all', qua=None):
 
-		lin_terms = self._parse_lin_terms(self.raw_data['K'], lin)
-		qua_terms = self._parse_qua_terms(self.raw_data['K'], qua)
+		lin_terms = parse_lin_terms(self.raw_data['K'], lin)
+		qua_terms = parse_qua_terms(self.raw_data['K'], qua)
 
 		self.propensity = Propensity(lin_terms, qua_terms, self.raw_data)
 		self.raw_data._dict['pscore'] = self.propensity['fitted']
@@ -39,7 +39,7 @@ class CausalModel(object):
 
 	def est_propensity_s(self, lin_B=None, C_lin=1, C_qua=2.71):
 	
-		lin_basic = self._parse_lin_terms(self.raw_data['K'], lin_B)
+		lin_basic = parse_lin_terms(self.raw_data['K'], lin_B)
 
 		self.propensity = PropensitySelect(lin_basic, C_lin, C_qua,
 		                                   self.raw_data)
@@ -70,7 +70,7 @@ class CausalModel(object):
 		pscore = self.raw_data['pscore']
 		g = 1.0/(pscore*(1-pscore))  # 1 over Bernoulli variance
 
-		self.cutoff = CausalModel._select_cutoff(g)
+		self.cutoff = select_cutoff(g)
 		self.trim()
 
 
@@ -80,7 +80,7 @@ class CausalModel(object):
 		pscore = self.raw_data['pscore']
 
 		if isinstance(self.blocks, (int, long)):
-			blocks = CausalModel._split_equal_bins(pscore, self.blocks)
+			blocks = split_equal_bins(pscore, self.blocks)
 
 		def subset(p_low, p_high):
 			return (p_low < pscore) & (pscore <= p_high)
@@ -94,100 +94,95 @@ class CausalModel(object):
 		self.estimates['ols'] = OLS(self.raw_data)
 
 
-	@staticmethod
-	def _split_equal_bins(pscore, blocks):
+def split_equal_bins(pscore, blocks):
 
-		q = np.linspace(0, 100, blocks+1)[1:-1]  # q as in qth centiles
-		centiles = map(lambda x: np.percentile(pscore, x), q)
+	q = np.linspace(0, 100, blocks+1)[1:-1]  # q as in qth centiles
+	centiles = map(lambda x: np.percentile(pscore, x), q)
 
-		return [0] + centiles + [1]
-
-
-	@staticmethod
-	def _sumlessthan(g, sorted_g, cumsum):
-
-		deduped_values = dict(izip(sorted_g, cumsum))
-
-		return np.array([deduped_values[x] for x in g])
+	return [0] + centiles + [1]
 
 
-	@staticmethod
-	def _select_cutoff(g):
+def sumlessthan(g, sorted_g, cumsum):
 
-		if g.max() <= 2*g.mean():
-			cutoff = 0
-		else:
-			sorted_g = np.sort(g)
-			cumsum_1 = xrange(1, len(g)+1)
-			LHS = g * CausalModel._sumlessthan(g, sorted_g, cumsum_1)
-			cumsum_g = np.cumsum(sorted_g)
-			RHS = 2 * CausalModel._sumlessthan(g, sorted_g, cumsum_g)
-			gamma = np.max(g[LHS <= RHS])
-			cutoff = 0.5 - np.sqrt(0.25 - 1./gamma)
+	deduped_values = dict(izip(sorted_g, cumsum))
 
-		return cutoff
+	return np.array([deduped_values[x] for x in g])
 
 
-	@staticmethod
-	def _parse_lin_terms(K, lin):
+def select_cutoff(g):
 
-		"""
-		Converts, if necessary, specification of linear terms given in
-		strings to list of column numbers of the original covariate
-		matrix.
+	if g.max() <= 2*g.mean():
+		cutoff = 0
+	else:
+		sorted_g = np.sort(g)
+		cumsum_1 = xrange(1, len(g)+1)
+		LHS = g * sumlessthan(g, sorted_g, cumsum_1)
+		cumsum_g = np.cumsum(sorted_g)
+		RHS = 2 * sumlessthan(g, sorted_g, cumsum_g)
+		gamma = np.max(g[LHS <= RHS])
+		cutoff = 0.5 - np.sqrt(0.25 - 1./gamma)
 
-		Expected args
-		-------------
-			K: int
-				Number of covariates, to infer all linear terms.
-			lin: string, list
-				Strings, such as 'all', or list of column
-				numbers, that specifies which covariates to
-				include as linear terms.
-
-		Returns
-		-------
-			List of column numbers of covariate matrix specifying
-			which variables to include linearly.
-		"""
-
-		if lin is None:
-			return []
-		elif lin == 'all':
-			return range(K)
-		else:
-			return lin
+	return cutoff
 
 
-	@staticmethod
-	def _parse_qua_terms(K, qua):
+def parse_lin_terms(K, lin):
 
-		"""
-		Converts, if necessary, specification of quadratic terms given
-		in strings to list of tuples of column numbers of the original
-		covariate matrix.
+	"""
+	Converts, if necessary, specification of linear terms given in
+	strings to list of column numbers of the original covariate
+	matrix.
 
-		Expected args
-		-------------
-			K: int
-				Number of covariates, to infer all quadratic terms.
-			qua: string, list
-				Strings, such as 'all', or list of paris of
-				column numbers, that specifies which covariates
-				to include as quadratic terms.
+	Expected args
+	-------------
+		K: int
+			Number of covariates, to infer all linear terms.
+		lin: string, list
+			Strings, such as 'all', or list of column
+			numbers, that specifies which covariates to
+			include as linear terms.
 
-		Returns
-		-------
-			List of tuples of column numbers of covariate matrix
-			specifying which terms to include quadratically.
-		"""
+	Returns
+	-------
+		List of column numbers of covariate matrix specifying
+		which variables to include linearly.
+	"""
 
-		if qua is None:
-			return []
-		elif qua == 'all':
-			return list(combinations_with_replacement(range(K), 2))
-		else:
-			return qua
+	if lin is None:
+		return []
+	elif lin == 'all':
+		return range(K)
+	else:
+		return lin
+
+
+def parse_qua_terms(K, qua):
+
+	"""
+	Converts, if necessary, specification of quadratic terms given
+	in strings to list of tuples of column numbers of the original
+	covariate matrix.
+
+	Expected args
+	-------------
+		K: int
+			Number of covariates, to infer all quadratic terms.
+		qua: string, list
+			Strings, such as 'all', or list of paris of
+			column numbers, that specifies which covariates
+			to include as quadratic terms.
+
+	Returns
+	-------
+		List of tuples of column numbers of covariate matrix
+		specifying which terms to include quadratically.
+	"""
+
+	if qua is None:
+		return []
+	elif qua == 'all':
+		return list(combinations_with_replacement(range(K), 2))
+	else:
+		return qua
 
 
 '''
