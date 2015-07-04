@@ -4,7 +4,7 @@ import scipy.linalg
 from itertools import combinations_with_replacement, izip
 from functools import partial
 
-from core import Data, Summary, Propensity, PropensitySelect
+from core import Data, Summary, Propensity, PropensitySelect, Strata
 from estimators import OLS
 
 
@@ -85,9 +85,8 @@ class CausalModel(object):
 		def subset(p_low, p_high):
 			return (p_low < pscore) & (pscore <= p_high)
 		subsets = [subset(*ps) for ps in izip(blocks, blocks[1:])]
-		self.strata = [CausalModel(Y[s], D[s], X[s]) for s in subsets]
-		for stratum, subset in izip(self.strata, subsets):
-			stratum.raw_data._dict['pscore'] = pscore[subset]
+		strata = [CausalModel(Y[s], D[s], X[s]) for s in subsets]
+		self.strata = Strata(strata, subsets, pscore)
 
 
 	def est_via_ols(self):

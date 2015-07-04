@@ -37,6 +37,13 @@ class Summary(Dict):
 						 self['X_t_sd'])
 
 
+	def _summarize_pscore(self, pscore):
+
+		self._dict['p_min'] = pscore.min()
+		self._dict['p_max'] = pscore.max()
+		self._dict['p_mean'] = pscore.mean()
+
+
 	def __str__(self):
 
 		p = Printer()

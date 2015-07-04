@@ -1,8 +1,7 @@
 import numpy as np
 import scipy.linalg
-from functools import partial
+from itertools import izip
 
-from .. import CausalModel
 from ..utils.tools import cache_readonly, Printer
 
 
@@ -12,12 +11,14 @@ class Strata(object):
 	List-like object containing the list of stratified propensity bins.
 	"""
 
-	def __init__(self, Y, D, X, pscore, blocks):
+	def __init__(self, strata, subsets, pscore):
 
-		create_stratum_i = partial(create_stratum, Y, D, X, pscore)
-		block_num = len(blocks) - 1
-		self._strata = map(create_stratum_i, xrange(block_num))
-
+		self._strata = strata
+		for stratum, subset in izip(self._strata, subsets):
+			pscore_sub = pscore[subset]
+			stratum.raw_data._dict['pscore'] = pscore_sub
+			stratum.summary_stats._summarize_pscore(pscore_sub)
+			
 
 	def __len__(self):
 
@@ -64,12 +65,6 @@ class Strata(object):
 
 		return output
 
-
-def create_stratum(Y, D, X, pscore, p_low, p_high):
-
-	subset = (p_low < pscore) and (pscore <= p_high)
-
-	return CausalModel(Y[subset], D[subset], X[subset])
 
 
 '''
