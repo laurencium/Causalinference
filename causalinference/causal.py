@@ -103,7 +103,7 @@ class CausalModel(object):
 def split_equal_bins(pscore, blocks):
 
 	q = np.linspace(0, 100, blocks+1)[1:-1]  # q as in qth centiles
-	centiles = map(lambda x: np.percentile(pscore, x), q)
+	centiles = [np.percentile(pscore, x) for x in q]
 
 	return [0] + centiles + [1]
 

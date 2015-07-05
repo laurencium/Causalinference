@@ -357,7 +357,7 @@ def get_excluded_lin(K, included):
 
 	included_set = set(included)
 
-	return filter(lambda x: x not in included_set, xrange(K))
+	return [x for x in xrange(K) if x not in included_set]
 
 
 def get_excluded_qua(lin, included):
@@ -391,7 +391,7 @@ def get_excluded_qua(lin, included):
 	whole_set = list(combinations_with_replacement(lin, 2))
 	included_set = set(included)
 
-	return filter(lambda x: x not in included_set, whole_set)
+	return [x for x in whole_set if x not in included_set]
 
 
 def calc_loglike(X_c, X_t, lin, qua):
@@ -474,7 +474,7 @@ def select_lin(X_c, X_t, lin_B, C_lin):
 		ll_alt = calc_loglike(X_c, X_t, lin_B+[lin_term], [])
 		return 2 * (ll_alt - ll_null)
 
-	lr_stats = np.array(map(lr_stat_lin, excluded))
+	lr_stats = np.array([lr_stat_lin(term) for term in excluded])
 	argmax_lr = lr_stats.argmax()
 
 	if lr_stats[argmax_lr] < C_lin:
@@ -572,7 +572,7 @@ def select_qua(X_c, X_t, lin, qua_B, C_qua):
 		ll_alt = calc_loglike(X_c, X_t, lin, qua_B+[qua_term])
 		return 2 * (ll_alt - ll_null)
 
-	lr_stats = np.array(map(lr_stat_qua, excluded))
+	lr_stats = np.array([lr_stat_qua(term) for term in excluded])
 	argmax_lr = lr_stats.argmax()
 
 	if lr_stats[argmax_lr] < C_qua:
