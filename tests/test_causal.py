@@ -1,3 +1,4 @@
+from __future__ import division
 from nose.tools import *
 import numpy as np
 
@@ -183,4 +184,53 @@ def test_select_cutoff():
 	g2 = np.array([22, 4, 6, 4, 25, 5])
 	ans2 = 0.2113248654
 	assert np.allclose(c.select_cutoff(g2), ans2)
+
+
+def test_calc_tstat():
+
+	sample1 = np.array([1, 1, 2, 2, 3, 3, 3, 3, 3, 3,
+	                    3, 3, 3, 3, 3, 3, 4, 4, 4, 5])
+	sample2 = np.array([5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4,
+	                    4, 4, 4, 4, 4, 4, 3, 3, 3, 2, 2])
+	ans = 3.632233
+
+	assert np.allclose(c.calc_tstat(sample1, sample2), ans)
+
+
+def test_calc_sample_sizes():
+
+	D1 = np.array([0, 1, 0, 1, 0, 1])
+	ans1 = (2, 1, 1, 2)
+	assert_equal(c.calc_sample_sizes(D1), ans1)
+
+	D2 = np.array([0, 1, 0, 1, 0])
+	ans2 = (1, 1, 2, 1)
+	assert_equal(c.calc_sample_sizes(D2), ans2)
+
+	D3 = np.array([1, 1, 1, 1, 1, 1])
+	ans3 = (0, 3, 0, 3)
+	assert_equal(c.calc_sample_sizes(D3), ans3)
+
+	D4 = np.array([0, 0, 0])
+	ans4 = (1, 0, 2, 0)
+	assert_equal(c.calc_sample_sizes(D4), ans4)
+
+
+def test_select_blocks():
+
+	pscore1 = np.array([0.05, 0.06, 0.3, 0.4, 0.5, 0.6, 0.7, 0.95, 0.95])
+	D1 = np.array([0, 0, 1, 1, 0, 0, 1, 1, 1])
+	logodds1 = np.log(pscore1 / (1-pscore1))
+	K1 = 1
+	ans1 = np.array([0.05, 0.5, 0.5, 0.95])
+	test1 = np.array(c.select_blocks(pscore1, logodds1, D1, K1, 0, 1))
+	assert np.allclose(test1, ans1)
+
+	pscore2 = np.array([0.05, 0.06, 0.3, 0.4, 0.5, 0.6, 0.7, 0.95, 0.95])
+	D2 = np.array([0, 0, 1, 1, 0, 0, 1, 1, 1])
+	logodds2 = np.log(pscore1 / (1-pscore1))
+	K2 = 2
+	ans2 = np.array([0, 1])
+	test2 = np.array(c.select_blocks(pscore2, logodds2, D2, K2, 0, 1))
+	assert np.allclose(test2, ans2)
 

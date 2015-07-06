@@ -81,13 +81,27 @@ class CausalModel(object):
 		if isinstance(self.blocks, (int, long)):
 			blocks = split_equal_bins(pscore, self.blocks)
 		else:
-			blocks = self.blocks
+			blocks = self.blocks[:]  # make a copy
+			blocks[0] = 0  # avoids always dropping 1st unit
 
 		def subset(p_low, p_high):
 			return (p_low < pscore) & (pscore <= p_high)
 		subsets = [subset(*ps) for ps in izip(blocks, blocks[1:])]
 		strata = [CausalModel(Y[s], D[s], X[s]) for s in subsets]
 		self.strata = Strata(strata, subsets, pscore)
+
+
+	def stratify_s(self):
+
+		order = self.raw_data['pscore'].argsort()
+		pscore = self.raw_data['pscore'][order]
+		D = self.raw_data['D'][order]
+		logodds = np.log(pscore / (1-pscore))
+		K = self.raw_data['K']
+
+		blocks_uniq = set(select_blocks(pscore, logodds, D, K, 0, 1))
+		self.blocks = sorted(blocks_uniq)
+		self.stratify()
 
 
 	def est_via_ols(self):
@@ -190,6 +204,53 @@ def parse_qua_terms(K, qua):
 	else:
 		return qua
 
+
+def calc_tstat(sample_c, sample_t):
+
+	N_c = sample_c.shape[0]
+	N_t = sample_t.shape[0]
+	var_c = sample_c.var(ddof=1)
+	var_t = sample_t.var(ddof=1)
+
+	return (sample_t.mean()-sample_c.mean()) / np.sqrt(var_c/N_c+var_t/N_t)
+
+
+def calc_sample_sizes(D):
+
+	N = D.shape[0]
+	mid_index  = N // 2
+	
+	Nleft = mid_index
+	Nleft_t = D[:mid_index].sum()
+	Nleft_c = Nleft - Nleft_t
+
+	Nright = N - Nleft
+	Nright_t = D[mid_index:].sum()
+	Nright_c = Nright - Nright_t
+
+	return (Nleft_c, Nleft_t, Nright_c, Nright_t)
+
+
+def select_blocks(pscore, logodds, D, K, p_low, p_high):
+
+	scope = (pscore >= p_low) & (pscore <= p_high)
+	c, t = (scope & (D==0)), (scope & (D==1))
+
+	Nleft_c, Nleft_t, Nright_c, Nright_t = calc_sample_sizes(D[scope])
+	if min(Nleft_c, Nleft_t, Nright_c, Nright_t) < K+1:
+		return [p_low, p_high]
+
+	tstat = calc_tstat(logodds[c], logodds[t])
+	if tstat <= 1.96:
+		return [p_low, p_high]
+
+	mid_index = scope.sum() // 2
+	low = pscore[scope][0]
+	mid = pscore[scope][mid_index]
+	high = pscore[scope][-1]
+
+	return select_blocks(pscore, logodds, D, K, low, mid) + \
+	       select_blocks(pscore, logodds, D, K, mid, high)
 
 '''
 class CausalModel(Basic):
