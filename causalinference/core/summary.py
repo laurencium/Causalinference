@@ -80,31 +80,5 @@ class Summary(Dict):
 
 def calc_ndiff(mean_c, mean_t, sd_c, sd_t):
 
-	"""
-	Computes the normalized covariate differences between control
-	and treatment groups. Unlike the t-statistic, normalized
-	differences do not, in expectation, increase with sample size,
-	and thus are more appropriate for assessing balance.
-
-	Expected args
-	-------------
-		mean_c: array-like
-			Vector of covariate sample means for the
-			control group.
-		mean_t: array-like
-			Vector of covariate sample means for the
-			treatment group.
-		sd_c: array-like
-			Vector of covariate sample standard
-			deviations for the control group.
-		sd_t: array-like
-			Vector of covariate sample standard
-			deviations for the treatment group.
-
-	Returns
-	-------
-		Vector of normalized differences between covariates.
-	"""
-
 	return (mean_t-mean_c) / np.sqrt((sd_c**2+sd_t**2)/2)
 

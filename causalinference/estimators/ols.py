@@ -7,6 +7,10 @@ from ..core import Dict
 
 class OLS(Dict):
 
+	"""
+	Dictionary-like class containing treatment effect estimates.
+	"""
+
 	def __init__(self, data):
 
 		Y, D, X = data['Y'], data['D'], data['X']
@@ -37,7 +41,7 @@ def form_matrix(D, X):
 	dX = X - X.mean(0)
 
 	Z = np.empty((N, 2+2*K))
-	Z[:, 0] = 1
+	Z[:, 0] = 1  # intercept term
 	Z[:, 1] = D
 	Z[:, 2:2+K] = D[:, None] * dX
 	Z[:, 2+K:] = dX
@@ -47,7 +51,7 @@ def form_matrix(D, X):
 
 def calc_ate(olscoef):
 
-	return olscoef[1]
+	return olscoef[1]  # coef of treatment variable
 
 
 def calc_atx(olscoef, meandiff):

@@ -10,10 +10,12 @@ from ..utils.tools import Printer
 class Propensity(Dict):
 
 	"""
-	Dictionary-like class containing propensity score data, including
-	estimated logistic regression coefficients, predicted propensity score,
-	maximized log-likelihood, and lists of the linear and quadratic terms
-	that are included in the regression.
+	Dictionary-like class containing propensity score data.
+	
+	Propensity score related data includes estimated logistic regression
+	coefficients, maximized log-likelihood, predicted propensity scores,
+	and lists of the linear and quadratic terms that are included in the
+	logistic regression.
 	"""
 
 	def __init__(self, lin, qua, data):
@@ -103,10 +105,12 @@ class Propensity(Dict):
 class PropensitySelect(Propensity):
 
 	"""
-	Dictionary-like class containing propensity score data, including
-	estimated logistic regression coefficients, predicted propensity score,
-	maximized log-likelihood, and lists of the linear and quadratic terms
-	that are included in the regression.
+	Dictionary-like class containing propensity score data.
+	
+	Propensity score related data includes estimated logistic regression
+	coefficients, maximized log-likelihood, predicted propensity scores,
+	and lists of the linear and quadratic terms that are included in the
+	logistic regression.
 	"""
 
 	def __init__(self, lin_B, C_lin, C_qua, data):
