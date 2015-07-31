@@ -100,14 +100,51 @@ def test_ols():
 	X = np.array([[1, 42], [3, 32], [9, 7], [12, 86],
 	              [5, 94], [4, 36], [2, 13], [6, 61]])
 	data = d.Data(Y, D, X)
-	ols = o.OLS(data)
-	atc = 63.2095
-	att = -2.020611
-	ate = 30.59444
-	keys = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
 
-	assert np.allclose(ols['atc'], atc)
-	assert np.allclose(ols['att'], att)
-	assert np.allclose(ols['ate'], ate)
-	assert_equal(set(ols.keys()), keys)
+	adj1 = 0
+	ols1 = o.OLS(data, adj1)
+	ate1 = 9.25
+	atc1 = 9.25
+	att1 = 9.25
+	ate_se1 = 17.68253
+	atc_se1 = 17.68253
+	att_se1 = 17.68253
+	keys = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
+	assert np.allclose(ols1['ate'], ate1)
+	assert np.allclose(ols1['atc'], atc1)
+	assert np.allclose(ols1['att'], att1)
+	assert np.allclose(ols1['ate_se'], ate_se1)
+	assert np.allclose(ols1['atc_se'], atc_se1)
+	assert np.allclose(ols1['att_se'], att_se1)
+	assert_equal(set(ols1.keys()), keys)
+
+	adj2 = 1
+	ols2 = o.OLS(data, adj2)
+	ate2 = 3.654552
+	atc2 = 3.654552
+	att2 = 3.654552
+	ate_se2 = 17.749993
+	atc_se2 = 17.749993
+	att_se2 = 17.749993
+	assert np.allclose(ols2['ate'], ate2)
+	assert np.allclose(ols2['atc'], atc2)
+	assert np.allclose(ols2['att'], att2)
+	assert np.allclose(ols2['ate_se'], ate_se2)
+	assert np.allclose(ols2['atc_se'], atc_se2)
+	assert np.allclose(ols2['att_se'], att_se2)
+
+	adj3 = 2
+	ols3 = o.OLS(data, adj3)
+	ate3 = 30.59444
+	atc3 = 63.2095
+	att3 = -2.020611
+	ate_se3 = 19.91887865
+	atc_se3 = 29.92152
+	att_se3 = 11.8586
+	assert np.allclose(ols3['ate'], ate3)
+	assert np.allclose(ols3['atc'], atc3)
+	assert np.allclose(ols3['att'], att3)
+	assert np.allclose(ols3['ate_se'], ate_se3)
+	assert np.allclose(ols3['atc_se'], atc_se3)
+	assert np.allclose(ols3['att_se'], att_se3)
 
