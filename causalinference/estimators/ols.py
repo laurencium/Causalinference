@@ -11,40 +11,55 @@ class OLS(Dict):
 	Dictionary-like class containing treatment effect estimates.
 	"""
 
-	def __init__(self, data):
+	def __init__(self, data, adj=2):
 
 		Y, D, X = data['Y'], data['D'], data['X']
 		Y_c, Y_t = data['Y_c'], data['Y_t']
 		X_c, X_t = data['X_c'], data['X_t']
-		N_c, N_t = data['N_c'], data['N_t']
 
-		Xmean = X.mean(0)
-		meandiff_c = X_c.mean(0) - Xmean
-		meandiff_t = X_t.mean(0) - Xmean
-		Z = form_matrix(D, X)
+		Z = form_matrix(D, X, adj)
 		olscoef = np.linalg.lstsq(Z, Y)[0]
 		u = Y - Z.dot(olscoef)
-		subcov = calc_subcov(Z, u)
+		cov = calc_cov(Z, u)
 
 		self._dict = dict()
 		self._dict['ate'] = calc_ate(olscoef)
-		self._dict['atc'] = calc_atx(olscoef, meandiff_c)
-		self._dict['att'] = calc_atx(olscoef, meandiff_t)
-		self._dict['ate_se'] = calc_ate_se(subcov)
-		self._dict['atc_se'] = calc_atx_se(subcov, meandiff_c)
-		self._dict['att_se'] = calc_atx_se(subcov, meandiff_t)
+		self._dict['ate_se'] = calc_ate_se(cov)
+
+		if adj <= 1:
+			self._dict['atc'] = self._dict['ate']
+			self._dict['att'] = self._dict['ate']
+			self._dict['atc_se'] = self._dict['ate_se']
+			self._dict['att_se'] = self._dict['ate_se']
+		else:
+			Xmean = X.mean(0)
+			meandiff_c = X_c.mean(0) - Xmean
+			meandiff_t = X_t.mean(0) - Xmean
+			self._dict['atc'] = calc_atx(olscoef, meandiff_c)
+			self._dict['att'] = calc_atx(olscoef, meandiff_t)
+			self._dict['atc_se'] = calc_atx_se(cov, meandiff_c)
+			self._dict['att_se'] = calc_atx_se(cov, meandiff_t)
 
 
-def form_matrix(D, X):
+def form_matrix(D, X, adj):
 
 	N, K = X.shape
-	dX = X - X.mean(0)
 
-	Z = np.empty((N, 2+2*K))
+	if adj == 0:
+		cols = 2
+	elif adj == 1:
+		cols = 2+K
+	else:
+		cols = 2+2*K
+	
+	Z = np.empty((N, cols))
 	Z[:, 0] = 1  # intercept term
 	Z[:, 1] = D
-	Z[:, 2:2+K] = D[:, None] * dX
-	Z[:, 2+K:] = dX
+	if adj >= 1:
+		dX = X - X.mean(0)
+		Z[:, 2:2+K] = dX
+	if adj == 2:
+		Z[:, 2+K:] = D[:, None] * dX
 
 	return Z
 
@@ -58,26 +73,37 @@ def calc_atx(olscoef, meandiff):
 
 	K = (len(olscoef)-2) / 2
 
-	return olscoef[1] + np.dot(meandiff, olscoef[2:2+K])
+	return olscoef[1] + np.dot(meandiff, olscoef[2+K:])
 
 
-def calc_subcov(Z, u):
+def calc_cov(Z, u):
 
-	K = (Z.shape[1]-2) / 2
 	A = np.linalg.inv(np.dot(Z.T, Z))
-	B = np.dot(u[:,None]*Z, A[:,1:2+K])  # select columns for D, D*dX from A
+	B = np.dot(u[:, None]*Z, A)
 
 	return np.dot(B.T, B)
 
 
-def calc_ate_se(subcov):
+def submatrix(cov):
 
-	return np.sqrt(subcov[0,0])
+	K = (cov.shape[0]-2) / 2
+	submat = np.empty((1+K, 1+K))
+	submat[0,0] = cov[1,1]
+	submat[0,1:] = cov[1,2+K:]
+	submat[1:,0] = cov[2+K:,1]
+	submat[1:,1:] = cov[2+K:, 2+K:]
+
+	return submat
 
 
-def calc_atx_se(subcov, meandiff):
+def calc_ate_se(cov):
+
+	return np.sqrt(cov[1,1])
+
+
+def calc_atx_se(cov, meandiff):
 
 	a = np.concatenate((np.array([1]), meandiff))
 
-	return np.sqrt(a.dot(subcov).dot(a))
+	return np.sqrt(a.dot(submatrix(cov)).dot(a))
 
