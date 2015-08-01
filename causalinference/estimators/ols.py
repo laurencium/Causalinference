@@ -14,7 +14,6 @@ class OLS(Dict):
 	def __init__(self, data, adj):
 
 		Y, D, X = data['Y'], data['D'], data['X']
-		Y_c, Y_t = data['Y_c'], data['Y_t']
 		X_c, X_t = data['X_c'], data['X_t']
 
 		Z = form_matrix(D, X, adj)

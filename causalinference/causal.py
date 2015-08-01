@@ -3,7 +3,7 @@ import numpy as np
 from itertools import combinations_with_replacement, izip
 
 from core import Data, Summary, Propensity, PropensitySelect, Strata
-from estimators import OLS, Blocking
+from estimators import OLS, Blocking, Weighting
 
 
 class CausalModel(object):
@@ -258,6 +258,16 @@ class CausalModel(object):
 		"""
 
 		self.estimates['blocking'] = Blocking(self.strata, adj)
+
+
+	def est_via_weighting(self):
+
+		"""
+		Estimates average treatment effects using doubly-robust
+		version of the Horvitz-Thompson weighting estimator.
+		"""
+
+		self.estimates['weighting'] = Weighting(self.raw_data)
 
 
 	def _post_pscore_init(self):
