@@ -11,7 +11,7 @@ class OLS(Dict):
 	Dictionary-like class containing treatment effect estimates.
 	"""
 
-	def __init__(self, data, adj=2):
+	def __init__(self, data, adj):
 
 		Y, D, X = data['Y'], data['D'], data['X']
 		Y_c, Y_t = data['Y_c'], data['Y_t']

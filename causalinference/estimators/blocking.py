@@ -10,11 +10,11 @@ class Blocking(Dict):
 	Dictionary-like class containing treatment effect estimates.
 	"""
 
-	def __init__(self, strata):
+	def __init__(self, strata, adj):
 	
 		self._dict = dict()
 		for s in strata:
-			s.est_via_ols()
+			s.est_via_ols(adj)
 
 		Ns = [s.raw_data['N'] for s in strata]
 		N_cs = [s.raw_data['N_c'] for s in strata]

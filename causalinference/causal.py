@@ -217,16 +217,26 @@ class CausalModel(object):
 		self.stratify()
 
 
-	def est_via_ols(self):
+	def est_via_ols(self, adj=2):
 
 		"""
 		Estimates average treatment effects using least squares.
+
+		Expected args
+		-------------
+			adj: integer; 0, 1, or 2. 
+				Indicates how covariate adjustments are to be
+				performed. Set adj = 0 to not include any
+				covariates.  Set adj = 1 to include treatment
+				indicator D and covariates X separately. Set
+				adj = 2 to additionally include interaction
+				terms between D and X. Defaults to 2.
 		"""
 
-		self.estimates['ols'] = OLS(self.raw_data)
+		self.estimates['ols'] = OLS(self.raw_data, adj)
 
 
-	def est_via_blocking(self):
+	def est_via_blocking(self, adj=1):
 
 		"""
 		Estimates average treatment effects using regression within
@@ -234,9 +244,20 @@ class CausalModel(object):
 		
 		This method should only be executed after the sample has been
 		stratified.
+
+		Expected args
+		-------------
+			adj: integer; 0, 1, or 2. 
+				Indicates how covariate adjustments are to be
+				performed for each within-bin regression.
+				Set adj = 0 to not include any covariates.
+				Set adj = 1 to include treatment indicator D
+				and covariates X separately. Set adj = 2 to
+				additionally include interaction terms between
+				D and X. Defaults to 1.
 		"""
 
-		self.estimates['blocking'] = Blocking(self.strata)
+		self.estimates['blocking'] = Blocking(self.strata, adj)
 
 
 	def _post_pscore_init(self):
