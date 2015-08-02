@@ -44,9 +44,15 @@ def test_weighting():
 	ate = -6.7963178
 	atc = -6.7963178
 	att = -6.7963178
-	keys = {'ate', 'atc', 'att'}
+	ate_se = 2.8125913
+	atc_se = 2.8125913
+	att_se = 2.8125913
+	keys = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
 	assert np.allclose(weighting['ate'], ate)
 	assert np.allclose(weighting['atc'], atc)
 	assert np.allclose(weighting['att'], att)
+	assert np.allclose(weighting['ate_se'], ate_se)
+	assert np.allclose(weighting['atc_se'], atc_se)
+	assert np.allclose(weighting['att_se'], att_se)
 	assert_equal(set(weighting.keys()), keys)
 

@@ -2,6 +2,7 @@ from __future__ import division
 import numpy as np
 
 from ..core import Dict
+from ols import calc_cov, calc_ate, calc_ate_se
 
 
 class Weighting(Dict):
@@ -19,11 +20,16 @@ class Weighting(Dict):
 		Y_w, Z_w = weigh_data(Y, D, X, weights)
 
 		wlscoef = np.linalg.lstsq(Z_w, Y_w)[0]
+		u_w = Y_w - Z_w.dot(wlscoef)
+		cov = calc_cov(Z_w, u_w)
 
 		self._dict = dict()
 		self._dict['ate'] = calc_ate(wlscoef)
 		self._dict['atc'] = self._dict['ate']
 		self._dict['att'] = self._dict['ate']
+		self._dict['ate_se'] = calc_ate_se(cov)
+		self._dict['atc_se'] = self._dict['ate_se']
+		self._dict['att_se'] = self._dict['ate_se']
 
 
 def calc_weights(pscore, D):
@@ -48,9 +54,4 @@ def weigh_data(Y, D, X, weights):
 	Z_w[:,2:] = weights[:,None] * X
 
 	return (Y_w, Z_w)
-
-
-def calc_ate(wlscoef):
-
-	return wlscoef[1]  # coef of treatment variable
 
