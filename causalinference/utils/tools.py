@@ -2,6 +2,34 @@ import numpy as np
 from scipy.stats import norm
 
 
+def convert_to_formatting(entry_types):
+
+	for entry_type in entry_types:
+		if entry_type == 'string':
+			yield 's'
+		elif entry_type == 'float':
+			yield '.3f'
+		elif entry_type == 'integer':
+			yield '.0f'
+
+
+def add_row(entries, entry_types, col_spans, width):
+
+	str_entries = tuple(str(entry) for entry in entries)
+	vis_cols = len(col_spans)
+	invis_cols = sum(col_spans)
+
+	char_per_col = width // invis_cols
+	first_col_padding = width % invis_cols
+
+	char_spans = [char_per_col * col_span for col_span in col_spans]
+	char_spans[0] += first_col_padding
+	formatting = convert_to_formatting(entry_types)
+	line = ['%'+str(s)+f for (s,f) in zip(char_spans,formatting)]
+
+	return (''.join(line) % str_entries) + '\n'
+
+
 def cache_readonly(func):
 
 	def try_cache(*args):
