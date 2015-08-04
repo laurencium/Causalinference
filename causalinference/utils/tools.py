@@ -15,7 +15,6 @@ def convert_to_formatting(entry_types):
 
 def add_row(entries, entry_types, col_spans, width):
 
-	str_entries = tuple(str(entry) for entry in entries)
 	vis_cols = len(col_spans)
 	invis_cols = sum(col_spans)
 
@@ -27,7 +26,7 @@ def add_row(entries, entry_types, col_spans, width):
 	formatting = convert_to_formatting(entry_types)
 	line = ['%'+str(s)+f for (s,f) in zip(char_spans,formatting)]
 
-	return (''.join(line) % str_entries) + '\n'
+	return (''.join(line) % tuple(entries)) + '\n'
 
 
 def cache_readonly(func):
