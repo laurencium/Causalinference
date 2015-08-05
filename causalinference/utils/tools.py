@@ -34,6 +34,16 @@ def add_line(width):
 	return '-'*width + '\n'
 
 
+def gen_reg_entries(varname, coef, se):
+
+		z = coef / se
+		p = 2*(1 - norm.cdf(np.abs(z)))
+		lw = coef - 1.96*se
+		up = coef + 1.96*se
+
+		return (varname, coef, se, z, p, lw, up)
+
+
 def cache_readonly(func):
 
 	def try_cache(*args):

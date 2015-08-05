@@ -36,3 +36,26 @@ def test_add_line():
 
 	assert_equal(t.add_line(width), ans)
 
+
+def test_gen_reg_entries():
+
+	varname = 'Income'
+	coef = 0.5
+	se = 0.25
+	ans1 = 'Income'
+	ans2 = 0.5
+	ans3 = 0.25
+	ans4 = 2
+	ans5 = 0.045500
+	ans6 = 0.01
+	ans7 = 0.99
+
+	v, c, s, z, p, lw, up = t.gen_reg_entries(varname, coef, se)
+	assert_equal(v, ans1)
+	assert_equal(c, ans2)
+	assert_equal(s, ans3)
+	assert_equal(z, ans4)
+	assert np.allclose(p, ans5)
+	assert np.allclose(lw, ans6)
+	assert np.allclose(up, ans7)
+
