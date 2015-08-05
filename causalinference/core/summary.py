@@ -1,8 +1,8 @@
 from __future__ import division
 import numpy as np
 
+import causalinference.utils.tools as tools
 from data import Dict
-from ..utils.tools import Printer
 
 
 class Summary(Dict):
@@ -46,7 +46,8 @@ class Summary(Dict):
 
 	def __str__(self):
 
-		p = Printer()
+		table_width = 80
+
 		N_c, N_t = self['N_c'], self['N_t']
 		K = self['X_c_mean'].shape[0]
 		mean_c, mean_t = self['X_c_mean'], self['X_t_mean']
@@ -57,23 +58,23 @@ class Summary(Dict):
 		output = '\n'
 		output += 'Covariates Summary\n\n'
 
-		entries = ('', 'Controls (N_c='+str(N_c)+')',
-		           'Treated (N_t='+str(N_t)+')', '')
-		span = [1, 2, 2, 1]
-		etype = ['string']*4
-		output += p.write_row(entries, span, etype)
+		entries = ['', 'Controls (N_c='+str(N_c)+')',
+		           'Treated (N_t='+str(N_t)+')', '']
+		entry_types = ['string']*4
+		col_spans = [1, 2, 2, 1]
+		output += tools.add_row(entries, entry_types, col_spans, table_width)
 
-		entries = ('Covariate', 'Mean', 'S.d.', 'Mean', 'S.d.', 'Nor-diff')
-		span = [1]*6
-		etype = ['string']*6
-		output += p.write_row(entries, span, etype)
-		output += p.write_row('-'*p.table_width, [1], ['string'])
+		entries = ['Covariate', 'Mean', 'S.d.',
+		           'Mean', 'S.d.', 'Nor-diff']
+		entry_types = ['string']*6
+		col_spans = [1]*6
+		output += tools.add_row(entries, entry_types, col_spans, table_width)
+		output += tools.add_line(table_width)
 		
-		etype = ['string'] + ['float']*5
-		for i in xrange(K):
-			entries = (varnames[i], mean_c[i], sd_c[i], mean_t[i],
-			           sd_t[i], ndiff[i])
-			output += p.write_row(entries, span, etype)
+		entry_types = ['string'] + ['float']*5
+		col_spans = [1]*6
+		for entries in zip(varnames, mean_c, sd_c, mean_t, sd_t, ndiff):
+			output += tools.add_row(entries, entry_types, col_spans, table_width)
 
 		return output
 			

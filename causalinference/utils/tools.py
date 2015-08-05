@@ -29,6 +29,11 @@ def add_row(entries, entry_types, col_spans, width):
 	return (''.join(line) % tuple(entries)) + '\n'
 
 
+def add_line(width):
+
+	return '-'*width + '\n'
+
+
 def cache_readonly(func):
 
 	def try_cache(*args):
