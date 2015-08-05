@@ -39,6 +39,10 @@ class Summary(Dict):
 
 	def _summarize_pscore(self, pscore):
 
+		"""
+		Called by Strata class during initialization.
+		"""
+
 		self._dict['p_min'] = pscore.min()
 		self._dict['p_max'] = pscore.max()
 		self._dict['p_mean'] = pscore.mean()

@@ -1,8 +1,4 @@
-import numpy as np
-import scipy.linalg
-from itertools import izip
-
-from ..utils.tools import Printer
+import causalinference.utils.tools as tools
 
 
 class Strata(object):
@@ -14,7 +10,7 @@ class Strata(object):
 	def __init__(self, strata, subsets, pscore):
 
 		self._strata = strata
-		for stratum, subset in izip(self._strata, subsets):
+		for stratum, subset in zip(self._strata, subsets):
 			pscore_sub = pscore[subset]
 			stratum.raw_data._dict['pscore'] = pscore_sub
 			stratum.summary_stats._summarize_pscore(pscore_sub)
@@ -32,36 +28,39 @@ class Strata(object):
 
 	def __str__(self):
 
-		p = Printer()
+		table_width = 80
 
 		output = '\n'
 		output += 'Stratification Summary\n\n'
 
-		entries = ('', 'Propensity score', '', 'Ave. p-score', 'Within')
-		span = [1, 2, 2, 2, 1]
-		etype = ['string']*5
-		output += p.write_row(entries, span, etype)
+		entries1 = ['', 'Propensity score', 'Sample size', 'Average outcome', '']
+		entry_types1 = ['string']*5
+		col_spans1 = [1, 2, 2, 2, 1]
+		output += tools.add_row(entries1, entry_types1,
+		                        col_spans1, table_width)
 
-		entries = ('Stratum', 'Min.', 'Max.', 'N_c', 'N_t',
-		           'Controls', 'Treated', 'Est.')
-		span = [1]*8
-		etype = ['string']*8
-		output += p.write_row(entries, span, etype)
-		output += p.write_row('-'*p.table_width, [1], ['string'])
+		entries2 = ['Stratum', 'Min.', 'Max.', 'Controls', 'Treated',
+		            'Controls', 'Treated', 'Raw-diff']
+		entry_types2 = ['string']*8
+		col_spans2 = [1]*8
+		output += tools.add_row(entries2, entry_types2,
+		                        col_spans2, table_width)
+		output += tools.add_line(table_width)
 
 		strata = self._strata
-		etype = ['integer', 'float', 'float', 'integer', 'integer',
-		         'float', 'float', 'float']
+		entry_types3 = ['integer', 'float', 'float', 'integer',
+		                'integer', 'float', 'float', 'float']
 		for i in xrange(len(strata)):
-
-			c, t = strata[i].controls, strata[i].treated
-			entries = (i+1, strata[i].pscore['min'],
-			           strata[i].pscore['max'], strata[i].N_c,
-				   strata[i].N_t,
-				   strata[i].pscore['fitted'][c].mean(),
-				   strata[i].pscore['fitted'][t].mean(),
-				   strata[i].within)
-			output += p.write_row(entries, span, etype)
+			summary = strata[i].summary_stats
+			N_c, N_t = summary['N_c'], summary['N_t']
+			p_min, p_max = summary['p_min'], summary['p_max']
+			Y_c_mean = summary['Y_c_mean']
+			Y_t_mean = summary['Y_t_mean']
+			within = summary['rdiff']
+			entries3 = [i+1, p_min, p_max, N_c, N_t,
+			            Y_c_mean, Y_t_mean, within]
+			output += tools.add_row(entries3, entry_types3,
+			                        col_spans2, table_width)
 
 		return output
 

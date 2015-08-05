@@ -3,8 +3,8 @@ import numpy as np
 from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
 
+import causalinference.utils.tools as tools
 from data import Dict
-from ..utils.tools import Printer
 
 
 class Propensity(Dict):
@@ -35,37 +35,43 @@ class Propensity(Dict):
 
 	def __str__(self):
 
-		coef = self._dict['coef']
-		se = self._dict['se']
-		p = Printer()
+		table_width = 80
+
+		coefs = self._dict['coef']
+		ses = self._dict['se']
 
 		output = '\n'
 		output += 'Estimated Parameters of Propensity Score\n\n'
 
-		entries = ('', 'Coef.', 'S.e.', 'z', 'P>|z|',
-		           '[95% Conf. int.]')
-		span = [1]*5 + [2]
-		etype = ['string']*6
-		output += p.write_row(entries, span, etype)
-		output += p.write_row('-'*p.table_width, [1], ['string'])
+		entries1 = ['', 'Coef.', 'S.e.', 'z', 'P>|z|',
+		           '[95% Conf. int.]']
+		entry_types1 = ['string']*6
+		col_spans1 = [1]*5 + [2]
+		output += tools.add_row(entries1, entry_types1,
+		                        col_spans1, table_width)
+		output += tools.add_line(table_width)
 
-		entries = p._reg_entries('Intercept', coef[0], se[0])
-		span = [1]*7
-		etype = ['string'] + ['float']*6
-		output += p.write_row(entries, span, etype)
+		entries2 = tools.gen_reg_entries('Intercept', coefs[0], ses[0])
+		entry_types2 = ['string'] + ['float']*6
+		col_spans2 = [1]*7
+		output += tools.add_row(entries2, entry_types2,
+		                        col_spans2, table_width)
 
 		lin = self._dict['lin']
-		for i in xrange(len(lin)):
-			entries = p._reg_entries('X'+str(lin[i]),
-			                         coef[1+i], se[1+i])
-			output += p.write_row(entries, span, etype)
+		for (lin_term, coef, se) in zip(lin, coefs[1:], ses[1:]):
+			entries3 = tools.gen_reg_entries('X'+str(lin_term),
+			                                 coef, se)
+			output += tools.add_row(entries3, entry_types2,
+			                        col_spans2, table_width)
 
 		qua = self._dict['qua']
-		for i in xrange(len(qua)):
-			name = 'X'+str(qua[i][0])+'*X'+str(qua[i][1])
-			entries = p._reg_entries(name, coef[1+len(lin)+i],
-			                         se[1+len(lin)+i])
-			output += p.write_row(entries, span, etype)
+		lin_num = len(lin)+1  # including intercept
+		for (qua_term, coef, se) in zip(qua, coefs[lin_num:],
+		                                ses[lin_num:]):
+			name = 'X'+str(qua_term[0])+'*X'+str(qua_term[1])
+			entries4 = tools.gen_reg_entries(name, coef, se)
+			output += tools.add_row(entries4, entry_types2,
+			                        col_spans2, table_width)
 
 		return output
 
