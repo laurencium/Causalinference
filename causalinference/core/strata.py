@@ -2,7 +2,7 @@ import numpy as np
 import scipy.linalg
 from itertools import izip
 
-from ..utils.tools import cache_readonly, Printer
+from ..utils.tools import Printer
 
 
 class Strata(object):

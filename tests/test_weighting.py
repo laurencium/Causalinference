@@ -21,14 +21,15 @@ def test_weigh_data():
 	X = np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]])
 	weights = np.array([1/0.9, 4, 2, 1/0.75, 10])
 
-	Y_w = np.array([1.11111, -8, 6, -6.66667, 70])
-	Z_w = np.array([[1.11111, 0, 1.11111, 2.22222],
+	Y_ans = np.array([1.11111, -8, 6, -6.66667, 70])
+	Z_ans = np.array([[1.11111, 0, 1.11111, 2.22222],
 	                [4, 4, 12, 16],
 			[2, 0, 10, 12],
 			[1.33333, 1.33333, 9.33333, 10.66667],
 			[10, 0, 90, 100]])
-	assert np.allclose(w.weigh_data(Y, D, X, weights)[0], Y_w)
-	assert np.allclose(w.weigh_data(Y, D, X, weights)[1], Z_w)
+	Y_out, Z_out = w.weigh_data(Y, D, X, weights)
+	assert np.allclose(Y_out, Y_ans)
+	assert np.allclose(Z_out, Z_ans)
 
 
 def test_weighting():

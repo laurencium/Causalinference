@@ -62,19 +62,22 @@ class Summary(Dict):
 		           'Treated (N_t='+str(N_t)+')', '']
 		entry_types = ['string']*4
 		col_spans = [1, 2, 2, 1]
-		output += tools.add_row(entries, entry_types, col_spans, table_width)
+		output += tools.add_row(entries, entry_types,
+		                        col_spans, table_width)
 
 		entries = ['Covariate', 'Mean', 'S.d.',
 		           'Mean', 'S.d.', 'Nor-diff']
 		entry_types = ['string']*6
 		col_spans = [1]*6
-		output += tools.add_row(entries, entry_types, col_spans, table_width)
+		output += tools.add_row(entries, entry_types,
+		                        col_spans, table_width)
 		output += tools.add_line(table_width)
 		
 		entry_types = ['string'] + ['float']*5
 		col_spans = [1]*6
 		for entries in zip(varnames, mean_c, sd_c, mean_t, sd_t, ndiff):
-			output += tools.add_row(entries, entry_types, col_spans, table_width)
+			output += tools.add_row(entries, entry_types,
+			                        col_spans, table_width)
 
 		return output
 			

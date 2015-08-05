@@ -3,7 +3,7 @@ from nose.tools import *
 import numpy as np
 
 import causalinference.causal as c
-from tools import random_data
+from utils import random_data
 
 
 def test_est_propensity():

@@ -3,7 +3,7 @@ import numpy as np
 
 import causalinference.core.data as d
 import causalinference.core.propensity as p
-from tools import random_data
+from utils import random_data
 
 
 def test_form_matrix():
