@@ -20,6 +20,7 @@ def test_summary():
 	summary = s.Summary(data)
 
 	N = 6
+	K = 2
 	N_c = 3
 	N_t = 3
 	Y_c_mean = 3
@@ -32,7 +33,7 @@ def test_summary():
 	X_c_sd = np.array([4, 4])
 	X_t_sd = np.array([4, 4])
 	ndiff = np.array([0.75, -0.25])
-	keys1 = {'N', 'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
+	keys1 = {'N', 'K', 'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
 	         'X_c_mean', 'X_t_mean', 'X_c_sd', 'X_t_sd', 'rdiff', 'ndiff'}
 
 	assert_equal(summary['N'], N)
@@ -52,7 +53,7 @@ def test_summary():
 
 	pscore = np.array([0.1, 0.3, 0.5, 0.5, 0.7, 0.9])
 	summary._summarize_pscore(pscore)
-	keys2 = {'N', 'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
+	keys2 = {'N', 'K', 'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
 	         'X_c_mean', 'X_t_mean', 'X_c_sd', 'X_t_sd', 'rdiff', 'ndiff',
 		 'p_min', 'p_max', 'p_mean'}
 	

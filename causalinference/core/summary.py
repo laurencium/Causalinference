@@ -20,7 +20,7 @@ class Summary(Dict):
 
 		self._dict = dict()
 
-		self._dict['N'] = data['N']
+		self._dict['N'], self._dict['K'] = data['N'], data['K']
 		self._dict['N_c'], self._dict['N_t'] = data['N_c'], data['N_t']
 		self._dict['Y_c_mean'] = data['Y_c'].mean()
 		self._dict['Y_t_mean'] = data['Y_t'].mean()
@@ -48,36 +48,54 @@ class Summary(Dict):
 
 		table_width = 80
 
-		N_c, N_t = self['N_c'], self['N_t']
-		K = self['X_c_mean'].shape[0]
-		mean_c, mean_t = self['X_c_mean'], self['X_t_mean']
-		sd_c, sd_t = self['X_c_sd'], self['X_t_mean']
-		ndiff = self['ndiff']
+		N_c, N_t, K = self['N_c'], self['N_t'], self['K']
+		Y_c_mean, Y_t_mean = self['Y_c_mean'], self['Y_t_mean']
+		Y_c_sd, Y_t_sd = self['Y_c_sd'], self['Y_t_sd']
+		X_c_mean, X_t_mean = self['X_c_mean'], self['X_t_mean']
+		X_c_sd, X_t_sd = self['X_c_sd'], self['X_t_sd']
+		rdiff, ndiff = self['rdiff'], self['ndiff']
 		varnames = ['X'+str(i) for i in xrange(K)]
 		
 		output = '\n'
-		output += 'Covariates Summary\n\n'
+		output += 'Summary Statistics\n\n'
 
-		entries = ['', 'Controls (N_c='+str(N_c)+')',
-		           'Treated (N_t='+str(N_t)+')', '']
-		entry_types = ['string']*4
-		col_spans = [1, 2, 2, 1]
-		output += tools.add_row(entries, entry_types,
-		                        col_spans, table_width)
+		entries1 = ['', 'Controls (N_c='+str(N_c)+')',
+		            'Treated (N_t='+str(N_t)+')', '']
+		entry_types1 = ['string']*4
+		col_spans1 = [1, 2, 2, 1]
+		output += tools.add_row(entries1, entry_types1,
+		                        col_spans1, table_width)
 
-		entries = ['Covariate', 'Mean', 'S.d.',
-		           'Mean', 'S.d.', 'Nor-diff']
-		entry_types = ['string']*6
-		col_spans = [1]*6
-		output += tools.add_row(entries, entry_types,
-		                        col_spans, table_width)
+		entries2 = ['Variable', 'Mean', 'S.d.',
+		            'Mean', 'S.d.', 'Raw-diff']
+		entry_types2 = ['string']*6
+		col_spans2 = [1]*6
+		output += tools.add_row(entries2, entry_types2,
+		                        col_spans2, table_width)
+		output += tools.add_line(table_width)
+
+		entries3 = ['Y', Y_c_mean, Y_c_sd, Y_t_mean, Y_t_sd, rdiff]
+		entry_types3 = ['string'] + ['float']*5
+		col_spans3 = [1]*6
+		output += tools.add_row(entries3, entry_types3,
+		                        col_spans3, table_width)
+
+		output += '\n\n'
+		output += tools.add_row(entries1, entry_types1,
+		                        col_spans1, table_width)
+
+		entries4 = ['Variable', 'Mean', 'S.d.',
+		            'Mean', 'S.d.', 'Nor-diff']
+		output += tools.add_row(entries4, entry_types2,
+		                        col_spans2, table_width)
 		output += tools.add_line(table_width)
 		
-		entry_types = ['string'] + ['float']*5
-		col_spans = [1]*6
-		for entries in zip(varnames, mean_c, sd_c, mean_t, sd_t, ndiff):
-			output += tools.add_row(entries, entry_types,
-			                        col_spans, table_width)
+		entry_types5 = ['string'] + ['float']*5
+		col_spans5 = [1]*6
+		for entries5 in zip(varnames, X_c_mean, X_c_sd,
+		                    X_t_mean, X_t_sd, ndiff):
+			output += tools.add_row(entries5, entry_types5,
+			                        col_spans5, table_width)
 
 		return output
 			
