@@ -32,6 +32,11 @@ class Dict(object):
 		return self._dict.iteritems()
 
 
+	def get(self, key, default=None):
+	
+		return self._dict.get(key, default)
+
+
 class Data(Dict):
 
 	"""

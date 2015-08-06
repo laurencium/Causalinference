@@ -2,10 +2,10 @@ from __future__ import division
 import numpy as np
 import scipy.linalg
 
-from ..core import Dict
+from base import Estimator
 
 
-class OLS(Dict):
+class OLS(Estimator):
 
 	"""
 	Dictionary-like class containing treatment effect estimates.
@@ -13,6 +13,7 @@ class OLS(Dict):
 
 	def __init__(self, data, adj):
 
+		self._method = 'OLS'
 		Y, D, X = data['Y'], data['D'], data['X']
 		X_c, X_t = data['X_c'], data['X_t']
 

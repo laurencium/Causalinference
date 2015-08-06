@@ -1,10 +1,10 @@
 from __future__ import division
 import numpy as np
 
-from ..core import Dict
+from base import Estimator
 
 
-class Blocking(Dict):
+class Blocking(Estimator):
 
 	"""
 	Dictionary-like class containing treatment effect estimates.
@@ -12,7 +12,7 @@ class Blocking(Dict):
 
 	def __init__(self, strata, adj):
 	
-		self._dict = dict()
+		self._method = 'Blocking'
 		for s in strata:
 			s.est_via_ols(adj)
 
@@ -23,6 +23,7 @@ class Blocking(Dict):
 		atcs = [s.estimates['ols']['atc'] for s in strata]
 		atts = [s.estimates['ols']['att'] for s in strata]
 
+		self._dict = dict()
 		self._dict['ate'] = calc_atx(ates, Ns)
 		self._dict['atc'] = calc_atx(atcs, N_cs)
 		self._dict['att'] = calc_atx(atts, N_ts)

@@ -15,6 +15,11 @@ def convert_to_formatting(entry_types):
 
 def add_row(entries, entry_types, col_spans, width):
 
+	"""
+	Convert an array of string or numeric entries into a string with
+	even formatting and spacing.
+	"""
+
 	vis_cols = len(col_spans)
 	invis_cols = sum(col_spans)
 
@@ -36,12 +41,12 @@ def add_line(width):
 
 def gen_reg_entries(varname, coef, se):
 
-		z = coef / se
-		p = 2*(1 - norm.cdf(np.abs(z)))
-		lw = coef - 1.96*se
-		up = coef + 1.96*se
+	z = coef / se
+	p = 2*(1 - norm.cdf(np.abs(z)))
+	lw = coef - 1.96*se
+	up = coef + 1.96*se
 
-		return (varname, coef, se, z, p, lw, up)
+	return (varname, coef, se, z, p, lw, up)
 
 
 def cache_readonly(func):

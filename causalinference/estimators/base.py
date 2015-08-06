@@ -1,83 +1,40 @@
-from ..utils.tools import Printer
+import causalinference.utils.tools as tools
+from ..core import Dict
 
 
-class Estimator(object):
+class Estimator(Dict):
 
 	"""
-	Dictionary-like class containing treatment effect estimates associated
-	with one method (e.g., OLS, matching, etc.). Standard errors for most
-	estimators are computed only when needed.
+	Dictionary-like class containing treatment effect estimates.
 	"""
-
-	def __init__(self):
-
-		ate, att, atc = self._compute_est()
-		self._dict = {'ate': ate, 'att': att, 'atc': atc,
-		              'ate_se': None, 'att_se': None, 'atc_se': None}
-
-	
-	def __iter__(self):
-
-		return iter(self._dict)
-
-
-	def __repr__(self):
-
-		if self._dict['ate_se'] is None:
-			ate_se, att_se, atc_se = self._compute_se()
-			self._store_se(ate_se, att_se, atc_se)
-
-		return repr(self._dict)
-
 
 	def __str__(self):
 
-		if self._dict['ate_se'] is None:
-			ate_se, att_se, atc_se = self._compute_se()
-			self._store_se(ate_se, att_se, atc_se)
+		table_width = 80
 
-		p = Printer()
-		est = ['ATE', 'ATT', 'ATC']
-		se = [self._dict['ate_se'], self._dict['att_se'],
-		      self._dict['atc_se']]
+		names = ['ate', 'atc', 'att']
+		coefs = [self[name] for name in names if name in self.keys()]
+		ses = [self[name+'_se'] for name in names if name+'_se' in self.keys()]
 
-		entries = ('', 'Est.', 'S.e.', 'z', 'P>|z|',
-		           '[95% Conf. int.]')
-		span = [1]*5 + [2]
-		etype = ['string']*6
 		output = '\n'
-		output += p.write_row(entries, span, etype)
-		output += p.write_row('-'*p.table_width, [1], ['string'])
+		output += 'Treatment Effect Estimates: ' + self._method + '\n\n'
 
-		span = [1]*7
-		etype = ['string'] + ['float']*6
-		for i in xrange(len(est)):
-			coef = self._dict[est[i].lower()]
-			entries = p._reg_entries(est[i], coef, se[i])
-			output += p.write_row(entries, span, etype)
+		entries1 = ['', 'Est.', 'S.e.', 'z', 'P>|z|',
+		           '[95% Conf. int.]']
+		entry_types1 = ['string']*6
+		col_spans1 = [1]*5 + [2]
+		output += tools.add_row(entries1, entry_types1,
+		                        col_spans1, table_width)
+		output += tools.add_line(table_width)
+
+		entry_types2 = ['string'] + ['float']*6
+		col_spans2 = [1]*7
+		for (name, coef, se) in zip(names, coefs, ses):
+			entries2 = tools.gen_reg_entries(name.upper(), coef, se)
+			output += tools.add_row(entries2, entry_types2,
+			                        col_spans2, table_width)
 
 		return output
-
-
-	def __getitem__(self, key):
-
-		if 'se' in key and self._dict['ate_se'] is None:
-			ate_se, att_se, atc_se = self._compute_se()
-			self._store_se(ate_se, att_se, atc_se)
-
-		return self._dict[key]
-
-
-	def _store_se(self, ate_se, att_se, atc_se):
-
-		self._dict['ate_se'] = ate_se
-		self._dict['att_se'] = att_se
-		self._dict['atc_se'] = atc_se
-
-
-	def keys(self):
-
-		return self._dict.keys()
 
 
 class Estimators(object):

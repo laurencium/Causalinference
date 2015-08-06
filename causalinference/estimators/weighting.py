@@ -1,11 +1,11 @@
 from __future__ import division
 import numpy as np
 
-from ..core import Dict
+from base import Estimator
 from ols import calc_cov, calc_ate, calc_ate_se
 
 
-class Weighting(Dict):
+class Weighting(Estimator):
 
 	"""
 	Dictionary-like class containing treatment effect estimates.
@@ -13,6 +13,7 @@ class Weighting(Dict):
 
 	def __init__(self, data):
 
+		self._method = 'Weighting'
 		Y, D, X = data['Y'], data['D'], data['X']
 		pscore = data['pscore']
 
