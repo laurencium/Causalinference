@@ -26,12 +26,7 @@ class OLS(Estimator):
 		self._dict['ate'] = calc_ate(olscoef)
 		self._dict['ate_se'] = calc_ate_se(cov)
 
-		if adj <= 1:
-			self._dict['atc'] = self._dict['ate']
-			self._dict['att'] = self._dict['ate']
-			self._dict['atc_se'] = self._dict['ate_se']
-			self._dict['att_se'] = self._dict['ate_se']
-		else:
+		if adj == 2:
 			Xmean = X.mean(0)
 			meandiff_c = X_c.mean(0) - Xmean
 			meandiff_t = X_t.mean(0) - Xmean

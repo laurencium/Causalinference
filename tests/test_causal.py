@@ -88,34 +88,20 @@ def test_est_via_ols():
 	adj1 = 0
 	causal.est_via_ols(adj1)
 	ate1 = 9.25
-	atc1 = 9.25
-	att1 = 9.25
 	ate_se1 = 17.68253
-	atc_se1 = 17.68253
-	att_se1 = 17.68253
-	keys = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
+	keys1 = {'ate', 'ate_se'}
 	assert np.allclose(causal.estimates['ols']['ate'], ate1)
-	assert np.allclose(causal.estimates['ols']['atc'], atc1)
-	assert np.allclose(causal.estimates['ols']['att'], att1)
 	assert np.allclose(causal.estimates['ols']['ate_se'], ate_se1)
-	assert np.allclose(causal.estimates['ols']['atc_se'], atc_se1)
-	assert np.allclose(causal.estimates['ols']['att_se'], att_se1)
-	assert_equal(set(causal.estimates['ols'].keys()), keys)
+	assert_equal(set(causal.estimates['ols'].keys()), keys1)
 
 	adj2 = 1
 	causal.est_via_ols(adj2)
 	ate2 = 3.654552
-	atc2 = 3.654552
-	att2 = 3.654552
 	ate_se2 = 17.749993
-	atc_se2 = 17.749993
-	att_se2 = 17.749993
+	keys2 = {'ate', 'ate_se'}
 	assert np.allclose(causal.estimates['ols']['ate'], ate2)
-	assert np.allclose(causal.estimates['ols']['atc'], atc2)
-	assert np.allclose(causal.estimates['ols']['att'], att2)
 	assert np.allclose(causal.estimates['ols']['ate_se'], ate_se2)
-	assert np.allclose(causal.estimates['ols']['atc_se'], atc_se2)
-	assert np.allclose(causal.estimates['ols']['att_se'], att_se2)
+	assert_equal(set(causal.estimates['ols'].keys()), keys2)
 
 	adj3 = 2
 	causal.est_via_ols(adj3)
@@ -125,12 +111,14 @@ def test_est_via_ols():
 	ate_se3 = 19.91887865
 	atc_se3 = 29.92152
 	att_se3 = 11.8586
+	keys3 = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
 	assert np.allclose(causal.estimates['ols']['ate'], ate3)
 	assert np.allclose(causal.estimates['ols']['atc'], atc3)
 	assert np.allclose(causal.estimates['ols']['att'], att3)
 	assert np.allclose(causal.estimates['ols']['ate_se'], ate_se3)
 	assert np.allclose(causal.estimates['ols']['atc_se'], atc_se3)
 	assert np.allclose(causal.estimates['ols']['att_se'], att_se3)
+	assert_equal(set(causal.estimates['ols'].keys()), keys3)
 
 
 def test_parse_lin_terms():

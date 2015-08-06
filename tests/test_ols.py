@@ -104,34 +104,20 @@ def test_ols():
 	adj1 = 0
 	ols1 = o.OLS(data, adj1)
 	ate1 = 9.25
-	atc1 = 9.25
-	att1 = 9.25
 	ate_se1 = 17.68253
-	atc_se1 = 17.68253
-	att_se1 = 17.68253
-	keys = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
+	keys1 = {'ate', 'ate_se'}
 	assert np.allclose(ols1['ate'], ate1)
-	assert np.allclose(ols1['atc'], atc1)
-	assert np.allclose(ols1['att'], att1)
 	assert np.allclose(ols1['ate_se'], ate_se1)
-	assert np.allclose(ols1['atc_se'], atc_se1)
-	assert np.allclose(ols1['att_se'], att_se1)
-	assert_equal(set(ols1.keys()), keys)
+	assert_equal(set(ols1.keys()), keys1)
 
 	adj2 = 1
 	ols2 = o.OLS(data, adj2)
 	ate2 = 3.654552
-	atc2 = 3.654552
-	att2 = 3.654552
 	ate_se2 = 17.749993
-	atc_se2 = 17.749993
-	att_se2 = 17.749993
+	keys2 = {'ate', 'ate_se'}
 	assert np.allclose(ols2['ate'], ate2)
-	assert np.allclose(ols2['atc'], atc2)
-	assert np.allclose(ols2['att'], att2)
 	assert np.allclose(ols2['ate_se'], ate_se2)
-	assert np.allclose(ols2['atc_se'], atc_se2)
-	assert np.allclose(ols2['att_se'], att_se2)
+	assert_equal(set(ols2.keys()), keys2)
 
 	adj3 = 2
 	ols3 = o.OLS(data, adj3)
@@ -141,10 +127,12 @@ def test_ols():
 	ate_se3 = 19.91887865
 	atc_se3 = 29.92152
 	att_se3 = 11.8586
+	keys3 = {'ate', 'atc', 'att', 'ate_se', 'atc_se', 'att_se'}
 	assert np.allclose(ols3['ate'], ate3)
 	assert np.allclose(ols3['atc'], atc3)
 	assert np.allclose(ols3['att'], att3)
 	assert np.allclose(ols3['ate_se'], ate_se3)
 	assert np.allclose(ols3['atc_se'], atc_se3)
 	assert np.allclose(ols3['att_se'], att_se3)
+	assert_equal(set(ols3.keys()), keys3)
 

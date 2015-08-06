@@ -26,11 +26,7 @@ class Weighting(Estimator):
 
 		self._dict = dict()
 		self._dict['ate'] = calc_ate(wlscoef)
-		self._dict['atc'] = self._dict['ate']
-		self._dict['att'] = self._dict['ate']
 		self._dict['ate_se'] = calc_ate_se(cov)
-		self._dict['atc_se'] = self._dict['ate_se']
-		self._dict['att_se'] = self._dict['ate_se']
 
 
 def calc_weights(pscore, D):
