@@ -37,7 +37,7 @@ class Estimator(Dict):
 		return output
 
 
-class Estimators(object):
+class Estimators(Dict):
 
 	"""
 	Dictionary-like class containing treatment effect estimates for each
@@ -49,38 +49,16 @@ class Estimators(object):
 		self._dict = {}
 
 
-	def __getitem__(self, key):
+	def __setitem__(self, key, item):
 
-		return self._dict[key]
-
-
-	def __setitem__(self, key, value):
-
-		self._dict[key] = value
-
-
-	def __iter__(self):
-
-		return iter(self._dict)
+		self._dict[key] = item
 
 
 	def __str__(self):
 
-		output = '\n'
-		output += 'Treatment Effect Estimates\n\n'
+		output = ''
+		for method in self.keys():
+			output += self[method].__str__()
 
-		for method in self._dict.keys():
-			if method == 'ols':
-				output += method.upper()
-			else:
-				output += method.title()
-			output += self._dict[method].__str__()
-			output += '\n'
-			
 		return output
-
-
-	def keys(self):
-
-		return self._dict.keys()
 

@@ -3,7 +3,7 @@ import numpy as np
 from itertools import combinations_with_replacement, izip
 
 from core import Data, Summary, Propensity, PropensitySelect, Strata
-from estimators import OLS, Blocking, Weighting
+from estimators import OLS, Blocking, Weighting, Estimators
 
 
 class CausalModel(object):
@@ -26,7 +26,7 @@ class CausalModel(object):
 		self.propensity = None
 		self.cutoff = None
 		self.blocks = None
-		self.estimates = dict()
+		self.estimates = Estimators()
 
 
 	def est_propensity(self, lin='all', qua=None):
