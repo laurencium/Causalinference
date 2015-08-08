@@ -13,7 +13,11 @@ class Strata(object):
 		for stratum, subset in zip(self._strata, subsets):
 			pscore_sub = pscore[subset]
 			stratum.raw_data._dict['pscore'] = pscore_sub
-			stratum.summary_stats._summarize_pscore(pscore_sub)
+			D_sub = stratum.raw_data['D']
+			pscore_sub_c = pscore_sub[D_sub==0]
+			pscore_sub_t = pscore_sub[D_sub==1]
+			stratum.summary_stats._summarize_pscore(pscore_sub_c,
+			                                        pscore_sub_t)
 			
 
 	def __len__(self):
@@ -33,7 +37,8 @@ class Strata(object):
 		output = '\n'
 		output += 'Stratification Summary\n\n'
 
-		entries1 = ['', 'Propensity score', 'Sample size', 'Average outcome', '']
+		entries1 = ['', 'Propensity Score', 'Sample Size',
+		            'Ave. Propensity', 'Outcome']
 		entry_types1 = ['string']*5
 		col_spans1 = [1, 2, 2, 2, 1]
 		output += tools.add_row(entries1, entry_types1,
@@ -54,11 +59,11 @@ class Strata(object):
 			summary = strata[i].summary_stats
 			N_c, N_t = summary['N_c'], summary['N_t']
 			p_min, p_max = summary['p_min'], summary['p_max']
-			Y_c_mean = summary['Y_c_mean']
-			Y_t_mean = summary['Y_t_mean']
+			p_c_mean = summary['p_c_mean']
+			p_t_mean = summary['p_t_mean']
 			within = summary['rdiff']
 			entries3 = [i+1, p_min, p_max, N_c, N_t,
-			            Y_c_mean, Y_t_mean, within]
+			            p_c_mean, p_t_mean, within]
 			output += tools.add_row(entries3, entry_types3,
 			                        col_spans2, table_width)
 

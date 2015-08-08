@@ -51,14 +51,16 @@ def test_summary():
 	assert np.array_equal(summary['ndiff'], ndiff)
 	assert_equal(set(summary.keys()), keys1)
 
-	pscore = np.array([0.1, 0.3, 0.5, 0.5, 0.7, 0.9])
-	summary._summarize_pscore(pscore)
+	p_c = np.array([0.3, 0.5, 0.7])
+	p_t = np.array([0.1, 0.5, 0.9])
+	summary._summarize_pscore(p_c, p_t)
 	keys2 = {'N', 'K', 'N_c', 'N_t', 'Y_c_mean', 'Y_t_mean', 'Y_c_sd', 'Y_t_sd',
 	         'X_c_mean', 'X_t_mean', 'X_c_sd', 'X_t_sd', 'rdiff', 'ndiff',
-		 'p_min', 'p_max', 'p_mean'}
+		 'p_min', 'p_max', 'p_c_mean', 'p_t_mean'}
 	
 	assert_equal(summary['p_min'], 0.1)
 	assert_equal(summary['p_max'], 0.9)
-	assert np.allclose(summary['p_mean'], 0.5)
+	assert_equal(summary['p_c_mean'], 0.5)
+	assert_equal(summary['p_t_mean'], 0.5)
 	assert_equal(set(summary.keys()), keys2)
 
