@@ -3,6 +3,14 @@ from itertools import chain
 
 from base import Estimator
 
+def norm(X_i, X_m, W):
+
+	dX = X_m - X_i
+	if W.ndim == 1:
+		return (dX**2 * W).sum(1)
+	else:
+		return (dX.dot(W)*dX).sum(1)
+
 
 class Matching(Estimator):
 
