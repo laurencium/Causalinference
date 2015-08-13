@@ -3,6 +3,7 @@ from itertools import chain
 
 from base import Estimator
 
+
 def norm(X_i, X_m, W):
 
 	dX = X_m - X_i
@@ -10,6 +11,19 @@ def norm(X_i, X_m, W):
 		return (dX**2 * W).sum(1)
 	else:
 		return (dX.dot(W)*dX).sum(1)
+
+
+def smallestm(d, m):
+
+	# partition around (m+1)th order stat
+	par_idx = np.argpartition(d, m)
+
+	if d[par_idx[:m]].max() < d[par_idx[m]]:  # m < (m+1)th
+		return par_idx[:m]
+	elif d[par_idx[m]] < d[par_idx[m+1:]].min():  # m+1 < (m+2)th
+		return par_idx[:m+1]
+	else:  # mth = (m+1)th = (m+2)th, so increment and recurse
+		return smallestm(d, m+2)
 
 
 class Matching(Estimator):
