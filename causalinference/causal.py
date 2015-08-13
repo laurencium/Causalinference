@@ -3,7 +3,7 @@ import numpy as np
 from itertools import combinations_with_replacement, izip
 
 from core import Data, Summary, Propensity, PropensitySelect, Strata
-from estimators import OLS, Blocking, Weighting, Estimators
+from estimators import OLS, Blocking, Weighting, Matching, Estimators
 
 
 class CausalModel(object):
@@ -268,6 +268,18 @@ class CausalModel(object):
 		"""
 
 		self.estimates['weighting'] = Weighting(self.raw_data)
+
+
+	def est_via_matching(self, weights='inv', matches=1):
+
+		X = self.raw_data['X']
+
+		if weights == 'inv':
+			W = 1/X.var(0)
+		elif weights == 'maha':
+			W = np.linalg.inv(np.cov(X, rowvar=False))
+
+		self.estimates['matching'] = Matching(self.raw_data, W, matches)
 
 
 	def _post_pscore_init(self):

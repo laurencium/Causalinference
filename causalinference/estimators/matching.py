@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from itertools import chain
 
@@ -26,6 +27,13 @@ def smallestm(d, m):
 		return smallestm(d, m+2)
 
 
+def match(X_i, X_m, W, m):
+
+	d = norm(X_i, X_m, W)
+
+	return smallestm(d, m)
+
+
 class Matching(Estimator):
 
 	"""
@@ -33,6 +41,26 @@ class Matching(Estimator):
 	errors are only computed when needed.
 	"""
 
+	def __init__(self, data, W, m):
+
+		N, N_c, N_t = data['N'], data['N_c'], data['N_t']
+		Y_c, Y_t = data['Y_c'], data['Y_t']
+		X_c, X_t = data['X_c'], data['X_t']
+
+		matches_c = [match(X_i, X_t, W, m) for X_i in X_c]
+		matches_t = [match(X_i, X_c, W, m) for X_i in X_t]
+		Yhat_c = np.array([Y_t[idx].mean() for idx in matches_c])
+		Yhat_t = np.array([Y_c[idx].mean() for idx in matches_t])
+		ITT_c = Yhat_c - Y_c
+		ITT_t = Y_t - Yhat_t
+
+		self._dict = dict()
+		self._dict['atc'] = ITT_c.mean()
+		self._dict['att'] = ITT_t.mean()
+		self._dict['ate'] = (N_c/N)*self['atc'] + (N_t/N)*self['att']
+
+
+	"""
 	def __init__(self, wmat, m, xbias, model):
 
 		self._model = model
@@ -47,6 +75,7 @@ class Matching(Estimator):
 		self._m = m
 		self._xbias = xbias
 		super(Matching, self).__init__()
+	"""
 
 
 	def _norm(self, dX):
