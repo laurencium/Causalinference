@@ -43,6 +43,7 @@ class Matching(Estimator):
 
 	def __init__(self, data, W, m):
 
+		self._method = 'Matching'
 		N, N_c, N_t = data['N'], data['N_c'], data['N_t']
 		Y_c, Y_t = data['Y_c'], data['Y_t']
 		X_c, X_t = data['X_c'], data['X_t']

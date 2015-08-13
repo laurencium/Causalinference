@@ -18,7 +18,7 @@ class Propensity(Dict):
 	logistic regression.
 	"""
 
-	def __init__(self, lin, qua, data):
+	def __init__(self, data, lin, qua):
 
 		Z = form_matrix(data['X'], lin, qua)
 		Z_c, Z_t = Z[data['controls']], Z[data['treated']]
@@ -87,13 +87,13 @@ class PropensitySelect(Propensity):
 	logistic regression.
 	"""
 
-	def __init__(self, lin_B, C_lin, C_qua, data):
+	def __init__(self, data, lin_B, C_lin, C_qua):
 
 		X_c, X_t = data['X_c'], data['X_t']
 		lin = select_lin_terms(X_c, X_t, lin_B, C_lin)
 		qua = select_qua_terms(X_c, X_t, lin, C_qua)
 
-		super(PropensitySelect, self).__init__(lin, qua, data)
+		super(PropensitySelect, self).__init__(data, lin, qua)
 
 
 def form_matrix(X, lin, qua):

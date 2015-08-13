@@ -218,7 +218,7 @@ def test_propensityselect():
 	Y = random_data(D_cur=D, X_cur=X)
 	data = d.Data(Y, D, X)
 
-	propensity1 = p.PropensitySelect([], 1, 2.71, data)
+	propensity1 = p.PropensitySelect(data, [], 1, 2.71)
 	lin1 = [1]
 	qua1 = []
 	coef1 = np.array([6.5424027, -0.7392041])
@@ -237,7 +237,7 @@ def test_propensityselect():
 	assert_equal(set(propensity1.keys()), keys)
 
 
-	propensity2 = p.PropensitySelect([0, 1], 1, 2.71, data)
+	propensity2 = p.PropensitySelect(data, [0, 1], 1, 2.71)
 	lin2 = [0, 1]
 	qua2 = []
 	coef2 = np.array([6.8066090, -0.0244874, -0.7524939])

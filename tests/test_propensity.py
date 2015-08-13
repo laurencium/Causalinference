@@ -89,7 +89,7 @@ def test_propensity():
 	Y = random_data(D_cur=D, X_cur=X)
 
 	data = d.Data(Y, D, X)
-	propensity = p.Propensity([0, 1], [], data)
+	propensity = p.Propensity(data, [0, 1], [])
 	lin = [0, 1]
 	qua = []
 	coef = np.array([6.8066090, -0.0244874, -0.7524939])

@@ -58,7 +58,7 @@ class CausalModel(object):
 		lin_terms = parse_lin_terms(self.raw_data['K'], lin)
 		qua_terms = parse_qua_terms(self.raw_data['K'], qua)
 
-		self.propensity = Propensity(lin_terms, qua_terms, self.raw_data)
+		self.propensity = Propensity(self.raw_data, lin_terms, qua_terms)
 		self.raw_data._dict['pscore'] = self.propensity['fitted']
 		self._post_pscore_init()
 
@@ -104,8 +104,8 @@ class CausalModel(object):
 
 		lin_basic = parse_lin_terms(self.raw_data['K'], lin_B)
 
-		self.propensity = PropensitySelect(lin_basic, C_lin, C_qua,
-		                                   self.raw_data)
+		self.propensity = PropensitySelect(self.raw_data, lin_basic,
+		                                   C_lin, C_qua)
 		self.raw_data._dict['pscore'] = self.propensity['fitted']
 		self._post_pscore_init()
 
