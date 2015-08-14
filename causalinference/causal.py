@@ -270,7 +270,7 @@ class CausalModel(object):
 		self.estimates['weighting'] = Weighting(self.raw_data)
 
 
-	def est_via_matching(self, weights='inv', matches=1):
+	def est_via_matching(self, weights='inv', matches=1, bias_adj=False):
 
 		X = self.raw_data['X']
 
@@ -279,7 +279,8 @@ class CausalModel(object):
 		elif weights == 'maha':
 			W = np.linalg.inv(np.cov(X, rowvar=False))
 
-		self.estimates['matching'] = Matching(self.raw_data, W, matches)
+		self.estimates['matching'] = Matching(self.raw_data, W,
+		                                      matches, bias_adj)
 
 
 	def _post_pscore_init(self):
