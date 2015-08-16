@@ -1,3 +1,4 @@
+from __future__ import division
 from nose.tools import *
 import numpy as np
 
@@ -92,4 +93,59 @@ def test_bias():
 
 	ans = np.array([-9, -4])
 	assert np.allclose(m.bias(X, X_m, matches, coefs), ans)
+
+
+def test_scaled_counts():
+
+	N = 10
+	matches = [np.array([3, 0, 1]), np.array([7]), np.array([1, 9])]
+
+	ans = np.array([1/3, 1/3+1/2, 0, 1/3, 0, 0, 0, 1, 0, 1/2])
+	assert np.allclose(m.scaled_counts(N, matches), ans)
+
+
+def test_calc_atx_var():
+
+	vars_c = np.array([1, 2])
+	vars_t = np.array([0.5, 1, 0.25])
+	weights_c = np.array([1.5, 0.5])
+	weights_t = np.array([1, 1, 1])
+
+	out_var = m.calc_atx_var(vars_c, vars_t, weights_c, weights_t)
+	ans = 0.8819444
+	assert np.allclose(out_var, ans)
+	
+
+def test_calc_atc_se():
+
+	vars_c = np.array([1, 2])
+	vars_t = np.array([0.5, 1, 0.25])
+	scaled_counts_t = np.array([1, 1, 0])
+
+	out_se = m.calc_atc_se(vars_c, vars_t, scaled_counts_t)
+	ans = 1.0606602
+	assert np.allclose(out_se, ans)
+
+
+def test_calc_att_se():
+
+	vars_c = np.array([1, 2])
+	vars_t = np.array([0.5, 1, 0.25])
+	scaled_counts_c = np.array([1, 2])
+
+	out_se = m.calc_att_se(vars_c, vars_t, scaled_counts_c)
+	ans = 1.0929064
+	assert np.allclose(out_se, ans)
+
+
+def test_calc_ate_se():
+
+	vars_c = np.array([1, 2])
+	vars_t = np.array([0.5, 1, 0.25])
+	scaled_counts_c = np.array([1, 2])
+	scaled_counts_t = np.array([1, 1, 0])
+
+	out_se = m.calc_ate_se(vars_c, vars_t, scaled_counts_c, scaled_counts_t)
+	ans = 1.0630146
+	assert np.allclose(out_se, ans)
 

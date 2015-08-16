@@ -39,12 +39,15 @@ class Matching(Estimator):
 		self._dict['att'] = ITT_t.mean()
 		self._dict['ate'] = (N_c/N)*self['atc'] + (N_t/N)*self['att']
 
-		# placeholder variances below
-		atc_var, att_var = ITT_c.var(), ITT_t.var()
-		ate_var = (N_c/N)**2*atc_var + (N_t/N)**2*att_var
-		self._dict['atc_se'] = np.sqrt(atc_var)
-		self._dict['att_se'] = np.sqrt(att_var)
-		self._dict['ate_se'] = np.sqrt(ate_var)
+		scaled_counts_c = scaled_counts(N_c, matches_t)
+		scaled_counts_t = scaled_counts(N_t, matches_c)
+		vars_c = np.repeat(ITT_c.var(), N_c)  # conservative
+		vars_t = np.repeat(ITT_t.var(), N_t)  # conservative
+		self._dict['atc_se'] = calc_atc_se(vars_c, vars_t, scaled_counts_t)
+		self._dict['att_se'] = calc_att_se(vars_c, vars_t, scaled_counts_c)
+		self._dict['ate_se'] = calc_ate_se(vars_c, vars_t,
+		                                   scaled_counts_c,
+						   scaled_counts_t)
 
 
 def norm(X_i, X_m, W):
@@ -90,7 +93,7 @@ def bias_coefs(matches, Y_m, X_m):
 	"""
 
 	flat_idx = reduce(lambda x,y: np.concatenate((x,y)), matches)
-	N, K = flat_idx.shape[0], X_m.shape[1]
+	N, K = len(flat_idx), X_m.shape[1]
 
 	Y = Y_m[flat_idx]
 	X = np.empty((N, K+1))
@@ -112,4 +115,64 @@ def bias(X, X_m, matches, coefs):
 	bias_list = [(X_j-X_i).dot(coefs) for X_i,X_j in zip(X, X_m_mean)]
 
 	return np.array(bias_list)
+
+
+def scaled_counts(N, matches):
+
+	"""
+	Counts the number of times each subject has appeared as a match. In
+	the case of multiple matches, each subject only gets partial credit.
+	"""
+
+	s_counts = np.zeros(N)
+
+	for matches_i in matches:
+		scale = 1 / len(matches_i)
+		for match in matches_i:
+			s_counts[match] += scale
+
+	return s_counts
+
+
+def calc_atx_var(vars_c, vars_t, weights_c, weights_t):
+
+	N_c, N_t = len(vars_c), len(vars_t)
+	summands_c = weights_c**2 * vars_c
+	summands_t = weights_t**2 * vars_t
+
+	return summands_t.sum()/N_t**2 + summands_c.sum()/N_c**2
+	
+
+def calc_atc_se(vars_c, vars_t, scaled_counts_t):
+
+	N_c, N_t = len(vars_c), len(vars_t)
+	weights_c = np.ones(N_c)
+	weights_t = (N_t/N_c) * scaled_counts_t
+
+	var = calc_atx_var(vars_c, vars_t, weights_c, weights_t)
+
+	return np.sqrt(var)
+
+
+def calc_att_se(vars_c, vars_t, scaled_counts_c):
+
+	N_c, N_t = len(vars_c), len(vars_t)
+	weights_c = (N_c/N_t) * scaled_counts_c
+	weights_t = np.ones(N_t)
+
+	var = calc_atx_var(vars_c, vars_t, weights_c, weights_t)
+
+	return np.sqrt(var)
+
+
+def calc_ate_se(vars_c, vars_t, scaled_counts_c, scaled_counts_t):
+
+	N_c, N_t = len(vars_c), len(vars_t)
+	N = N_c + N_t
+	weights_c = (N_c/N)*(1+scaled_counts_c)
+	weights_t = (N_t/N)*(1+scaled_counts_t)
+	
+	var = calc_atx_var(vars_c, vars_t, weights_c, weights_t)
+
+	return np.sqrt(var)
 
