@@ -272,12 +272,44 @@ class CausalModel(object):
 
 	def est_via_matching(self, weights='inv', matches=1, bias_adj=False):
 
+		"""
+		Estimates average treatment effects using nearest-
+		neighborhood matching.
+
+		Matching is done with replacement. Method supports multiple
+		matching. Correcting bias that arise due to imperfect matches
+		is also supported. For details on methodology, see Imbens
+		and Rubin (2015).
+
+		Expected args
+		-------------
+			weights: string or positive definite square matrix.
+				Specifies weighting matrix used in computing
+				distance measures. Defaults to string 'inv',
+				which does inverse variance weighting. String
+				'maha' gives the weighting matrix used in the
+				Mahalanobis metric.
+			matches: integer.
+				Number of matches to use for each subject.
+			bias_adj: Boolean.
+				Specifies whether bias adjustments should be
+				attempted.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences: An
+				Introduction.
+		"""
+
 		X = self.raw_data['X']
 
 		if weights == 'inv':
 			W = 1/X.var(0)
 		elif weights == 'maha':
 			W = np.linalg.inv(np.cov(X, rowvar=False))
+		else:
+			W = weights
 
 		self.estimates['matching'] = Matching(self.raw_data, W,
 		                                      matches, bias_adj)
@@ -289,12 +321,24 @@ class CausalModel(object):
 		self.blocks = 5
 
 
-def split_equal_bins(pscore, blocks):
+def parse_lin_terms(K, lin):
 
-	q = np.linspace(0, 100, blocks+1)[1:-1]  # q as in qth centiles
-	centiles = [np.percentile(pscore, x) for x in q]
+	if lin is None:
+		return []
+	elif lin == 'all':
+		return range(K)
+	else:
+		return lin
 
-	return [0] + centiles + [1]
+
+def parse_qua_terms(K, qua):
+
+	if qua is None:
+		return []
+	elif qua == 'all':
+		return list(combinations_with_replacement(range(K), 2))
+	else:
+		return qua
 
 
 def sumlessthan(g, sorted_g, cumsum):
@@ -320,24 +364,12 @@ def select_cutoff(g):
 	return cutoff
 
 
-def parse_lin_terms(K, lin):
+def split_equal_bins(pscore, blocks):
 
-	if lin is None:
-		return []
-	elif lin == 'all':
-		return range(K)
-	else:
-		return lin
+	q = np.linspace(0, 100, blocks+1)[1:-1]  # q as in qth centiles
+	centiles = [np.percentile(pscore, x) for x in q]
 
-
-def parse_qua_terms(K, qua):
-
-	if qua is None:
-		return []
-	elif qua == 'all':
-		return list(combinations_with_replacement(range(K), 2))
-	else:
-		return qua
+	return [0] + centiles + [1]
 
 
 def calc_tstat(sample_c, sample_t):
