@@ -55,3 +55,41 @@ def test_smallestm():
 	ans7 = np.array([0, 1, 3])
 	assert_equal(set(m.smallestm(d7, m7)), set(ans7))
 
+
+def test_match():
+
+	X_i = np.array([1, 7, 3])
+	X_m = np.array([[9, 8, 6], [4, 2, 5]])
+
+	W1 = np.array([0.5, 1, 0.25])
+	m1 = 1
+	ans1 = np.array([1])
+	assert_equal(set(m.match(X_i, X_m, W1, m1)), set(ans1))
+
+	W2 = np.array([[0.5, -0.1, 0.7], [-0.1, 1, 3], [0.7, 3, 0.25]])
+	m2 = 1
+	ans2 = np.array([1])
+	assert_equal(set(m.match(X_i, X_m, W2, m2)), set(ans2))
+
+
+def test_bias_coefs():
+
+	Y_m = np.array([4, 2, 5, 2])
+	X_m = np.array([[7, 6], [5, 4], [2, 3], [3, 5]])
+	matches = [np.array([1, 0, 2]), np.array([1, 2]),
+	           np.array([2, 0]), np.array([0]), np.array([0, 1])]
+
+	ans = np.array([-2, 3])
+	assert np.allclose(m.bias_coefs(matches, Y_m, X_m), ans)
+
+
+def test_bias():
+
+	X = np.array([[1, 2, 3], [-3, -2, -1]])
+	X_m = np.array([[4, 2, 6], [5, 7, 3], [9, 4, 1]])
+	matches = [np.array([0, 1, 2]), np.array([1])]
+	coefs = np.array([-2, 0, 3])
+
+	ans = np.array([-9, -4])
+	assert np.allclose(m.bias(X, X_m, matches, coefs), ans)
+
