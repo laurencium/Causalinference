@@ -302,12 +302,18 @@ class CausalModel(object):
 				Introduction.
 		"""
 
-		X = self.raw_data['X']
+		X, K = self.raw_data['X'], self.raw_data['K']
+		X_c, X_t = self.raw_data['X_c'], self.raw_data['X_t']
 
 		if weights == 'inv':
 			W = 1/X.var(0)
 		elif weights == 'maha':
-			W = np.linalg.inv(np.cov(X, rowvar=False))
+			V_c = np.cov(X_c, rowvar=False, ddof=0)
+			V_t = np.cov(X_t, rowvar=False, ddof=0)
+			if K == 1:
+				W = 1/np.array([[(V_c+V_t)/2]])  # matrix form
+			else:
+				W = np.linalg.inv((V_c+V_t)/2)
 		else:
 			W = weights
 

@@ -4,5 +4,7 @@
 *.aux
 dist
 *.egg-info
+ldw_exper.txt
+example_data.txt
 interactive.py
 
