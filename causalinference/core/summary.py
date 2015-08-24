@@ -85,7 +85,7 @@ class Summary(Dict):
 		output += tools.add_row(entries3, entry_types3,
 		                        col_spans3, table_width)
 
-		output += '\n\n'
+		output += '\n'
 		output += tools.add_row(entries1, entry_types1,
 		                        col_spans1, table_width)
 

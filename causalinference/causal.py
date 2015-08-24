@@ -21,7 +21,8 @@ class CausalModel(object):
 		results.
 		"""
 
-		self.raw_data = self.old_data
+		Y, D, X = self.old_data['Y'], self.old_data['D'], self.old_data['X']
+		self.raw_data = Data(Y, D, X)
 		self.summary_stats = Summary(self.raw_data)
 		self.propensity = None
 		self.cutoff = None
