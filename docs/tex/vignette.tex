@@ -71,39 +71,177 @@
 \author{Laurence Wong}
 \maketitle
 
-\section*{Installation}
+In this document we illustrate the use of CausalInference with a simple simulated data set.
 
-CausalInference can be installed using \texttt{pip}, and will run provided the necessary dependencies are in place. On Ubuntu systems, the following commands should take care of all the essential steps if you are starting from scratch:
+\section*{Simulated Data}
+
+The data generating process that generated the example data set was chosen so that:
+\begin{itemize}
+\item[i.)] Unconfoundedness, $\big(Y(0), Y(1)\big) \independent D \, | \, X$, is satisfied.
+\item[ii.)] Unconditionally, selection is not random. In particular, the probability of being assigned treatment is a function of the covariates $X$.
+\item[iii.)] Potential outcomes $Y(0)$ and $Y(1)$ are nonlinear functions of $X$ plus random error.
+\end{itemize}
+
+Property (i) ensures that the tools available in CausalInference are actually appropriate. Properties (ii) and (iii) were adopted to illustrate how standard linear methods can fail even if selection is only on observables. A detailed description of the data simulation can be found in the Appendix.
+
+\section*{Initialization}
+
+The main object of interest in CausalInference is the class \texttt{CausalModel}. It takes as inputs three NumPy arrays: \texttt{Y}, an $N$-vector of observed outcomes; \texttt{D}, an $N$-vector of treatment status indicators; and \texttt{X}, an $N$-by-$K$ matrix of covariates. To initialize a CausalModel instance, simply run:
+
 \begin{verbatim}
-  $ sudo apt-get update
-  $ sudo apt-get install python-pip python-numpy python-scipy
-  $ sudo pip install causalinference
-\end{verbatim}
-
-\section*{Minimal Example}
-
-The main object of interest in CausalInference is the class \texttt{CausalModel}. It takes as inputs three NumPy arrays: \texttt{Y}, an $N$-vector of observed outcomes; \texttt{D}, an $N$-vector of treatment status indicators; and \texttt{X}, an $N$-by-$K$ matrix of covariates. The following code snippet illustrates how the class can be invoked using random data simulated from NumPy's \texttt{random} module.
-
-\begin{verbatim}
-  >>> import numpy as np
-  >>> from causalinference import *
-  >>> Y = np.random.rand(1000)
-  >>> D = np.random.randint(0, 2, 1000)
-  >>> X = np.random.rand(1000, 3)
   >>> causal = CausalModel(Y, D, X)
 \end{verbatim}
 
-\section*{Class Attributes and Methods}
+\section*{Summary Statistics}
+
+Once an instance of the class \texttt{CausalModel} has been created, we can compute some basic summary statistics. This can be done by running:
+
+\begin{verbatim}
+  >>> print causal.summary_stats
+  Summary Statistics
+  
+                         Controls (N_c=392)         Treated (N_t=608)             
+         Variable         Mean         S.d.         Mean         S.d.     Raw-diff
+  --------------------------------------------------------------------------------
+                Y       43.097       31.353       90.911       41.815       47.814
+  
+                         Controls (N_c=392)         Treated (N_t=608)             
+         Variable         Mean         S.d.         Mean         S.d.     Nor-diff
+  --------------------------------------------------------------------------------
+               X0        3.810        2.950        5.762        2.566        0.706
+               X1        3.436        2.848        5.849        2.634        0.880
+\end{verbatim}
+
+The attribute \texttt{summary\_stats} is in reality just a dictionary-like object with special method defined to enable the display of the above table. In many situations it is more convenient to simply access the relevant statistic directly. To retrieve the vector of covariate mean for the treatment group, for example, we simply run:
+
+\begin{verbatim}
+  >>> causal.summary_stats['X_t_mean']
+  array([ 5.76232357,  5.8489734 ])
+\end{verbatim}
+
+Since \texttt{summary\_stats} behaves like a dictionary, it is equipped with the usual Python dictionary methods. To list the dictionary keys, for instance, we go:
+
+\begin{verbatim}
+  >>> causal.summary_stats.keys()
+  ['Y_c_mean', 'X_t_sd', 'N_t', 'K', 'ndiff', 'N', 'Y_t_sd', 'rdiff', 'Y_t_mean',
+  'X_c_mean', 'X_t_mean', 'Y_c_sd', 'X_c_sd', 'N_c']
+\end{verbatim}
+
+Most of the statistics appearing in the summary table should be self-explanatory, with the possible exception of the normalized differences in average covariates. This statistic is defined as
+\[\frac{\bar{X}_{k,t} - \bar{X}_{k,c}}{\sqrt{\left(s^2_{k,t}+s^2_{k,c}\right)\Big/ 2}},\]
+where $\bar{X}_{k,t}$ and $s_{k,t}$ are the sample mean and sample standard deviation of the $k$th covariate of the treatment group, and $\bar{X}_{k,c}$ and $s_{k,c}$ are the analogous statistics for the control group.
+
+The normalized differences in average covariates provide a way to measure the covariate balance between the treatment and the control groups. Unlike the t-statistic, its absolute magnitude does not increase (in expectation) as the sample size increases.
+
+\section*{Propensity Score Estimation}
+
+When there is indication of covariate imbalance, we may wish to construct a sample where the treatment and control groups are more similar than the original full sample.
+
+\begin{verbatim}
+  >>> causal.est_propensity_s()
+  >>> print causal.propensity
+  Estimated Parameters of Propensity Score
+  
+                      Coef.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+       Intercept     -2.839      0.526     -5.401      0.000     -3.870     -1.809
+              X1      0.486      0.153      3.178      0.001      0.186      0.786
+              X0      0.466      0.155      3.011      0.003      0.163      0.770
+           X1*X0      0.080      0.015      5.391      0.000      0.051      0.109
+           X0*X0     -0.045      0.012     -3.579      0.000     -0.069     -0.020
+           X1*X1     -0.045      0.013     -3.542      0.000     -0.070     -0.020
+\end{verbatim}
+
+Like \texttt{summary\_stats}, the \texttt{propensity} attribule is another dictionary-like container of results. The dictionary keys of \texttt{propensity} can be found by running:
+\begin{verbatim}
+  >>> causal.propensity.keys()
+  ['coef', 'lin', 'qua', 'loglike', 'fitted', 'se']
+\end{verbatim}
+The estimated propensity scores can be recovered by accessing \texttt{causal.propensity['fitted']}. Though we won't make direct use of it, most of the propensity-based techniques discussed subsequently are based on this vector.
+
+\section*{Improving Covariate Balance}
+
+\begin{verbatim}
+  >>> causal.trim_s()
+  >>> causal.cutoff
+  0.095492801025642338
+\end{verbatim}
+
+We can now print \texttt{summary\_stats} again to view the summary statistics of the trimmed sample.
+
+\begin{verbatim}
+  >>> print causal.summary_stats
+  Summary Statistics
+  
+                         Controls (N_c=371)         Treated (N_t=362)             
+         Variable         Mean         S.d.         Mean         S.d.     Raw-diff
+  --------------------------------------------------------------------------------
+                Y       41.331       29.608       65.984       28.102       24.653
+  
+                         Controls (N_c=371)         Treated (N_t=362)             
+         Variable         Mean         S.d.         Mean         S.d.     Nor-diff
+  --------------------------------------------------------------------------------
+               X0        3.709        2.872        4.645        2.514        0.347
+               X1        3.407        2.784        4.674        2.509        0.478
+\end{verbatim}
+
+\section*{Stratifying the Sample}
+
+\begin{verbatim}
+  >>> causal.stratify_s()
+  >>> print causal.strata
+  Stratification Summary
+  
+                Propensity Score         Sample Size     Ave. Propensity   Outcome
+     Stratum      Min.      Max.  Controls   Treated  Controls   Treated  Raw-diff
+  --------------------------------------------------------------------------------
+           1     0.096     0.265       157        27     0.188     0.190    10.052
+           2     0.266     0.474       111        72     0.360     0.367    12.025
+           3     0.477     0.728        70       113     0.598     0.601    11.696
+           4     0.728     0.836        23        69     0.781     0.787    10.510
+           5     0.838     0.904        10        81     0.865     0.873     3.405
+\end{verbatim}
+
+\begin{verbatim}
+  >>> for stratum in causal.strata:
+  ...     stratum.est_via_ols(adj=1)
+  ... 
+  >>> [stratum.estimates['ols']['ate'] for stratum in causal.strata]
+  [9.9532273440618457, 9.2918973715823778, 9.6787670925744465, 9.6722830043582491,
+  9.2239596078237955]
+\end{verbatim}
+
+\section*{Treatment Effect Estimation}
+
+\begin{verbatim}
+  >>> causal.est_via_blocking()
+  >>> causal.est_via_matching(bias_adj=True)
+  >>> print causal.estimates
+  Treatment Effect Estimates: Blocking
+  
+                       Est.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+             ATE      9.594      0.373     25.706      0.000      8.862     10.325
+             ATC      9.667      0.511     18.911      0.000      8.665     10.668
+             ATT      9.519      0.331     28.723      0.000      8.870     10.169
+  
+  Treatment Effect Estimates: Matching
+  
+                       Est.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+             ATE      9.573      0.243     39.469      0.000      9.098     10.049
+             ATC      9.544      0.272     35.035      0.000      9.010     10.078
+             ATT      9.603      0.313     30.723      0.000      8.990     10.216
+\end{verbatim}
 
 Once an instance of the class \texttt{CausalModel} has been created, it will contain a number of attributes and methods that are relevant for conducting a causal analysis. Tables \ref{tab.a} and \ref{tab.b} contain a brief description of these attributes and methods. \\
 
 \begin{table}[h]
 \begin{center}\begin{tabular}{ll}
 Attribute & Description \\
-\texttt{N, N\_c, N\_t, K} & Integers indicating sample sizes and number of covariates. \\
-\texttt{covariates} & Dictionary-like object containing summary statistics for the \\
+\texttt{summary\_stats} & Dictionary-like object containing summary statistics for the \\
 & covariate variables. \\
-\texttt{pscore} & Dictionary-like object containing propensity score data, \\
+\texttt{propensity} & Dictionary-like object containing propensity score data, \\
 & including estimated logistic regression coefficients, predicted \\
 & propensity score, maximized log-likelihood, and the lists of the \\
 & linear and quadratic terms that are included in the regression. \\
@@ -113,7 +251,7 @@ Attribute & Description \\
 & stratify the sample into, or a list of ascending numbers specifying \\
 & the boundaries of the strata. \\
 \texttt{strata} & List-like object containing the list of stratified propensity bins. \\
-\texttt{est} & Dictionary-like object containing treatment effect estimates for \\
+\texttt{estimates} & Dictionary-like object containing treatment effect estimates for \\
 & each estimator used.
 \end{tabular}\end{center}
 \caption{Attributes of the class CausalModel. Invoking \texttt{print} on any of the dictionary- or list-like attribute above yields customized summary tables. Note that some attributes are only created after the relevant methods have been called.}  \label{tab.a}
@@ -123,11 +261,11 @@ Attribute & Description \\
 \begin{table}[h]
 \begin{center}\begin{tabular}{ll}
 Method & Description \\
-\texttt{restart} & Reinitializes data to original inputs, and drop any \\
+\texttt{reset} & Reinitializes data to original inputs, and drop any \\
 & estimated results. \\
-\texttt{propensity} & Estimates via logit the propensity score using specified \\
+\texttt{est\_propensity} & Estimates via logit the propensity score using specified \\
 & linear and quadratic terms. \\
-\texttt{propensity\_s} & Estimates via logit the propensity score using the \\
+\texttt{est\_propensity\_s} & Estimates via logit the propensity score using the \\
 & covariate selection algorithm of Imbens and Rubin (2015). \\
 \texttt{trim} & Trims data based on propensity score using the threshold \\
 & specified by the attribute \texttt{cutoff}. \\
@@ -139,88 +277,25 @@ Method & Description \\
 \texttt{stratify\_s} & Stratifies the sample based on propensity score \\
 & using the bin selection procedure suggested by \\
 & Imbens and Rubin (2015). \\
-\texttt{blocking} & Estimates average treatment effects using regression \\
+\texttt{est\_via\_blocking} & Estimates average treatment effects using regression \\
 & within blocks. \\
-\texttt{matching} & Estimates average treatment effects using matching \\
+\texttt{est\_via\_matching} & Estimates average treatment effects using matching \\
 & with replacement. \\
-\texttt{weighting} & Estimates average treatment effects using the \\
+\texttt{est\_via\_weighting} & Estimates average treatment effects using the \\
 & Horvitz-Thompson weighting estimator modified to \\
 & incorporate covariates. \\
-\texttt{ols} & Estimates average treatment effects using least squares.
+\texttt{est\_via\_ols} & Estimates average treatment effects using least squares.
 \end{tabular}\end{center}
 \caption{Methods of the class CausalModel. Invoke \texttt{help} on any of the above methods for more detailed documentation.}  \label{tab.b}
 \end{table}
 
-\section*{Using CausalInference Interactively}
+\section*{Installation}
 
+CausalInference can be installed using \texttt{pip}, and will run provided the necessary dependencies are in place. On Ubuntu systems, the following commands should take care of all the essential steps if you are starting from scratch:
 \begin{verbatim}
-  >>> print causal.covariates
-  Covariates Summary
-                         Controls (N_c=267)         Treated (N_t=233)
-        Covariate         Mean         S.d.         Mean         S.d.     Nor-diff
-  --------------------------------------------------------------------------------
-               X0       -0.507        0.936        0.390        0.907        0.972
-               X1       -0.295        0.902        0.380        0.905        0.748
-               X2       -0.514        0.950        0.367        0.871        0.967
-\end{verbatim}
-
-Estimate propensity score.
-
-\begin{verbatim}
-  >>> causal.propensity_s()
-  >>> print causal.pscore
-  Estimated Parameters of Propensity Score
-                      Coef.       S.e.          z      P>|z|      [95% Conf. int.]
-  --------------------------------------------------------------------------------
-       Intercept     -0.018      0.136     -0.133      0.447     -0.284      0.248
-              X0      1.785      0.192      9.305      0.000      1.409      2.161
-              X2      1.789      0.195      9.177      0.000      1.407      2.171
-              X1      1.765      0.203      8.678      0.000      1.366      2.163
-\end{verbatim}
-
-Trimming based on propensity score.
-
-\begin{verbatim}
-  >>> causal.trim_s()
-  >>> causal.N, causal.N_c, causal.N_t
-  (281, 143, 138)
-  >>> print causal.covariates
-  Covariates Summary
-                         Controls (N_c=143)         Treated (N_t=138)             
-        Covariate         Mean         S.d.         Mean         S.d.     Nor-diff
-  --------------------------------------------------------------------------------
-               X0       -0.171        0.770        0.163        0.893        0.401
-               X1       -0.046        0.848        0.066        0.765        0.139
-               X2       -0.178        0.780        0.125        0.802        0.383
-\end{verbatim}
-
-Stratifying sample based on propensity score.
-
-\begin{verbatim}
-  >>> causal.stratify_s()
-  >>> print causal.strata
-  Stratification Summary
-                Propensity score                            Ave. p-score    Within
-     Stratum      Min.      Max.       N_c       N_t  Controls   Treated      Est.
-  --------------------------------------------------------------------------------
-           1     0.085     0.513       104        37     0.230     0.267     2.274
-           2     0.518     0.631        18        17     0.570     0.589     2.996
-           3     0.632     0.753         7        28     0.678     0.699     3.447
-           4     0.757     0.915        14        56     0.835     0.842     3.367
-\end{verbatim}
-
-Computing the blocking estimator.
-
-\begin{verbatim}
->>> causal.blocking()
->>> print causal.est
-  Treatment Effect Estimates
-  Blocking
-                       Est.       S.e.          z      P>|z|      [95% Conf. int.]
-  --------------------------------------------------------------------------------
-             ATE      2.782      0.127     21.941      0.000      2.534      3.031
-             ATT      3.045      0.152     20.046      0.000      2.747      3.342
-             ATC      2.530      0.134     18.925      0.000      2.268      2.792
+  $ sudo apt-get update
+  $ sudo apt-get install python-pip python-numpy python-scipy
+  $ sudo pip install causalinference
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
