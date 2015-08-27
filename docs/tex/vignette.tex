@@ -92,6 +92,14 @@ The main object of interest in CausalInference is the class \texttt{CausalModel}
   >>> causal = CausalModel(Y, D, X)
 \end{verbatim}
 
+\texttt{CausalModel} is \textit{stateful}. As we employ some of the methods to be discussed subsequently, the instance \texttt{causal} will mutate, with new data being added or existing data being modified or dropped. Running
+
+\begin{verbatim}
+  >> causal.reset()
+\end{verbatim}
+
+will return \texttt{causal} to its initial state.
+
 \section*{Summary Statistics}
 
 Once an instance of the class \texttt{CausalModel} has been created, we can compute some basic summary statistics. This can be done by running:
@@ -135,7 +143,9 @@ The normalized differences in average covariates provide a way to measure the co
 
 \section*{Propensity Score Estimation}
 
-When there is indication of covariate imbalance, we may wish to construct a sample where the treatment and control groups are more similar than the original full sample.
+The propensity score, defined as the probability of getting treatment conditional on the covariates, plays a central role in much of what follows. Two methods, \texttt{est\_propensity} and \texttt{est\_propensity\_s}, are provided for propensity score estimation. Both involve running a logistic regression of the treatment indicator $D$ on functions of the covariates. \texttt{est\_propensity} allows the user to specify the covariates to include linearly and/or quadratically, while \texttt{est\_propensity\_s} will make this choice automatically based on a sequence of likelihood ratio tests.
+
+In the following, we run \texttt{est\_propensity\_s} and display the estimation results. In this example, the specification selection algorithm decided to include both covariates and all the interaction and quadratic terms.
 
 \begin{verbatim}
   >>> causal.est_propensity_s()
@@ -152,14 +162,25 @@ When there is indication of covariate imbalance, we may wish to construct a samp
            X1*X1     -0.045      0.013     -3.542      0.000     -0.070     -0.020
 \end{verbatim}
 
-Like \texttt{summary\_stats}, the \texttt{propensity} attribule is another dictionary-like container of results. The dictionary keys of \texttt{propensity} can be found by running:
+Like \texttt{summary\_stats}, the \texttt{propensity} attribule is in reality another dictionary-like container of results. The dictionary keys of \texttt{propensity} can be found by running:
 \begin{verbatim}
   >>> causal.propensity.keys()
   ['coef', 'lin', 'qua', 'loglike', 'fitted', 'se']
 \end{verbatim}
-The estimated propensity scores can be recovered by accessing \texttt{causal.propensity['fitted']}. Though we won't make direct use of it, most of the propensity-based techniques discussed subsequently are based on this vector.
+The estimated propensity scores can be recovered by accessing \texttt{causal.propensity['fitted']}. Though we won't make direct calls to it, most of the propensity-based techniques discussed subsequently are based on this vector.
 
 \section*{Improving Covariate Balance}
+
+When there is indication of covariate imbalance, we may wish to construct a sample where the treatment and control groups are more similar than the original full sample. One way of doing so is by dropping units with extreme values of propensity score. For these subjects, their covariate values are such that the probability of being in the treatment (or control) group is so overwhelmingly high that we cannot reliably find comparable units in the opposite group. We may wish to forego estimating treatment effects for such units since nothing much can be credibly said about them.
+
+A good rule-of-thumb is to drop units whose estimated propensity score is less than $\alpha=0.1$ or greater than $1-\alpha=0.9$. By default, once the propensity score has been estimated by running either \texttt{est\_propensity} or \texttt{est\_propensity\_s}, a value of 0.1 will be set for the attribute \texttt{cutoff}:
+
+\begin{verbatim}
+  >>> causal.cutoff
+  0.1
+\end{verbatim}
+
+Calling \texttt{causal.trim()} at this point will drop every unit that has propensity score outside of the $[\alpha, 1-\alpha]$ interval. Alternatively, a procedure exists that will estimate the optimal cutoff. The method \texttt{trim\_s} will perform this calculation, set the \texttt{cutoff} to the optimal $\alpha$, and then invoke \texttt{trim} to construct the subsample. For our example, the optimal $\alpha$ was estimated to be slightly less than 0.1:
 
 \begin{verbatim}
   >>> causal.trim_s()
@@ -167,7 +188,7 @@ The estimated propensity scores can be recovered by accessing \texttt{causal.pro
   0.095492801025642338
 \end{verbatim}
 
-We can now print \texttt{summary\_stats} again to view the summary statistics of the trimmed sample.
+If we now print \texttt{summary\_stats} again to view the summary statistics of the trimmed sample, we see that the normalized differences in average covariates has fallen noticeably.
 
 \begin{verbatim}
   >>> print causal.summary_stats
