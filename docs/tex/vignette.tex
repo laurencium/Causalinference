@@ -87,23 +87,21 @@ Property (i) ensures that the tools available in CausalInference are actually ap
 \section*{Initialization}
 
 The main object of interest in CausalInference is the class \texttt{CausalModel}. It takes as inputs three NumPy arrays: \texttt{Y}, an $N$-vector of observed outcomes; \texttt{D}, an $N$-vector of treatment status indicators; and \texttt{X}, an $N$-by-$K$ matrix of covariates. To initialize a CausalModel instance, simply run:
-
 \begin{verbatim}
   >>> causal = CausalModel(Y, D, X)
 \end{verbatim}
 
-\texttt{CausalModel} is \textit{stateful}. As we employ some of the methods to be discussed subsequently, the instance \texttt{causal} will mutate, with new data being added or existing data being modified or dropped. Running
+Once an instance of the class \texttt{CausalModel} has been created, it will contain a number of attributes and methods that are relevant for conducting a causal analysis. Tables \ref{tab.a} and \ref{tab.b} contain a brief description of these attributes and methods.
 
+\texttt{CausalModel} is \textit{stateful}. As we employ some of the methods to be discussed subsequently, the instance \texttt{causal} will mutate, with new data being added or existing data being modified or dropped. Running
 \begin{verbatim}
   >> causal.reset()
 \end{verbatim}
-
 will return \texttt{causal} to its initial state.
 
 \section*{Summary Statistics}
 
-Once an instance of the class \texttt{CausalModel} has been created, we can compute some basic summary statistics. This can be done by running:
-
+Once an instance of the class \texttt{CausalModel} has been created, basic summary statistics will be computed and stored in the attribute \texttt{summary\_stats}. We can display it by running:
 \begin{verbatim}
   >>> print causal.summary_stats
   Summary Statistics
@@ -121,14 +119,12 @@ Once an instance of the class \texttt{CausalModel} has been created, we can comp
 \end{verbatim}
 
 The attribute \texttt{summary\_stats} is in reality just a dictionary-like object with special method defined to enable the display of the above table. In many situations it is more convenient to simply access the relevant statistic directly. To retrieve the vector of covariate mean for the treatment group, for example, we simply run:
-
 \begin{verbatim}
   >>> causal.summary_stats['X_t_mean']
   array([ 5.76232357,  5.8489734 ])
 \end{verbatim}
 
 Since \texttt{summary\_stats} behaves like a dictionary, it is equipped with the usual Python dictionary methods. To list the dictionary keys, for instance, we go:
-
 \begin{verbatim}
   >>> causal.summary_stats.keys()
   ['Y_c_mean', 'X_t_sd', 'N_t', 'K', 'ndiff', 'N', 'Y_t_sd', 'rdiff', 'Y_t_mean',
@@ -181,33 +177,36 @@ A good rule-of-thumb is to drop units whose estimated propensity score is less t
 \end{verbatim}
 
 Calling \texttt{causal.trim()} at this point will drop every unit that has propensity score outside of the $[\alpha, 1-\alpha]$ interval. Alternatively, a procedure exists that will estimate the optimal cutoff. The method \texttt{trim\_s} will perform this calculation, set the \texttt{cutoff} to the optimal $\alpha$, and then invoke \texttt{trim} to construct the subsample. For our example, the optimal $\alpha$ was estimated to be slightly less than 0.1:
-
 \begin{verbatim}
   >>> causal.trim_s()
   >>> causal.cutoff
-  0.095492801025642338
+  0.0954928016329
 \end{verbatim}
 
 If we now print \texttt{summary\_stats} again to view the summary statistics of the trimmed sample, we see that the normalized differences in average covariates has fallen noticeably.
-
 \begin{verbatim}
   >>> print causal.summary_stats
   Summary Statistics
   
-                         Controls (N_c=371)         Treated (N_t=362)             
+                         Controls (N_c=371)         Treated (N_t=363)             
          Variable         Mean         S.d.         Mean         S.d.     Raw-diff
   --------------------------------------------------------------------------------
-                Y       41.331       29.608       65.984       28.102       24.653
+                Y       41.331       29.608       66.067       28.108       24.736
   
-                         Controls (N_c=371)         Treated (N_t=362)             
+                         Controls (N_c=371)         Treated (N_t=363)             
          Variable         Mean         S.d.         Mean         S.d.     Nor-diff
   --------------------------------------------------------------------------------
-               X0        3.709        2.872        4.645        2.514        0.347
-               X1        3.407        2.784        4.674        2.509        0.478
+               X0        3.709        2.872        4.658        2.522        0.351
+               X1        3.407        2.784        4.661        2.517        0.472
 \end{verbatim}
 
 \section*{Stratifying the Sample}
 
+With the propensity score estimated, one may wish to stratify the sample into blocks that have units that are more similar in terms of their covariates. This makes the treatment and control groups within each propensity bin more comparable, and therefore treatment effect estimates more credible.
+
+CausalInference provides two methods for subclassification based on propensity score. The first, \texttt{stratify}, splits the sample based on what is specified in the attribute \texttt{blocks}. The default value of \texttt{blocks} is set to 5, which means that \texttt{stratify} will split the sample into 5 equal-sized bins. In contrast, the second method, \texttt{stratify\_s}, will use a data-driven procedure for selecting both the number of blocks and their boundaries, with the expectation that the number of blocks should increase with the sample size.
+
+To inspect the result of the stratification, we can invoke \texttt{print} on the attribute \texttt{strata} to display some summary statistics, as follows:
 \begin{verbatim}
   >>> causal.stratify_s()
   >>> print causal.strata
@@ -216,46 +215,71 @@ If we now print \texttt{summary\_stats} again to view the summary statistics of 
                 Propensity Score         Sample Size     Ave. Propensity   Outcome
      Stratum      Min.      Max.  Controls   Treated  Controls   Treated  Raw-diff
   --------------------------------------------------------------------------------
-           1     0.096     0.265       157        27     0.188     0.190    10.052
+           1     0.095     0.265       157        28     0.188     0.187    11.885
            2     0.266     0.474       111        72     0.360     0.367    12.025
            3     0.477     0.728        70       113     0.598     0.601    11.696
            4     0.728     0.836        23        69     0.781     0.787    10.510
            5     0.838     0.904        10        81     0.865     0.873     3.405
 \end{verbatim}
 
+Under the hood, the attribute \texttt{strata} is actually a list-like object that contains, as each of its elements, a full instance of the class CausalModel, with the input data being those that correspond to the units that are in the propensity bin. We can thus, for example, access each stratum and inspect its \texttt{summary\_stats} attribute, or as the following illustrates, loop through \texttt{strata} and estimate within-bin treatment effects using least squares.
 \begin{verbatim}
   >>> for stratum in causal.strata:
   ...     stratum.est_via_ols(adj=1)
   ... 
   >>> [stratum.estimates['ols']['ate'] for stratum in causal.strata]
-  [9.9532273440618457, 9.2918973715823778, 9.6787670925744465, 9.6722830043582491,
-  9.2239596078237955]
+  [10.379170390195197, 9.2918973715823707, 9.67876709257445, 9.6722830043583023,
+  9.2239596078238222]
 \end{verbatim}
+
+Note these estimates are much more stable and closer to the true value of 10 than the within-bin raw differences in average outcomes that were reported in the stratification summary table, highlighting the virtue of further controlling for covariates even within blocks.
+
+Instead of manually looping through the \texttt{strata} attribute, estimating within-bin treatment effects, and then averaging appropriately to arrive at an overall estimate, we can also simply call \texttt{est\_via\_blocking}. We will report the resulting estimates in the next section along with estimates obtained from other, alternative estimators.
 
 \section*{Treatment Effect Estimation}
 
+In addition to least squares and the blocking estimator described in the last section, CausalInference provides two alternative treatment effect estimators. The first is the nearest neighborhood matching estimator of Abadie and Imbens (2006). Instead of relying on the propensity score, this estimator constructs matching treatment and control units by matching directly on the covariate vectors themselves. The method \texttt{est\_via\_matching} implements this estimator, and provides several optional arguments that can be used to specify certain key parameters.
+
+The last estimator is a version of the Horvitz-Thompson estimator, modified to further adjust for covariates. Mechanically, this involves running the following weight least squares regression:
+\[Y_i = \alpha + \tau D_i + X_i \beta + \varepsilon_i,\]
+where the weight for unit $i$ is $1/\hat{p}(X)$ if $i$ is in the treatment group, and $1/\big(1-\hat{p}(X)\big)$ if $i$ is in the control group. This estimator is also sometimes called the doubly-robust estimator, referring to the fact that this estimator is consistent if either the specification of the propensity score is correct, or the specification of the regression function is correct. We can invoke it by calling \texttt{est\_via\_weighting}.
+
+In the following we invoke each of the four estimators (including least squares, since the input data has changed now that the sample has been trimmed), and print out the resulting estimates.
 \begin{verbatim}
+  >>> causal.est_via_ols()
+  >>> causal.est_via_weighting()
   >>> causal.est_via_blocking()
   >>> causal.est_via_matching(bias_adj=True)
-  >>> print causal.estimates
+  Treatment Effect Estimates: Weighting
+  
+                       Est.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+             ATE     17.821      1.684     10.585      0.000     14.521     21.121
+  
+  Treatment Effect Estimates: OLS
+  
+                       Est.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+             ATE      2.913      0.803      3.627      0.000      1.339      4.487
+             ATC      2.435      0.824      2.956      0.003      0.820      4.049
+             ATT      3.401      0.885      3.843      0.000      1.667      5.136
+  
   Treatment Effect Estimates: Blocking
   
                        Est.       S.e.          z      P>|z|      [95% Conf. int.]
   --------------------------------------------------------------------------------
-             ATE      9.594      0.373     25.706      0.000      8.862     10.325
-             ATC      9.667      0.511     18.911      0.000      8.665     10.668
-             ATT      9.519      0.331     28.723      0.000      8.870     10.169
+             ATE      9.702      0.381     25.444      0.000      8.954     10.449
+             ATC      9.847      0.527     18.701      0.000      8.815     10.879
+             ATT      9.553      0.332     28.771      0.000      8.903     10.204
   
   Treatment Effect Estimates: Matching
   
                        Est.       S.e.          z      P>|z|      [95% Conf. int.]
   --------------------------------------------------------------------------------
-             ATE      9.573      0.243     39.469      0.000      9.098     10.049
-             ATC      9.544      0.272     35.035      0.000      9.010     10.078
-             ATT      9.603      0.313     30.723      0.000      8.990     10.216
+             ATE      9.624      0.245     39.354      0.000      9.145     10.103
+             ATC      9.642      0.270     35.776      0.000      9.114     10.170
+             ATT      9.606      0.318     30.159      0.000      8.981     10.230
 \end{verbatim}
-
-Once an instance of the class \texttt{CausalModel} has been created, it will contain a number of attributes and methods that are relevant for conducting a causal analysis. Tables \ref{tab.a} and \ref{tab.b} contain a brief description of these attributes and methods. \\
 
 \begin{table}[h]
 \begin{center}\begin{tabular}{ll}
@@ -270,7 +294,7 @@ Attribute & Description \\
 & on propensity score.\\
 \texttt{blocks} & Either an integer indicating the number of equal-sized blocks to \\
 & stratify the sample into, or a list of ascending numbers specifying \\
-& the boundaries of the strata. \\
+& the boundaries of each stratum. \\
 \texttt{strata} & List-like object containing the list of stratified propensity bins. \\
 \texttt{estimates} & Dictionary-like object containing treatment effect estimates for \\
 & each estimator used.
@@ -284,9 +308,9 @@ Attribute & Description \\
 Method & Description \\
 \texttt{reset} & Reinitializes data to original inputs, and drop any \\
 & estimated results. \\
-\texttt{est\_propensity} & Estimates via logit the propensity score using specified \\
+\texttt{est\_propensity} & Estimates via logistic regression the propensity score using specified \\
 & linear and quadratic terms. \\
-\texttt{est\_propensity\_s} & Estimates via logit the propensity score using the \\
+\texttt{est\_propensity\_s} & Estimates via logistic regression the propensity score using the \\
 & covariate selection algorithm of Imbens and Rubin (2015). \\
 \texttt{trim} & Trims data based on propensity score using the threshold \\
 & specified by the attribute \texttt{cutoff}. \\
