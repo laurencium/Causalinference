@@ -7,7 +7,8 @@
 \documentclass[12pt]{article}
 
 
-\usepackage{amsmath, amsthm, amssymb, setspace, fullpage, apacite, enumitem, listings}
+\usepackage{amsmath, amsthm, amssymb, setspace, fullpage, enumitem, listings}
+\usepackage{apacite}
 \usepackage[margin=0.7in]{geometry}
 \usepackage[english]{babel}
 
@@ -73,20 +74,13 @@
 
 In this document we illustrate the use of CausalInference with a simple simulated data set.
 
-\section*{Simulated Data}
+\section{Initialization} \label{sec.a}
 
-The data generating process that generated the example data set was chosen so that:
-\begin{itemize}
-\item[i.)] Unconfoundedness, $\big(Y(0), Y(1)\big) \independent D \, | \, X$, is satisfied.
-\item[ii.)] Unconditionally, selection is not random. In particular, the probability of being assigned treatment is a function of the covariates $X$.
-\item[iii.)] Potential outcomes $Y(0)$ and $Y(1)$ are nonlinear functions of $X$ plus random error.
-\end{itemize}
-
-Property (i) ensures that the tools available in CausalInference are actually appropriate. Properties (ii) and (iii) were adopted to illustrate how standard linear methods can fail even if selection is only on observables. A detailed description of the data simulation can be found in the Appendix.
-
-\section*{Initialization}
-
-The main object of interest in CausalInference is the class \texttt{CausalModel}. It takes as inputs three NumPy arrays: \texttt{Y}, an $N$-vector of observed outcomes; \texttt{D}, an $N$-vector of treatment status indicators; and \texttt{X}, an $N$-by-$K$ matrix of covariates. To initialize a CausalModel instance, simply run:
+The main object of interest in CausalInference is the class \texttt{CausalModel}, which we can import with
+\begin{verbatim}
+  >>> from causalinference import CausalModel
+\end{verbatim}
+\texttt{CausalModel} takes as inputs three NumPy arrays: \texttt{Y}, an $N$-vector of observed outcomes; \texttt{D}, an $N$-vector of treatment status indicators; and \texttt{X}, an $N$-by-$K$ matrix of covariates. To initialize a \texttt{CausalModel} instance, simply run:
 \begin{verbatim}
   >>> causal = CausalModel(Y, D, X)
 \end{verbatim}
@@ -99,7 +93,7 @@ Once an instance of the class \texttt{CausalModel} has been created, it will con
 \end{verbatim}
 will return \texttt{causal} to its initial state.
 
-\section*{Summary Statistics}
+\section{Summary Statistics} \label{sec.b}
 
 Once an instance of the class \texttt{CausalModel} has been created, basic summary statistics will be computed and stored in the attribute \texttt{summary\_stats}. We can display it by running:
 \begin{verbatim}
@@ -137,7 +131,7 @@ where $\bar{X}_{k,t}$ and $s_{k,t}$ are the sample mean and sample standard devi
 
 The normalized differences in average covariates provide a way to measure the covariate balance between the treatment and the control groups. Unlike the t-statistic, its absolute magnitude does not increase (in expectation) as the sample size increases.
 
-\section*{Propensity Score Estimation}
+\section{Propensity Score Estimation} \label{sec.c}
 
 The propensity score, defined as the probability of getting treatment conditional on the covariates, plays a central role in much of what follows. Two methods, \texttt{est\_propensity} and \texttt{est\_propensity\_s}, are provided for propensity score estimation. Both involve running a logistic regression of the treatment indicator $D$ on functions of the covariates. \texttt{est\_propensity} allows the user to specify the covariates to include linearly and/or quadratically, while \texttt{est\_propensity\_s} will make this choice automatically based on a sequence of likelihood ratio tests.
 
@@ -165,7 +159,7 @@ Like \texttt{summary\_stats}, the \texttt{propensity} attribule is in reality an
 \end{verbatim}
 The estimated propensity scores can be recovered by accessing \texttt{causal.propensity['fitted']}. Though we won't make direct calls to it, most of the propensity-based techniques discussed subsequently are based on this vector.
 
-\section*{Improving Covariate Balance}
+\section{Improving Covariate Balance} \label{sec.d}
 
 When there is indication of covariate imbalance, we may wish to construct a sample where the treatment and control groups are more similar than the original full sample. One way of doing so is by dropping units with extreme values of propensity score. For these subjects, their covariate values are such that the probability of being in the treatment (or control) group is so overwhelmingly high that we cannot reliably find comparable units in the opposite group. We may wish to forego estimating treatment effects for such units since nothing much can be credibly said about them.
 
@@ -200,13 +194,13 @@ If we now print \texttt{summary\_stats} again to view the summary statistics of 
                X1        3.407        2.784        4.661        2.517        0.472
 \end{verbatim}
 
-\section*{Stratifying the Sample}
+\section{Stratifying the Sample} \label{sec.e}
 
 With the propensity score estimated, one may wish to stratify the sample into blocks that have units that are more similar in terms of their covariates. This makes the treatment and control groups within each propensity bin more comparable, and therefore treatment effect estimates more credible.
 
 CausalInference provides two methods for subclassification based on propensity score. The first, \texttt{stratify}, splits the sample based on what is specified in the attribute \texttt{blocks}. The default value of \texttt{blocks} is set to 5, which means that \texttt{stratify} will split the sample into 5 equal-sized bins. In contrast, the second method, \texttt{stratify\_s}, will use a data-driven procedure for selecting both the number of blocks and their boundaries, with the expectation that the number of blocks should increase with the sample size.
 
-To inspect the result of the stratification, we can invoke \texttt{print} on the attribute \texttt{strata} to display some summary statistics, as follows:
+To inspect the results of the stratification, we can invoke \texttt{print} on the attribute \texttt{strata} to display some summary statistics, as follows:
 \begin{verbatim}
   >>> causal.stratify_s()
   >>> print causal.strata
@@ -222,7 +216,7 @@ To inspect the result of the stratification, we can invoke \texttt{print} on the
            5     0.838     0.904        10        81     0.865     0.873     3.405
 \end{verbatim}
 
-Under the hood, the attribute \texttt{strata} is actually a list-like object that contains, as each of its elements, a full instance of the class CausalModel, with the input data being those that correspond to the units that are in the propensity bin. We can thus, for example, access each stratum and inspect its \texttt{summary\_stats} attribute, or as the following illustrates, loop through \texttt{strata} and estimate within-bin treatment effects using least squares.
+Under the hood, the attribute \texttt{strata} is actually a list-like object that contains, as each of its elements, a full instance of the class \texttt{CausalModel}, with the input data being those that correspond to the units that are in the propensity bin. We can thus, for example, access each stratum and inspect its \texttt{summary\_stats} attribute, or as the following illustrates, loop through \texttt{strata} and estimate within-bin treatment effects using least squares.
 \begin{verbatim}
   >>> for stratum in causal.strata:
   ...     stratum.est_via_ols(adj=1)
@@ -236,9 +230,9 @@ Note these estimates are much more stable and closer to the true value of 10 tha
 
 Instead of manually looping through the \texttt{strata} attribute, estimating within-bin treatment effects, and then averaging appropriately to arrive at an overall estimate, we can also simply call \texttt{est\_via\_blocking}. We will report the resulting estimates in the next section along with estimates obtained from other, alternative estimators.
 
-\section*{Treatment Effect Estimation}
+\section{Treatment Effect Estimation} \label{sec.f}
 
-In addition to least squares and the blocking estimator described in the last section, CausalInference provides two alternative treatment effect estimators. The first is the nearest neighborhood matching estimator of Abadie and Imbens (2006). Instead of relying on the propensity score, this estimator constructs matching treatment and control units by matching directly on the covariate vectors themselves. The method \texttt{est\_via\_matching} implements this estimator, and provides several optional arguments that can be used to specify certain key parameters.
+In addition to least squares and the blocking estimator described in the last section, CausalInference provides two alternative treatment effect estimators. The first is the nearest neighborhood matching estimator of Abadie and Imbens \citeyear{AbadieImbens.2006}. Instead of relying on the propensity score, this estimator constructs matching treatment and control units by matching directly on the covariate vectors themselves. The method \texttt{est\_via\_matching} implements this estimator, and provides several optional arguments that can be used to specify certain key parameters.
 
 The last estimator is a version of the Horvitz-Thompson estimator, modified to further adjust for covariates. Mechanically, this involves running the following weight least squares regression:
 \[Y_i = \alpha + \tau D_i + X_i \beta + \varepsilon_i,\]
@@ -281,6 +275,17 @@ In the following we invoke each of the four estimators (including least squares,
              ATT      9.606      0.318     30.159      0.000      8.981     10.230
 \end{verbatim}
 
+\section{Simulated Data} \label{sec.g}
+
+The data generating process that generated the example data set was chosen so that:
+\begin{itemize}
+\item[i.)] Unconfoundedness, $\big(Y(0), Y(1)\big) \independent D \, | \, X$, is satisfied.
+\item[ii.)] Unconditionally, selection is not random. In particular, the probability of being assigned treatment is a function of the covariates $X$.
+\item[iii.)] Potential outcomes $Y(0)$ and $Y(1)$ are nonlinear functions of $X$ plus random error.
+\end{itemize}
+
+Property (i) ensures that the tools available in CausalInference are actually appropriate. Properties (ii) and (iii) were adopted to illustrate how standard linear methods can fail even if selection is only on observables. A detailed description of the data simulation can be found in the Appendix.
+
 \begin{table}[h]
 \begin{center}\begin{tabular}{ll}
 Attribute & Description \\
@@ -299,7 +304,7 @@ Attribute & Description \\
 \texttt{estimates} & Dictionary-like object containing treatment effect estimates for \\
 & each estimator used.
 \end{tabular}\end{center}
-\caption{Attributes of the class CausalModel. Invoking \texttt{print} on any of the dictionary- or list-like attribute above yields customized summary tables. Note that some attributes are only created after the relevant methods have been called.}  \label{tab.a}
+\caption{Attributes of the class \texttt{CausalModel}. Invoking \texttt{print} on any of the dictionary- or list-like attribute above yields customized summary tables. Note that some attributes are only created after the relevant methods have been called.}  \label{tab.a}
 \end{table}
 
 
@@ -311,17 +316,17 @@ Method & Description \\
 \texttt{est\_propensity} & Estimates via logistic regression the propensity score using specified \\
 & linear and quadratic terms. \\
 \texttt{est\_propensity\_s} & Estimates via logistic regression the propensity score using the \\
-& covariate selection algorithm of Imbens and Rubin (2015). \\
+& covariate selection algorithm of Imbens and Rubin \citeyear{ImbensRubin.2015}. \\
 \texttt{trim} & Trims data based on propensity score using the threshold \\
 & specified by the attribute \texttt{cutoff}. \\
 \texttt{trim\_s} & Trims data based on propensity score using the cutoff \\
 & selected by the procedure of Crump, Hotz, Imbens, \\
-& and Mitnik (2008). \\
+& and Mitnik \citeyear{CrumpHotzImbensMitnik.2009}. \\
 \texttt{stratify} & Stratifies the sample based on propensity score as \\
 & specified by the attribute \texttt{blocks}. \\
 \texttt{stratify\_s} & Stratifies the sample based on propensity score \\
 & using the bin selection procedure suggested by \\
-& Imbens and Rubin (2015). \\
+& Imbens and Rubin \citeyear{ImbensRubin.2015}. \\
 \texttt{est\_via\_blocking} & Estimates average treatment effects using regression \\
 & within blocks. \\
 \texttt{est\_via\_matching} & Estimates average treatment effects using matching \\
@@ -331,19 +336,17 @@ Method & Description \\
 & incorporate covariates. \\
 \texttt{est\_via\_ols} & Estimates average treatment effects using least squares.
 \end{tabular}\end{center}
-\caption{Methods of the class CausalModel. Invoke \texttt{help} on any of the above methods for more detailed documentation.}  \label{tab.b}
+\caption{Methods of the class \texttt{CausalModel}. Invoke \texttt{help} on any of the above methods for more detailed documentation.}  \label{tab.b}
 \end{table}
 
-\section*{Installation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-CausalInference can be installed using \texttt{pip}, and will run provided the necessary dependencies are in place. On Ubuntu systems, the following commands should take care of all the essential steps if you are starting from scratch:
-\begin{verbatim}
-  $ sudo apt-get update
-  $ sudo apt-get install python-pip python-numpy python-scipy
-  $ sudo pip install causalinference
-\end{verbatim}
+\bibliographystyle{apacite}
+\bibliography{references}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \end{document}
+
