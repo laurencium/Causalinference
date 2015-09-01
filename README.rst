@@ -14,8 +14,8 @@ https://pypi.python.org/pypi/CausalInference
 Main Features
 =============
 
-* Estimation of propensity score
 * Assessment of overlap in covariate distributions
+* Estimation of propensity score
 * Improvement of covariate balance through trimming
 * Subclassification on propensity score
 * Estimation of treatment effects via matching, blocking, weighting, and least squares

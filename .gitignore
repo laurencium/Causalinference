@@ -2,6 +2,9 @@
 *.swp
 *.log
 *.aux
+*.bbl
+*.blg
+*.bak
 dist
 *.egg-info
 ldw_exper.txt
