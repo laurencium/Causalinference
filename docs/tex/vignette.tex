@@ -84,11 +84,14 @@ The set of observables $(Y_i, D_i, X_i)$, $i=1,2,\ldots,N$, forms the basic inpu
 
 CausalInference is appropriate for settings in which treatment can be said to be \textit{strongly ignorable}, as defined in Rosenbaum and Rubin \citeyear{RosenbaumRubin.1983}. That is, for all $x$ in the support of $X$, we have
 \begin{itemize}
-\item[(i)] $D$ is independent of $\big(Y(0), Y(1)\big)$ conditional on $X=x$;
-\item[(ii)] $c < \P(D=1|X=x) < 1-c$, for some $c>0$.
+\item[(i)] Unconfoundedness: $D$ is independent of $\big(Y(0), Y(1)\big)$ conditional on $X=x$;
+\item[(ii)] Overlap: $c < \P(D=1|X=x) < 1-c$, for some $c>0$.
 \end{itemize}
 
-In the following, we illustrate the typical flow of a causal analysis using the tools of CausalInference and a simulated data set. In simulating the data, we specified a constant treatment effect of 10 for simplicity, and incorporated systematic selection issues and nonlinearities to highlight a number of tools in the package. We focus mostly on illustrating the use of CausalInference; for details on methodology please refer to Imbens and Rubin \citeyear{ImbensRubin.2015}.
+In the following, we illustrate the typical flow of a causal analysis using the tools of CausalInference and a simulated data set. In simulating the data, we specified a constant treatment effect of 10 for simplicity, and incorporated systematic overlap issues and nonlinearities to highlight a number of tools in the package. We focus mostly on illustrating the use of CausalInference; for details on methodology please refer to Imbens and Rubin \citeyear{ImbensRubin.2015}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Initialization} \label{sec.a}
 
@@ -109,11 +112,16 @@ Once an instance of the class \texttt{CausalModel} has been created, it will con
 \end{verbatim}
 will return \texttt{causal} to its initial state.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Summary Statistics} \label{sec.b}
 
 Once an instance of the class \texttt{CausalModel} has been created, basic summary statistics will be computed and stored in the attribute \texttt{summary\_stats}. We can display it by running:
 \begin{verbatim}
   >>> print causal.summary_stats
+\end{verbatim}
+\begin{verbatim}
   Summary Statistics
   
                          Controls (N_c=392)         Treated (N_t=608)             
@@ -147,6 +155,41 @@ where $\bar{X}_{k,t}$ and $s_{k,t}$ are the sample mean and sample standard devi
 
 The normalized differences in average covariates provide a way to measure the covariate balance between the treatment and the control groups. Unlike the t-statistic, its absolute magnitude does not increase (in expectation) as the sample size increases.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Least Squares Estimation}
+
+One of the simplest treatment effect estimators is the ordinary least squares (OLS) estimator. CausalInference provides several common regression specification.
+
+By default, the method \texttt{est\_via\_ols} will run the following regression:
+\[Y_i = \alpha + \beta D_i + \gamma (X_i-\bar{X}) + \delta D_i (X_i-\bar{X}) + \varepsilon_i.\]
+
+To inspect any treatment effect estimates produced, we can simply invoke \texttt{print} on the attribute \texttt{estimates}, as in below:
+\begin{verbatim}
+  >>> causal.est_via_ols()
+  >>> print causal.estimates
+\end{verbatim}
+\begin{verbatim}
+  Treatment Effect Estimates: OLS
+  
+                       Est.       S.e.          z      P>|z|      [95% Conf. int.]
+  --------------------------------------------------------------------------------
+             ATE      3.672      0.906      4.051      0.000      1.895      5.449
+             ATC     -0.227      0.930     -0.244      0.807     -2.050      1.596
+             ATT      6.186      1.067      5.799      0.000      4.095      8.277
+\end{verbatim}
+Here ATE, ATC, and ATT stand for, respectively, average treatment effect, average treatment effect for the controls, and average treatment effect for the treated. Like \texttt{summary\_stats}, the attribute \texttt{estimates} is a dictionary-like object that contains the estimation results.
+
+Including interaction terms between the treatment indicator $D$ and covariates $X$ implies that treatment effects can differ across individuals. In some instances we may want to assume a constant treatment effect, and only run
+\[Y_i = \alpha + \beta D_i + \gamma (X_i-\bar{X}_i) + \varepsilon_i.\]
+This can be achieved by supplying a value of 1 in \texttt{est\_via\_ols} to the optional parameter \texttt{adj} (its default value is 2). To compute the raw difference in average outcomes between treatment and control groups, we can set \texttt{adj=0}.
+
+In this example, the least squares estimates are radically different from the true treatment effect of 10. This is the result of the nonlinearity and non-overlap issues intentionally introduced into the data simulation process. As we shall see, several other tools exist in CausalInference that can better deal with a lack of overlap and that will allow us to obtain estimates that are less sensitive to functional form assumptions.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Propensity Score Estimation} \label{sec.c}
 
 The probability of getting treatment conditional on the covariates, $p(X_i) = \P(D_i=1|X_i)$, also known as the propensity score, plays a central role in much of what follows. Two methods, \texttt{est\_propensity} and \texttt{est\_propensity\_s}, are provided for propensity score estimation. Both involve running a logistic regression of the treatment indicator $D$ on functions of the covariates. \texttt{est\_propensity} allows the user to specify the covariates to include linearly and/or quadratically, while \texttt{est\_propensity\_s} will make this choice automatically based on a sequence of likelihood ratio tests.
@@ -156,6 +199,8 @@ In the following, we run \texttt{est\_propensity\_s} and display the estimation 
 \begin{verbatim}
   >>> causal.est_propensity_s()
   >>> print causal.propensity
+\end{verbatim}
+\begin{verbatim}
   Estimated Parameters of Propensity Score
   
                       Coef.       S.e.          z      P>|z|      [95% Conf. int.]
@@ -168,12 +213,15 @@ In the following, we run \texttt{est\_propensity\_s} and display the estimation 
            X1*X1     -0.045      0.013     -3.542      0.000     -0.070     -0.020
 \end{verbatim}
 
-Like \texttt{summary\_stats}, the \texttt{propensity} attribule is in reality another dictionary-like container of results. The dictionary keys of \texttt{propensity} can be found by running:
+The \texttt{propensity} attribute is again another dictionary-like container of results. The dictionary keys of \texttt{propensity} can be found by running:
 \begin{verbatim}
   >>> causal.propensity.keys()
   ['coef', 'lin', 'qua', 'loglike', 'fitted', 'se']
 \end{verbatim}
 The estimated propensity scores can be recovered by accessing \texttt{causal.propensity['fitted']}. Though we won't make direct calls to it, most of the propensity-based techniques discussed subsequently are based on this vector.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Improving Covariate Balance} \label{sec.d}
 
@@ -197,6 +245,8 @@ The complexity of this cutoff selection algorithm is only $O(N)$, i.e., linear i
 If we now print \texttt{summary\_stats} again to view the summary statistics of the trimmed sample, we see that the normalized differences in average covariates has fallen noticeably.
 \begin{verbatim}
   >>> print causal.summary_stats
+\end{verbatim}
+\begin{verbatim}
   Summary Statistics
   
                          Controls (N_c=371)         Treated (N_t=363)             
@@ -211,6 +261,9 @@ If we now print \texttt{summary\_stats} again to view the summary statistics of 
                X1        3.407        2.784        4.661        2.517        0.472
 \end{verbatim}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Stratifying the Sample} \label{sec.e}
 
 With the propensity score estimated, one may wish to stratify the sample into blocks that have units that are more similar in terms of their covariates. This makes the treatment and control groups within each propensity bin more comparable, and therefore treatment effect estimates more credible.
@@ -221,6 +274,8 @@ To inspect the results of the stratification, we can invoke \texttt{print} on th
 \begin{verbatim}
   >>> causal.stratify_s()
   >>> print causal.strata
+\end{verbatim}
+\begin{verbatim}
   Stratification Summary
   
                 Propensity Score         Sample Size     Ave. Propensity   Outcome
@@ -247,15 +302,18 @@ Note these estimates are much more stable and closer to the true value of 10 tha
 
 Instead of manually looping through the \texttt{strata} attribute, estimating within-bin treatment effects, and then averaging appropriately to arrive at an overall estimate, we can also simply call \texttt{est\_via\_blocking}. We will report the resulting estimates in the next section along with estimates obtained from other, alternative estimators.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Treatment Effect Estimation} \label{sec.f}
 
-In addition to least squares and the blocking estimator described in the last section, CausalInference provides two alternative treatment effect estimators. The first is the nearest neighborhood matching estimator of Abadie and Imbens \citeyear{AbadieImbens.2006}. Instead of relying on the propensity score, this estimator constructs matching treatment and control units by matching directly on the covariate vectors themselves. More specifically, each unit $i$ in the sample is matched with a unit $m(i)$ in the opposite group, where
+In addition to least squares and the blocking estimator described in the last section, CausalInference provides two alternative treatment effect estimators. The first is the nearest neighborhood matching estimator of Abadie and Imbens \citeyear{AbadieImbens.2006}. Instead of relying on the propensity score, this estimator pairs treatment and control units by matching directly on the covariate vectors themselves. More specifically, each unit $i$ in the sample is matched with a unit $m(i)$ in the opposite group, where
 \[m(i) = \argmin_{j: D_j \neq D_i} \|X_j - X_i\|,\]
-where $\|X_j - X_i\|$ is some measure of distance between the covariate vectors $X_j$ and $X_i$. The method \texttt{est\_via\_matching} implements this estimator, as well as several extensions that can be invoked through optional arguments.
+and $\|X_j - X_i\|$ is some measure of distance between the covariate vectors $X_j$ and $X_i$. The method \texttt{est\_via\_matching} implements this estimator, as well as several extensions that can be invoked through optional arguments.
 
-The last estimator is a version of the Horvitz-Thompson estimator, modified to further adjust for covariates. Mechanically, this involves running the following weight least squares regression:
+The last estimator is a version of the Horvitz-Thompson weighting estimator, modified to further adjust for covariates. Mechanically, this involves running the following weight least squares regression:
 \[Y_i = \alpha + \tau D_i + X_i \beta + \varepsilon_i,\]
-where the weight for unit $i$ is $1/\hat{p}(X)$ if $i$ is in the treatment group, and $1/\big(1-\hat{p}(X)\big)$ if $i$ is in the control group. This estimator is also sometimes called the doubly-robust estimator, referring to the fact that this estimator is consistent if either the specification of the propensity score is correct, or the specification of the regression function is correct. We can invoke it by calling \texttt{est\_via\_weighting}. Note that under this specification the treatment effect does not differ across units, so both the average treatment effect for the treated (ATT) and the average treatment effect for controls (ATC) are both equal to the overal average treatment effect (ATE).
+where the weight for unit $i$ is $1/\hat{p}(X)$ if $i$ is in the treatment group, and $1/\big(1-\hat{p}(X)\big)$ if $i$ is in the control group. This estimator is also sometimes called the doubly-robust estimator, referring to the fact that this estimator is consistent if either the specification of the propensity score is correct, or the specification of the regression function is correct. We can invoke it by calling \texttt{est\_via\_weighting}. Note that under this specification the treatment effect does not differ across units, so the ATC and the ATT are both equal to the overall ATE.
 
 In the following we invoke each of the four estimators (including least squares, since the input data has changed now that the sample has been trimmed), and print out the resulting estimates.
 \begin{verbatim}
@@ -264,12 +322,16 @@ In the following we invoke each of the four estimators (including least squares,
   >>> causal.est_via_blocking()
   >>> causal.est_via_matching(bias_adj=True)
   >>> print causal.estimates
+\end{verbatim}
+\begin{verbatim}
   Treatment Effect Estimates: Weighting
   
                        Est.       S.e.          z      P>|z|      [95% Conf. int.]
   --------------------------------------------------------------------------------
              ATE     17.821      1.684     10.585      0.000     14.521     21.121
   
+\end{verbatim}
+\begin{verbatim}
   Treatment Effect Estimates: OLS
   
                        Est.       S.e.          z      P>|z|      [95% Conf. int.]
@@ -278,6 +340,8 @@ In the following we invoke each of the four estimators (including least squares,
              ATC      2.435      0.824      2.956      0.003      0.820      4.049
              ATT      3.401      0.885      3.843      0.000      1.667      5.136
   
+\end{verbatim}
+\begin{verbatim}
   Treatment Effect Estimates: Blocking
   
                        Est.       S.e.          z      P>|z|      [95% Conf. int.]
@@ -286,6 +350,8 @@ In the following we invoke each of the four estimators (including least squares,
              ATC      9.847      0.527     18.701      0.000      8.815     10.879
              ATT      9.553      0.332     28.771      0.000      8.903     10.204
   
+\end{verbatim}
+\begin{verbatim}
   Treatment Effect Estimates: Matching
   
                        Est.       S.e.          z      P>|z|      [95% Conf. int.]
@@ -294,6 +360,8 @@ In the following we invoke each of the four estimators (including least squares,
              ATC      9.642      0.270     35.776      0.000      9.114     10.170
              ATT      9.606      0.318     30.159      0.000      8.981     10.230
 \end{verbatim}
+
+As we can see above, despite the trimming the least squares estimates are still severely biased, as is the weighting estimator (since neither the propensity score or the regression function is correctly specified). The blocking and matching estimators, on the other hand, are less sensitive to specification assumptions, and thus result in estimates that are closer to the true average treatment effects.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -344,14 +412,14 @@ Method & Description \\
 \texttt{stratify\_s} & Stratifies the sample based on propensity score \\
 & using the bin selection procedure suggested by \\
 & Imbens and Rubin \citeyear{ImbensRubin.2015}. \\
-\texttt{est\_via\_blocking} & Estimates average treatment effects using regression \\
-& within blocks. \\
-\texttt{est\_via\_matching} & Estimates average treatment effects using matching \\
-& with replacement. \\
+\texttt{est\_via\_ols} & Estimates average treatment effects using least squares. \\
 \texttt{est\_via\_weighting} & Estimates average treatment effects using the \\
 & Horvitz-Thompson weighting estimator modified to \\
 & incorporate covariates. \\
-\texttt{est\_via\_ols} & Estimates average treatment effects using least squares.
+\texttt{est\_via\_blocking} & Estimates average treatment effects using regression \\
+& within blocks. \\
+\texttt{est\_via\_matching} & Estimates average treatment effects using matching \\
+& with replacement.
 \end{tabular}\end{center}
 \caption{Methods of the class \texttt{CausalModel}. Invoke \texttt{help} on any of the above methods for more detailed documentation.}  \label{tab.b}
 \end{table}
