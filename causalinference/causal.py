@@ -145,16 +145,17 @@ class CausalModel(object):
 		"""
 		Trims data based on propensity score using the cutoff
 		selection algorithm suggested by Crump, Hotz, Imbens, and
-		Mitnik (2008).
+		Mitnik (2009).
 		
 		This method should only be executed after the propensity score
 		has been estimated.
 
 		References
 		----------
-			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2008).
+			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2009).
 				Dealing with Limited Overlap in Estimation of
-				Average Treatment Effects. Biometrika.
+				Average Treatment Effects. Biometrika, 96,
+				187-199.
 		"""
 
 		pscore = self.raw_data['pscore']
@@ -206,6 +207,12 @@ class CausalModel(object):
 
 		This method should only be executed after the propensity score
 		has been estimated.
+
+		References
+		----------
+			Imbens, G. & Rubin, D. (2015). Causal Inference in
+				Statistics, Social, and Biomedical Sciences: An
+				Introduction.
 		"""
 
 		pscore_order = self.raw_data['pscore'].argsort()
