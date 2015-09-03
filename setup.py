@@ -5,7 +5,7 @@ except ImportError:
 
 config = {
 	'name': 'CausalInference',
-	'version': '0.0.4',
+	'version': '0.0.5',
 	'url': 'https://github.com/laurencium/CausalInference',
 	'author': 'Laurence Wong',
 	'author_email': 'laurencium@gmail.com',

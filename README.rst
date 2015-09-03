@@ -11,6 +11,9 @@ https://github.com/laurencium/causalinference
 Package source and binary distribution files are available from PyPi:
 https://pypi.python.org/pypi/CausalInference
 
+For an overview of the main features and uses of CausalInference, please refer to:
+https://github.com/laurencium/CausalInference/blob/master/docs/tex/vignette.pdf
+
 Main Features
 =============
 
