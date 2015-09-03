@@ -163,7 +163,7 @@ The normalized differences in average covariates provide a way to measure the co
 One of the simplest treatment effect estimators is the ordinary least squares (OLS) estimator. CausalInference provides several common regression specification.
 
 By default, the method \texttt{est\_via\_ols} will run the following regression:
-\[Y_i = \alpha + \beta D_i + \gamma (X_i-\bar{X}) + \delta D_i (X_i-\bar{X}) + \varepsilon_i.\]
+\[Y_i = \alpha + \beta D_i + \gamma' (X_i-\bar{X}) + \delta' D_i (X_i-\bar{X}) + \varepsilon_i.\]
 
 To inspect any treatment effect estimates produced, we can simply invoke \texttt{print} on the attribute \texttt{estimates}, as in below:
 \begin{verbatim}
@@ -182,7 +182,7 @@ To inspect any treatment effect estimates produced, we can simply invoke \texttt
 Here ATE, ATC, and ATT stand for, respectively, average treatment effect, average treatment effect for the controls, and average treatment effect for the treated. Like \texttt{summary\_stats}, the attribute \texttt{estimates} is a dictionary-like object that contains the estimation results.
 
 Including interaction terms between the treatment indicator $D$ and covariates $X$ implies that treatment effects can differ across individuals. In some instances we may want to assume a constant treatment effect, and only run
-\[Y_i = \alpha + \beta D_i + \gamma (X_i-\bar{X}_i) + \varepsilon_i.\]
+\[Y_i = \alpha + \beta D_i + \gamma' (X_i-\bar{X}_i) + \varepsilon_i.\]
 This can be achieved by supplying a value of 1 in \texttt{est\_via\_ols} to the optional parameter \texttt{adj} (its default value is 2). To compute the raw difference in average outcomes between treatment and control groups, we can set \texttt{adj=0}.
 
 In this example, the least squares estimates are radically different from the true treatment effect of 10. This is the result of the nonlinearity and non-overlap issues intentionally introduced into the data simulation process. As we shall see, several other tools exist in CausalInference that can better deal with a lack of overlap and that will allow us to obtain estimates that are less sensitive to functional form assumptions.
@@ -312,7 +312,7 @@ In addition to least squares and the blocking estimator described in the last se
 and $\|X_j - X_i\|$ is some measure of distance between the covariate vectors $X_j$ and $X_i$. The method \texttt{est\_via\_matching} implements this estimator, as well as several extensions that can be invoked through optional arguments.
 
 The last estimator is a version of the Horvitz-Thompson weighting estimator, modified to further adjust for covariates. Mechanically, this involves running the following weight least squares regression:
-\[Y_i = \alpha + \tau D_i + X_i \beta + \varepsilon_i,\]
+\[Y_i = \alpha + \beta D_i + \gamma' X_i + \varepsilon_i,\]
 where the weight for unit $i$ is $1/\hat{p}(X)$ if $i$ is in the treatment group, and $1/\big(1-\hat{p}(X)\big)$ if $i$ is in the control group. This estimator is also sometimes called the doubly-robust estimator, referring to the fact that this estimator is consistent if either the specification of the propensity score is correct, or the specification of the regression function is correct. We can invoke it by calling \texttt{est\_via\_weighting}. Note that under this specification the treatment effect does not differ across units, so the ATC and the ATT are both equal to the overall ATE.
 
 In the following we invoke each of the four estimators (including least squares, since the input data has changed now that the sample has been trimmed), and print out the resulting estimates.
