@@ -27,6 +27,7 @@ class CausalModel(object):
 		self.propensity = None
 		self.cutoff = None
 		self.blocks = None
+		self.strata = None
 		self.estimates = Estimators()
 
 
@@ -133,6 +134,7 @@ class CausalModel(object):
 			self.raw_data = Data(Y_trimmed, D_trimmed, X_trimmed)
 			self.raw_data._dict['pscore'] = pscore[keep]
 			self.summary_stats = Summary(self.raw_data)
+			self.strata = None
 			self.estimates = Estimators()
 		elif self.cutoff == 0:
 			pass
