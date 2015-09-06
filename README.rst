@@ -40,3 +40,15 @@ On Ubuntu systems, the following commands should take care of all the essential 
   $ sudo apt-get install python-pip python-numpy python-scipy
   $ sudo pip install causalinference
 
+Minimal Example
+===============
+
+The following illustrates how to create an instance of CausalModel: ::
+
+  >>> from causalinference import CausalModel
+  >>> from causalinference.utils import random_data
+  >>> Y, D, X = random_data()
+  >>> causal = CausalModel(Y, D, X)
+
+Invoking ``help`` on ``causal`` at this point should return a comprehensive listing of all the causal analysis tools available in CausalInference.
+
