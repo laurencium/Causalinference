@@ -117,7 +117,7 @@ will return \texttt{causal} to its initial state.
 
 \section{Summary Statistics} \label{sec.b}
 
-Once an instance of the class \texttt{CausalModel} has been created, basic summary statistics will be computed and stored in the attribute \texttt{summary\_stats}. We can display it by running:
+Once \texttt{CausalModel} has been instantiated, basic summary statistics will be computed and stored in the attribute \texttt{summary\_stats}. We can display it by running:
 \begin{verbatim}
   >>> print causal.summary_stats
 \end{verbatim}
@@ -136,7 +136,7 @@ Once an instance of the class \texttt{CausalModel} has been created, basic summa
                X1        3.436        2.848        5.849        2.634        0.880
 \end{verbatim}
 
-The attribute \texttt{summary\_stats} is in reality just a dictionary-like object with special method defined to enable the display of the above table. In many situations it is more convenient to simply access the relevant statistic directly. To retrieve the vector of covariate mean for the treatment group, for example, we simply run:
+The attribute \texttt{summary\_stats} is in reality just a dictionary-like object with special method defined to enable the display of the above table. In many situations it is more convenient to simply access the relevant statistic directly. To retrieve the vector of covariate means for the treatment group, for example, we simply run:
 \begin{verbatim}
   >>> causal.summary_stats['X_t_mean']
   array([ 5.76232357,  5.8489734 ])
@@ -160,7 +160,7 @@ The normalized differences in average covariates provide a way to measure the co
 
 \section{Least Squares Estimation}
 
-One of the simplest treatment effect estimators is the ordinary least squares (OLS) estimator. CausalInference provides several common regression specification.
+One of the simplest treatment effect estimators is the ordinary least squares (OLS) estimator. CausalInference provides several common regression specifications.
 
 By default, the method \texttt{est\_via\_ols} will run the following regression:
 \[Y_i = \alpha + \beta D_i + \gamma' (X_i-\bar{X}) + \delta' D_i (X_i-\bar{X}) + \varepsilon_i.\]
