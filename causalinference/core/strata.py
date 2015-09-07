@@ -55,7 +55,7 @@ class Strata(object):
 		strata = self._strata
 		entry_types3 = ['integer', 'float', 'float', 'integer',
 		                'integer', 'float', 'float', 'float']
-		for i in xrange(len(strata)):
+		for i in range(len(strata)):
 			summary = strata[i].summary_stats
 			N_c, N_t = summary['N_c'], summary['N_t']
 			p_min, p_max = summary['p_min'], summary['p_max']

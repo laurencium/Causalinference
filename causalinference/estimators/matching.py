@@ -1,8 +1,9 @@
 from __future__ import division
 import numpy as np
 from itertools import chain
+from functools import reduce
 
-from base import Estimator
+from .base import Estimator
 
 
 class Matching(Estimator):

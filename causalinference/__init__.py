@@ -1,2 +1,2 @@
-from causal import CausalModel
+from .causal import CausalModel
 

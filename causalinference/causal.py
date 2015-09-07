@@ -1,9 +1,9 @@
 from __future__ import division
 import numpy as np
-from itertools import combinations_with_replacement, izip
+from itertools import combinations_with_replacement
 
-from core import Data, Summary, Propensity, PropensitySelect, Strata
-from estimators import OLS, Blocking, Weighting, Matching, Estimators
+from .core import Data, Summary, Propensity, PropensitySelect, Strata
+from .estimators import OLS, Blocking, Weighting, Matching, Estimators
 
 
 class CausalModel(object):
@@ -185,7 +185,7 @@ class CausalModel(object):
 		Y, D, X = self.raw_data['Y'], self.raw_data['D'], self.raw_data['X']
 		pscore = self.raw_data['pscore']
 
-		if isinstance(self.blocks, (int, long)):
+		if isinstance(self.blocks, int):
 			blocks = split_equal_bins(pscore, self.blocks)
 		else:
 			blocks = self.blocks[:]  # make a copy; should be sorted
@@ -193,7 +193,7 @@ class CausalModel(object):
 
 		def subset(p_low, p_high):
 			return (p_low < pscore) & (pscore <= p_high)
-		subsets = [subset(*ps) for ps in izip(blocks, blocks[1:])]
+		subsets = [subset(*ps) for ps in zip(blocks, blocks[1:])]
 		strata = [CausalModel(Y[s], D[s], X[s]) for s in subsets]
 		self.strata = Strata(strata, subsets, pscore)
 
@@ -360,7 +360,7 @@ def parse_qua_terms(K, qua):
 
 def sumlessthan(g, sorted_g, cumsum):
 
-	deduped_values = dict(izip(sorted_g, cumsum))
+	deduped_values = dict(zip(sorted_g, cumsum))
 
 	return np.array([deduped_values[x] for x in g])
 
@@ -371,7 +371,7 @@ def select_cutoff(g):
 		cutoff = 0
 	else:
 		sorted_g = np.sort(g)
-		cumsum_1 = xrange(1, len(g)+1)
+		cumsum_1 = range(1, len(g)+1)
 		LHS = g * sumlessthan(g, sorted_g, cumsum_1)
 		cumsum_g = np.cumsum(sorted_g)
 		RHS = 2 * sumlessthan(g, sorted_g, cumsum_g)

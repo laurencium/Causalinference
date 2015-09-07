@@ -4,7 +4,7 @@ from scipy.optimize import fmin_bfgs
 from itertools import combinations_with_replacement
 
 import causalinference.utils.tools as tools
-from data import Dict
+from .data import Dict
 
 
 class Propensity(Dict):
@@ -177,7 +177,7 @@ def get_excluded_lin(K, included):
 
 	included_set = set(included)
 
-	return [x for x in xrange(K) if x not in included_set]
+	return [x for x in range(K) if x not in included_set]
 
 
 def get_excluded_qua(lin, included):

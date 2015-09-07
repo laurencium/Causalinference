@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import scipy.linalg
 
-from base import Estimator
+from .base import Estimator
 
 
 class OLS(Estimator):

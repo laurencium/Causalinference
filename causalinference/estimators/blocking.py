@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 
-from base import Estimator
+from .base import Estimator
 
 
 class Blocking(Estimator):

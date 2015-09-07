@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 
 import causalinference.utils.tools as tools
-from data import Dict
+from .data import Dict
 
 
 class Summary(Dict):
@@ -59,7 +59,7 @@ class Summary(Dict):
 		X_c_mean, X_t_mean = self['X_c_mean'], self['X_t_mean']
 		X_c_sd, X_t_sd = self['X_c_sd'], self['X_t_sd']
 		rdiff, ndiff = self['rdiff'], self['ndiff']
-		varnames = ['X'+str(i) for i in xrange(K)]
+		varnames = ['X'+str(i) for i in range(K)]
 		
 		output = '\n'
 		output += 'Summary Statistics\n\n'

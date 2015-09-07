@@ -1,8 +1,8 @@
 from __future__ import division
 import numpy as np
 
-from base import Estimator
-from ols import calc_cov, calc_ate, calc_ate_se
+from .base import Estimator
+from .ols import calc_cov, calc_ate, calc_ate_se
 
 
 class Weighting(Estimator):

@@ -1,2 +1,2 @@
-from tools import random_data
+from .tools import random_data
 
