@@ -32,13 +32,11 @@ Dependencies
 Installation
 ============
 
-CausalInference can be installed using ``pip``, and will run provided the necessary dependencies are in place.
+CausalInference can be installed using ``pip``: ::
 
-On Ubuntu systems, the following commands should take care of all the essential steps if you are starting from scratch: ::
+  $ pip install causalinference
 
-  $ sudo apt-get update
-  $ sudo apt-get install python-pip python-numpy python-scipy
-  $ sudo pip install causalinference
+and will run provided the necessary dependencies are in place.
 
 Minimal Example
 ===============
