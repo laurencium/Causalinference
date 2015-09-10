@@ -240,7 +240,7 @@ Calling \texttt{causal.trim()} at this point will drop every unit that has prope
   >>> causal.cutoff
   0.0954928016329
 \end{verbatim}
-The complexity of this cutoff selection algorithm is only $O(N)$, i.e., linear in the sample size, so in practice there is very little reason to not employ it.
+The complexity of this cutoff selection algorithm is only $O(N \log N)$, so in practice there is very little reason to not employ it.
 
 If we now print \texttt{summary\_stats} again to view the summary statistics of the trimmed sample, we see that the normalized differences in average covariates has fallen noticeably.
 \begin{verbatim}
@@ -268,7 +268,7 @@ If we now print \texttt{summary\_stats} again to view the summary statistics of 
 
 With the propensity score estimated, one may wish to stratify the sample into blocks that have units that are more similar in terms of their covariates. This makes the treatment and control groups within each propensity bin more comparable, and therefore treatment effect estimates more credible.
 
-CausalInference provides two methods for subclassification based on propensity score. The first, \texttt{stratify}, splits the sample based on what is specified in the attribute \texttt{blocks}. The default value of \texttt{blocks} is set to 5, which means that \texttt{stratify} will split the sample into 5 equal-sized bins. In contrast, the second method, \texttt{stratify\_s}, will use a data-driven procedure for selecting both the number of blocks and their boundaries, with the expectation that the number of blocks should increase with the sample size. Operationally this method is a divide-and-conquer algorithm that recursively divides the sample into two until there is no significant advantage of doing so. The algorithm runs in $O(N \log N)$ time, so costs relatively little to use. 
+CausalInference provides two methods for subclassification based on propensity score. The first, \texttt{stratify}, splits the sample based on what is specified in the attribute \texttt{blocks}. The default value of \texttt{blocks} is set to 5, which means that \texttt{stratify} will split the sample into 5 equal-sized bins. In contrast, the second method, \texttt{stratify\_s}, will use a data-driven procedure for selecting both the number of blocks and their boundaries, with the expectation that the number of blocks should increase with the sample size. Operationally this method is a divide-and-conquer algorithm that recursively divides the sample into two until there is no significant advantage of doing so. This algorithm also runs in $O(N \log N)$ time, so costs relatively little to use. 
 
 To inspect the results of the stratification, we can invoke \texttt{print} on the attribute \texttt{strata} to display some summary statistics, as follows:
 \begin{verbatim}
