@@ -8,6 +8,10 @@ from .estimators import OLS, Blocking, Weighting, Matching, Estimators
 
 class CausalModel(object):
 
+	"""
+	Class that provides the main tools of Causal Inference.
+	"""
+
 	def __init__(self, Y, D, X):
 
 		self.old_data = Data(Y, D, X)
@@ -41,20 +45,20 @@ class CausalModel(object):
 		receiving the treatment given the observed covariates.
 		Estimation is done via a logistic regression.
 
-		Expected args
-		-------------
-			lin: string, list
-				Column numbers (zero-based) of variables of
-				the original covariate matrix X to include
-				linearly. Defaults to the string 'all', which
-				uses whole covariate matrix.
-			qua: list
-				Tuples indicating which columns of the original
-				covariate matrix to multiply and include. E.g.,
-				[(1,1), (2,3)] indicates squaring the 2nd column
-				and including the product of the 3rd and 4th
-				columns. Default is to not include any
-				quadratic terms.
+		Parameters
+		----------
+		lin: string or list, optional
+			Column numbers (zero-based) of variables of
+			the original covariate matrix X to include
+			linearly. Defaults to the string 'all', which
+			uses whole covariate matrix.
+		qua: list, optional
+			Tuples indicating which columns of the original
+			covariate matrix to multiply and include. E.g.,
+			[(1,1), (2,3)] indicates squaring the 2nd column
+			and including the product of the 3rd and 4th
+			columns. Default is to not include any
+			quadratic terms.
 		"""
 
 		lin_terms = parse_lin_terms(self.raw_data['K'], lin)
@@ -69,7 +73,7 @@ class CausalModel(object):
 	
 		"""
 		Estimates the propensity score with covariates selected using
-		the algorithm suggested by Imbens and Rubin (2015).
+		the algorithm suggested by [1]_.
 
 		The propensity score is the conditional probability of
 		receiving the treatment given the observed covariates.
@@ -78,30 +82,29 @@ class CausalModel(object):
 		The covariate selection algorithm is based on a sequence
 		of likelihood ratio tests.
 
-		Expected args
-		-------------
-			lin_B: list
-				Column numbers (zero-based) of variables of
-				the original covariate matrix X to include
-				linearly. Defaults to empty list, meaning
-				every column of X is subjected to the
-				selection algorithm.
-			C_lin: scalar
-				Critical value used in likelihood ratio tests
-				to decide whether candidate linear terms should
-				be included. Defaults to 1 as in Imbens and 
-				Rubin (2015).
-			C_qua: scalar
-				Critical value used in likelihood ratio tests
-				to decide whether candidate quadratic terms
-				should be included. Defaults to 2.71 as in
-				Imbens and Rubin (2015).
+		Parameters
+		----------
+		lin_B: list, optional
+			Column numbers (zero-based) of variables of
+			the original covariate matrix X to include
+			linearly. Defaults to empty list, meaning
+			every column of X is subjected to the
+			selection algorithm.
+		C_lin: scalar, optional
+			Critical value used in likelihood ratio tests
+			to decide whether candidate linear terms should
+			be included. Defaults to 1 as in [1]_.
+		C_qua: scalar, optional
+			Critical value used in likelihood ratio tests
+			to decide whether candidate quadratic terms
+			should be included. Defaults to 2.71 as in
+			[1]_.
 
 		References
 		----------
-			Imbens, G. & Rubin, D. (2015). Causal Inference in
-				Statistics, Social, and Biomedical Sciences: An
-				Introduction.
+		.. [1] Imbens, G. & Rubin, D. (2015). Causal Inference in
+			Statistics, Social, and Biomedical Sciences: An
+			Introduction.
 		"""
 
 		lin_basic = parse_lin_terms(self.raw_data['K'], lin_B)
@@ -146,18 +149,16 @@ class CausalModel(object):
 
 		"""
 		Trims data based on propensity score using the cutoff
-		selection algorithm suggested by Crump, Hotz, Imbens, and
-		Mitnik (2009).
+		selection algorithm suggested by [1]_.
 		
 		This method should only be executed after the propensity score
 		has been estimated.
 
 		References
 		----------
-			Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2009).
-				Dealing with Limited Overlap in Estimation of
-				Average Treatment Effects. Biometrika, 96,
-				187-199.
+		.. [1] Crump, R., Hotz, V., Imbens, G., & Mitnik, O. (2009).
+			Dealing with Limited Overlap in Estimation of
+			Average Treatment Effects. Biometrika, 96, 187-199.
 		"""
 
 		pscore = self.raw_data['pscore']
@@ -202,7 +203,7 @@ class CausalModel(object):
 
 		"""
 		Stratifies the sample based on propensity score using the
-		bin selection procedure suggested by Imbens and Rubin (2015).
+		bin selection procedure suggested by [1]_.
 
 		The bin selection algorithm is based on a sequence of
 		two-sample t tests performed on the log-odds ratio.
@@ -212,9 +213,9 @@ class CausalModel(object):
 
 		References
 		----------
-			Imbens, G. & Rubin, D. (2015). Causal Inference in
-				Statistics, Social, and Biomedical Sciences: An
-				Introduction.
+		.. [1] Imbens, G. & Rubin, D. (2015). Causal Inference in
+			Statistics, Social, and Biomedical Sciences: An
+			Introduction.
 		"""
 
 		pscore_order = self.raw_data['pscore'].argsort()
@@ -233,15 +234,15 @@ class CausalModel(object):
 		"""
 		Estimates average treatment effects using least squares.
 
-		Expected args
-		-------------
-			adj: integer; 0, 1, or 2. 
-				Indicates how covariate adjustments are to be
-				performed. Set adj = 0 to not include any
-				covariates.  Set adj = 1 to include treatment
-				indicator D and covariates X separately. Set
-				adj = 2 to additionally include interaction
-				terms between D and X. Defaults to 2.
+		Parameters
+		----------
+		adj: int (0, 1, or 2)
+			Indicates how covariate adjustments are to be
+			performed. Set adj = 0 to not include any
+			covariates.  Set adj = 1 to include treatment
+			indicator D and covariates X separately. Set
+			adj = 2 to additionally include interaction
+			terms between D and X. Defaults to 2.
 		"""
 
 		self.estimates['ols'] = OLS(self.raw_data, adj)
@@ -256,16 +257,16 @@ class CausalModel(object):
 		This method should only be executed after the sample has been
 		stratified.
 
-		Expected args
-		-------------
-			adj: integer; 0, 1, or 2. 
-				Indicates how covariate adjustments are to be
-				performed for each within-bin regression.
-				Set adj = 0 to not include any covariates.
-				Set adj = 1 to include treatment indicator D
-				and covariates X separately. Set adj = 2 to
-				additionally include interaction terms between
-				D and X. Defaults to 1.
+		Parameters
+		----------
+		adj: int (0, 1, or 2)
+			Indicates how covariate adjustments are to be
+			performed for each within-bin regression.
+			Set adj = 0 to not include any covariates.
+			Set adj = 1 to include treatment indicator D
+			and covariates X separately. Set adj = 2 to
+			additionally include interaction terms between
+			D and X. Defaults to 1.
 		"""
 
 		self.estimates['blocking'] = Blocking(self.strata, adj)
@@ -289,28 +290,27 @@ class CausalModel(object):
 
 		Matching is done with replacement. Method supports multiple
 		matching. Correcting bias that arise due to imperfect matches
-		is also supported. For details on methodology, see Imbens
-		and Rubin (2015).
+		is also supported. For details on methodology, see [1]_.
 
-		Expected args
-		-------------
-			weights: string or positive definite square matrix.
-				Specifies weighting matrix used in computing
-				distance measures. Defaults to string 'inv',
-				which does inverse variance weighting. String
-				'maha' gives the weighting matrix used in the
-				Mahalanobis metric.
-			matches: integer.
-				Number of matches to use for each subject.
-			bias_adj: Boolean.
-				Specifies whether bias adjustments should be
-				attempted.
+		Parameters
+		----------
+		weights: str or positive definite square matrix
+			Specifies weighting matrix used in computing
+			distance measures. Defaults to string 'inv',
+			which does inverse variance weighting. String
+			'maha' gives the weighting matrix used in the
+			Mahalanobis metric.
+		matches: int
+			Number of matches to use for each subject.
+		bias_adj: bool
+			Specifies whether bias adjustments should be
+			attempted.
 
 		References
 		----------
-			Imbens, G. & Rubin, D. (2015). Causal Inference in
-				Statistics, Social, and Biomedical Sciences: An
-				Introduction.
+		.. [1] Imbens, G. & Rubin, D. (2015). Causal Inference in
+			Statistics, Social, and Biomedical Sciences: An
+			Introduction.
 		"""
 
 		X, K = self.raw_data['X'], self.raw_data['K']

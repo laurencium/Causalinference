@@ -62,10 +62,8 @@ def norm(X_i, X_m, W):
 
 def smallestm(d, m):
 
-	"""
-	Finds indices of the smallest m numbers in an array. Tied values are
-	included as well, so number of returned indices can be greater than m.
-	"""
+	# Finds indices of the smallest m numbers in an array. Tied values are
+	# included as well, so number of returned indices can be greater than m.
 
 	# partition around (m+1)th order stat
 	par_idx = np.argpartition(d, m)
@@ -87,11 +85,9 @@ def match(X_i, X_m, W, m):
 
 def bias_coefs(matches, Y_m, X_m):
 
-	"""
-	Computes OLS coefficient in bias correction regression. Constructs
-	data for regression by including (possibly multiple times) every
-	observation that has appeared in the matched sample.
-	"""
+	# Computes OLS coefficient in bias correction regression. Constructs
+	# data for regression by including (possibly multiple times) every
+	# observation that has appeared in the matched sample.
 
 	flat_idx = reduce(lambda x,y: np.concatenate((x,y)), matches)
 	N, K = len(flat_idx), X_m.shape[1]
@@ -106,11 +102,9 @@ def bias_coefs(matches, Y_m, X_m):
 
 def bias(X, X_m, matches, coefs):
 
-	"""
-	Computes bias correction term, which is approximated by the dot product
-	of the matching discrepancy (i.e., X-X_matched) and the coefficients
-	from the bias correction regression.
-	"""
+	# Computes bias correction term, which is approximated by the dot
+	# product of the matching discrepancy (i.e., X-X_matched) and the
+	# coefficients from the bias correction regression.
 
 	X_m_mean = [X_m[idx].mean(0) for idx in matches]
 	bias_list = [(X_j-X_i).dot(coefs) for X_i,X_j in zip(X, X_m_mean)]
@@ -120,10 +114,8 @@ def bias(X, X_m, matches, coefs):
 
 def scaled_counts(N, matches):
 
-	"""
-	Counts the number of times each subject has appeared as a match. In
-	the case of multiple matches, each subject only gets partial credit.
-	"""
+	# Counts the number of times each subject has appeared as a match. In
+	# the case of multiple matches, each subject only gets partial credit.
 
 	s_counts = np.zeros(N)
 

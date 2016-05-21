@@ -1,20 +1,20 @@
 causalinference package
 =======================
 
+CausalModel
+-----------
+
+.. automodule:: causalinference.causal
+   :members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 1
 
-    causalinference.core
-    causalinference.estimators
-    causalinference.utils
-
-causalinference.causal module
------------------------------
-
-.. automodule:: causalinference.causal
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   causalinference.core
+   causalinference.estimators
+   causalinference.utils
 

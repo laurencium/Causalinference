@@ -23,7 +23,10 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="CausalInference 0.0.7 documentation" href="index.html" /> 
+    <link rel="top" title="CausalInference 0.0.7 documentation" href="index.html" />
+    <link rel="up" title="causalinference package" href="causalinference.html" />
+    <link rel="next" title="causalinference.utils package" href="causalinference.utils.html" />
+    <link rel="prev" title="causalinference.core package" href="causalinference.core.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -33,9 +36,13 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li> 
+          <a href="causalinference.utils.html" title="causalinference.utils package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="causalinference.core.html" title="causalinference.core package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="causalinference.html" accesskey="U">causalinference package</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,7 +60,6 @@
 <em class="property">class </em><code class="descclassname">causalinference.estimators.base.</code><code class="descname">Estimator</code><a class="headerlink" href="#causalinference.estimators.base.Estimator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="causalinference.core.html#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
 <p>Dictionary-like class containing treatment effect estimates.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
 
 <dl class="class">
@@ -62,7 +68,6 @@
 <dd><p>Bases: <a class="reference internal" href="causalinference.core.html#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
 <p>Dictionary-like class containing treatment effect estimates for each
 estimator used.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
 
 </div>
@@ -73,18 +78,7 @@ estimator used.</p>
 <em class="property">class </em><code class="descclassname">causalinference.estimators.blocking.</code><code class="descname">Blocking</code><span class="sig-paren">(</span><em>strata</em>, <em>adj</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.blocking.Blocking" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
 <p>Dictionary-like class containing treatment effect estimates.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.blocking.calc_atx">
-<code class="descclassname">causalinference.estimators.blocking.</code><code class="descname">calc_atx</code><span class="sig-paren">(</span><em>atxs</em>, <em>Ns</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.blocking.calc_atx" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.blocking.calc_atx_se">
-<code class="descclassname">causalinference.estimators.blocking.</code><code class="descname">calc_atx_se</code><span class="sig-paren">(</span><em>atx_ses</em>, <em>Ns</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.blocking.calc_atx_se" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </div>
 <div class="section" id="module-causalinference.estimators.matching">
@@ -95,67 +89,6 @@ estimator used.</p>
 <dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
 <p>Dictionary-like class containing treatment effect estimates. Standard
 errors are only computed when needed.</p>
-<p class="rubric">Methods</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.bias">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">bias</code><span class="sig-paren">(</span><em>X</em>, <em>X_m</em>, <em>matches</em>, <em>coefs</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.bias" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes bias correction term, which is approximated by the dot product
-of the matching discrepancy (i.e., X-X_matched) and the coefficients
-from the bias correction regression.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.bias_coefs">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">bias_coefs</code><span class="sig-paren">(</span><em>matches</em>, <em>Y_m</em>, <em>X_m</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.bias_coefs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes OLS coefficient in bias correction regression. Constructs
-data for regression by including (possibly multiple times) every
-observation that has appeared in the matched sample.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.calc_atc_se">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">calc_atc_se</code><span class="sig-paren">(</span><em>vars_c</em>, <em>vars_t</em>, <em>scaled_counts_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.calc_atc_se" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.calc_ate_se">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">calc_ate_se</code><span class="sig-paren">(</span><em>vars_c</em>, <em>vars_t</em>, <em>scaled_counts_c</em>, <em>scaled_counts_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.calc_ate_se" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.calc_att_se">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">calc_att_se</code><span class="sig-paren">(</span><em>vars_c</em>, <em>vars_t</em>, <em>scaled_counts_c</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.calc_att_se" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.calc_atx_var">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">calc_atx_var</code><span class="sig-paren">(</span><em>vars_c</em>, <em>vars_t</em>, <em>weights_c</em>, <em>weights_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.calc_atx_var" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.match">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">match</code><span class="sig-paren">(</span><em>X_i</em>, <em>X_m</em>, <em>W</em>, <em>m</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.match" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.norm">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">norm</code><span class="sig-paren">(</span><em>X_i</em>, <em>X_m</em>, <em>W</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.norm" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.scaled_counts">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">scaled_counts</code><span class="sig-paren">(</span><em>N</em>, <em>matches</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.scaled_counts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Counts the number of times each subject has appeared as a match. In
-the case of multiple matches, each subject only gets partial credit.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.matching.smallestm">
-<code class="descclassname">causalinference.estimators.matching.</code><code class="descname">smallestm</code><span class="sig-paren">(</span><em>d</em>, <em>m</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.smallestm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds indices of the smallest m numbers in an array. Tied values are
-included as well, so number of returned indices can be greater than m.</p>
 </dd></dl>
 
 </div>
@@ -166,43 +99,7 @@ included as well, so number of returned indices can be greater than m.</p>
 <em class="property">class </em><code class="descclassname">causalinference.estimators.ols.</code><code class="descname">OLS</code><span class="sig-paren">(</span><em>data</em>, <em>adj</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.OLS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
 <p>Dictionary-like class containing treatment effect estimates.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.ols.calc_ate">
-<code class="descclassname">causalinference.estimators.ols.</code><code class="descname">calc_ate</code><span class="sig-paren">(</span><em>olscoef</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.calc_ate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.ols.calc_ate_se">
-<code class="descclassname">causalinference.estimators.ols.</code><code class="descname">calc_ate_se</code><span class="sig-paren">(</span><em>cov</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.calc_ate_se" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.ols.calc_atx">
-<code class="descclassname">causalinference.estimators.ols.</code><code class="descname">calc_atx</code><span class="sig-paren">(</span><em>olscoef</em>, <em>meandiff</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.calc_atx" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.ols.calc_atx_se">
-<code class="descclassname">causalinference.estimators.ols.</code><code class="descname">calc_atx_se</code><span class="sig-paren">(</span><em>cov</em>, <em>meandiff</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.calc_atx_se" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.ols.calc_cov">
-<code class="descclassname">causalinference.estimators.ols.</code><code class="descname">calc_cov</code><span class="sig-paren">(</span><em>Z</em>, <em>u</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.calc_cov" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.ols.form_matrix">
-<code class="descclassname">causalinference.estimators.ols.</code><code class="descname">form_matrix</code><span class="sig-paren">(</span><em>D</em>, <em>X</em>, <em>adj</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.form_matrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.ols.submatrix">
-<code class="descclassname">causalinference.estimators.ols.</code><code class="descname">submatrix</code><span class="sig-paren">(</span><em>cov</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.submatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </div>
 <div class="section" id="module-causalinference.estimators.weighting">
@@ -212,18 +109,7 @@ included as well, so number of returned indices can be greater than m.</p>
 <em class="property">class </em><code class="descclassname">causalinference.estimators.weighting.</code><code class="descname">Weighting</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.weighting.Weighting" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
 <p>Dictionary-like class containing treatment effect estimates.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.weighting.calc_weights">
-<code class="descclassname">causalinference.estimators.weighting.</code><code class="descname">calc_weights</code><span class="sig-paren">(</span><em>pscore</em>, <em>D</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.weighting.calc_weights" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.estimators.weighting.weigh_data">
-<code class="descclassname">causalinference.estimators.weighting.</code><code class="descname">weigh_data</code><span class="sig-paren">(</span><em>Y</em>, <em>D</em>, <em>X</em>, <em>weights</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.weighting.weigh_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </div>
 </div>
@@ -246,6 +132,12 @@ included as well, so number of returned indices can be greater than m.</p>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="causalinference.core.html"
+                        title="previous chapter">causalinference.core package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="causalinference.utils.html"
+                        title="next chapter">causalinference.utils package</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -267,9 +159,13 @@ included as well, so number of returned indices can be greater than m.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li> 
+          <a href="causalinference.utils.html" title="causalinference.utils package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="causalinference.core.html" title="causalinference.core package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="causalinference.html" >causalinference package</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

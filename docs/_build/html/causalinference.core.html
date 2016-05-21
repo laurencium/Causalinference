@@ -23,7 +23,10 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="CausalInference 0.0.7 documentation" href="index.html" /> 
+    <link rel="top" title="CausalInference 0.0.7 documentation" href="index.html" />
+    <link rel="up" title="causalinference package" href="causalinference.html" />
+    <link rel="next" title="causalinference.estimators package" href="causalinference.estimators.html" />
+    <link rel="prev" title="causalinference package" href="causalinference.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -33,9 +36,13 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li> 
+          <a href="causalinference.estimators.html" title="causalinference.estimators package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="causalinference.html" title="causalinference package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="causalinference.html" accesskey="U">causalinference package</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -49,40 +56,18 @@
 <div class="section" id="module-causalinference.core.data">
 <span id="causalinference-core-data-module"></span><h2>causalinference.core.data module<a class="headerlink" href="#module-causalinference.core.data" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="causalinference.core.data.Data">
-<em class="property">class </em><code class="descclassname">causalinference.core.data.</code><code class="descname">Data</code><span class="sig-paren">(</span><em>outcome</em>, <em>treatment</em>, <em>covariates</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.Data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
-<p>Dictionary-like class containing basic data.</p>
-<p class="rubric">Methods</p>
-</dd></dl>
-
-<dl class="class">
 <dt id="causalinference.core.data.Dict">
 <em class="property">class </em><code class="descclassname">causalinference.core.data.</code><code class="descname">Dict</code><a class="headerlink" href="#causalinference.core.data.Dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Dictionary-mimicking class.</p>
-<p class="rubric">Methods</p>
-<dl class="method">
-<dt id="causalinference.core.data.Dict.get">
-<code class="descname">get</code><span class="sig-paren">(</span><em>key</em>, <em>default=None</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.Dict.get" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="causalinference.core.data.Dict.iteritems">
-<code class="descname">iteritems</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.Dict.iteritems" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="causalinference.core.data.Dict.keys">
-<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.Dict.keys" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
-<dl class="function">
-<dt id="causalinference.core.data.preprocess">
-<code class="descclassname">causalinference.core.data.</code><code class="descname">preprocess</code><span class="sig-paren">(</span><em>Y</em>, <em>D</em>, <em>X</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.preprocess" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="class">
+<dt id="causalinference.core.data.Data">
+<em class="property">class </em><code class="descclassname">causalinference.core.data.</code><code class="descname">Data</code><span class="sig-paren">(</span><em>outcome</em>, <em>treatment</em>, <em>covariates</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.Data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
+<p>Dictionary-like class containing basic data.</p>
+</dd></dl>
 
 </div>
 <div class="section" id="module-causalinference.core.propensity">
@@ -96,7 +81,6 @@
 coefficients, maximized log-likelihood, predicted propensity scores,
 and lists of the linear and quadratic terms that are included in the
 logistic regression.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
 
 <dl class="class">
@@ -108,88 +92,7 @@ logistic regression.</p>
 coefficients, maximized log-likelihood, predicted propensity scores,
 and lists of the linear and quadratic terms that are included in the
 logistic regression.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.calc_coef">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">calc_coef</code><span class="sig-paren">(</span><em>X_c</em>, <em>X_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.calc_coef" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.calc_loglike">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">calc_loglike</code><span class="sig-paren">(</span><em>X_c</em>, <em>X_t</em>, <em>lin</em>, <em>qua</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.calc_loglike" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.calc_se">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">calc_se</code><span class="sig-paren">(</span><em>X</em>, <em>phat</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.calc_se" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.form_matrix">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">form_matrix</code><span class="sig-paren">(</span><em>X</em>, <em>lin</em>, <em>qua</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.form_matrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.get_excluded_lin">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">get_excluded_lin</code><span class="sig-paren">(</span><em>K</em>, <em>included</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.get_excluded_lin" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.get_excluded_qua">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">get_excluded_qua</code><span class="sig-paren">(</span><em>lin</em>, <em>included</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.get_excluded_qua" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.log1exp">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">log1exp</code><span class="sig-paren">(</span><em>x</em>, <em>top_threshold=100</em>, <em>bottom_threshold=-100</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.log1exp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.neg_gradient">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">neg_gradient</code><span class="sig-paren">(</span><em>beta</em>, <em>X_c</em>, <em>X_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.neg_gradient" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.neg_loglike">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">neg_loglike</code><span class="sig-paren">(</span><em>beta</em>, <em>X_c</em>, <em>X_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.neg_loglike" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.select_lin">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">select_lin</code><span class="sig-paren">(</span><em>X_c</em>, <em>X_t</em>, <em>lin_B</em>, <em>C_lin</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.select_lin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Selects, through a sequence of likelihood ratio tests, the
-variables that should be included linearly in propensity
-score estimation.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.select_lin_terms">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">select_lin_terms</code><span class="sig-paren">(</span><em>X_c</em>, <em>X_t</em>, <em>lin_B</em>, <em>C_lin</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.select_lin_terms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mostly a wrapper around function select_lin to handle cases that
-require little computation.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.select_qua">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">select_qua</code><span class="sig-paren">(</span><em>X_c</em>, <em>X_t</em>, <em>lin</em>, <em>qua_B</em>, <em>C_qua</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.select_qua" title="Permalink to this definition">¶</a></dt>
-<dd><p>Selects, through a sequence of likelihood ratio tests, the
-variables that should be included quadratically in propensity
-score estimation.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.select_qua_terms">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">select_qua_terms</code><span class="sig-paren">(</span><em>X_c</em>, <em>X_t</em>, <em>lin</em>, <em>C_qua</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.select_qua_terms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mostly a wrapper around function select_qua to handle cases that
-require little computation.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.propensity.sigmoid">
-<code class="descclassname">causalinference.core.propensity.</code><code class="descname">sigmoid</code><span class="sig-paren">(</span><em>x</em>, <em>top_threshold=100</em>, <em>bottom_threshold=-100</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.sigmoid" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </div>
 <div class="section" id="module-causalinference.core.strata">
@@ -213,13 +116,7 @@ require little computation.</p>
 covariates. Large values indicate that simple linear adjustment methods
 may not be adequate for removing biases that are associated with
 differences in covariates.</p>
-<p class="rubric">Methods</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="causalinference.core.summary.calc_ndiff">
-<code class="descclassname">causalinference.core.summary.</code><code class="descname">calc_ndiff</code><span class="sig-paren">(</span><em>mean_c</em>, <em>mean_t</em>, <em>sd_c</em>, <em>sd_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.summary.calc_ndiff" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </div>
 </div>
@@ -241,6 +138,12 @@ differences in covariates.</p>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="causalinference.html"
+                        title="previous chapter">causalinference package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="causalinference.estimators.html"
+                        title="next chapter">causalinference.estimators package</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -262,9 +165,13 @@ differences in covariates.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li> 
+          <a href="causalinference.estimators.html" title="causalinference.estimators package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="causalinference.html" title="causalinference package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CausalInference 0.0.7 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="causalinference.html" >causalinference package</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

@@ -199,11 +199,9 @@ def calc_loglike(X_c, X_t, lin, qua):
 
 def select_lin(X_c, X_t, lin_B, C_lin):
 
-	"""
-	Selects, through a sequence of likelihood ratio tests, the
-	variables that should be included linearly in propensity
-	score estimation.
-	"""
+	# Selects, through a sequence of likelihood ratio tests, the
+	# variables that should be included linearly in propensity
+	# score estimation.
 
 	K = X_c.shape[1]
 	excluded = get_excluded_lin(K, lin_B)
@@ -228,10 +226,8 @@ def select_lin(X_c, X_t, lin_B, C_lin):
 
 def select_lin_terms(X_c, X_t, lin_B, C_lin):
 
-	"""
-	Mostly a wrapper around function select_lin to handle cases that
-	require little computation.
-	"""
+	# Mostly a wrapper around function select_lin to handle cases that
+	# require little computation.
 
 	if C_lin <= 0:
 		K = X_c.shape[1]
@@ -244,11 +240,9 @@ def select_lin_terms(X_c, X_t, lin_B, C_lin):
 
 def select_qua(X_c, X_t, lin, qua_B, C_qua):
 
-	"""
-	Selects, through a sequence of likelihood ratio tests, the
-	variables that should be included quadratically in propensity
-	score estimation.
-	"""
+	# Selects, through a sequence of likelihood ratio tests, the
+	# variables that should be included quadratically in propensity
+	# score estimation.
 
 	excluded = get_excluded_qua(lin, qua_B)
 	if excluded == []:
@@ -272,10 +266,8 @@ def select_qua(X_c, X_t, lin, qua_B, C_qua):
 
 def select_qua_terms(X_c, X_t, lin, C_qua):
 
-	"""
-	Mostly a wrapper around function select_qua to handle cases that
-	require little computation.
-	"""
+	# Mostly a wrapper around function select_qua to handle cases that
+	# require little computation.
 
 	if lin == []:
 		return []
