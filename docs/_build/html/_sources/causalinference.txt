@@ -10,9 +10,6 @@ Subpackages
     causalinference.estimators
     causalinference.utils
 
-Submodules
-----------
-
 causalinference.causal module
 -----------------------------
 
@@ -21,11 +18,3 @@ causalinference.causal module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: causalinference
-    :members:
-    :undoc-members:
-    :show-inheritance:

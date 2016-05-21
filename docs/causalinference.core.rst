@@ -1,9 +1,6 @@
 causalinference.core package
 ============================
 
-Submodules
-----------
-
 causalinference.core.data module
 --------------------------------
 
@@ -36,11 +33,3 @@ causalinference.core.summary module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: causalinference.core
-    :members:
-    :undoc-members:
-    :show-inheritance:

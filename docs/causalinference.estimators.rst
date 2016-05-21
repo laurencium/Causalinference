@@ -1,9 +1,6 @@
 causalinference.estimators package
 ==================================
 
-Submodules
-----------
-
 causalinference.estimators.base module
 --------------------------------------
 
@@ -44,11 +41,3 @@ causalinference.estimators.weighting module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: causalinference.estimators
-    :members:
-    :undoc-members:
-    :show-inheritance:
