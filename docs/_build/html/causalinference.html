@@ -1,0 +1,301 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>causalinference package &mdash; CausalInference 0.0.7 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CausalInference 0.0.7 documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="causalinference-package">
+<h1>causalinference package<a class="headerlink" href="#causalinference-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="causalinference.core.html">causalinference.core package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.core.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.core.html#module-causalinference.core.data">causalinference.core.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.core.html#module-causalinference.core.propensity">causalinference.core.propensity module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.core.html#module-causalinference.core.strata">causalinference.core.strata module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.core.html#module-causalinference.core.summary">causalinference.core.summary module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.core.html#module-causalinference.core">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="causalinference.estimators.html">causalinference.estimators package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.estimators.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.estimators.html#module-causalinference.estimators.base">causalinference.estimators.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.estimators.html#module-causalinference.estimators.blocking">causalinference.estimators.blocking module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.estimators.html#module-causalinference.estimators.matching">causalinference.estimators.matching module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.estimators.html#module-causalinference.estimators.ols">causalinference.estimators.ols module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.estimators.html#module-causalinference.estimators.weighting">causalinference.estimators.weighting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.estimators.html#module-causalinference.estimators">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="causalinference.utils.html">causalinference.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.utils.html#module-causalinference.utils.tools">causalinference.utils.tools module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="causalinference.utils.html#module-causalinference.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-causalinference.causal">
+<span id="causalinference-causal-module"></span><h2>causalinference.causal module<a class="headerlink" href="#module-causalinference.causal" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="causalinference.causal.CausalModel">
+<em class="property">class </em><code class="descclassname">causalinference.causal.</code><code class="descname">CausalModel</code><span class="sig-paren">(</span><em>Y</em>, <em>D</em>, <em>X</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Just document this, alright?</p>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.est_propensity">
+<code class="descname">est_propensity</code><span class="sig-paren">(</span><em>lin='all'</em>, <em>qua=None</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_propensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the propensity scores given list of covariates to
+include linearly or quadratically.</p>
+<p>The propensity score is the conditional probability of
+receiving the treatment given the observed covariates.
+Estimation is done via a logistic regression.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.est_propensity_s">
+<code class="descname">est_propensity_s</code><span class="sig-paren">(</span><em>lin_B=None</em>, <em>C_lin=1</em>, <em>C_qua=2.71</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_propensity_s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the propensity score with covariates selected using
+the algorithm suggested by Imbens and Rubin (2015).</p>
+<p>The propensity score is the conditional probability of
+receiving the treatment given the observed covariates.
+Estimation is done via a logistic regression.</p>
+<p>The covariate selection algorithm is based on a sequence
+of likelihood ratio tests.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.est_via_blocking">
+<code class="descname">est_via_blocking</code><span class="sig-paren">(</span><em>adj=1</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_blocking" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates average treatment effects using regression within
+blocks.</p>
+<p>This method should only be executed after the sample has been
+stratified.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.est_via_matching">
+<code class="descname">est_via_matching</code><span class="sig-paren">(</span><em>weights='inv'</em>, <em>matches=1</em>, <em>bias_adj=False</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_matching" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates average treatment effects using nearest-
+neighborhood matching.</p>
+<p>Matching is done with replacement. Method supports multiple
+matching. Correcting bias that arise due to imperfect matches
+is also supported. For details on methodology, see Imbens
+and Rubin (2015).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.est_via_ols">
+<code class="descname">est_via_ols</code><span class="sig-paren">(</span><em>adj=2</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_ols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates average treatment effects using least squares.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.est_via_weighting">
+<code class="descname">est_via_weighting</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_weighting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates average treatment effects using doubly-robust
+version of the Horvitz-Thompson weighting estimator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinitializes data to original inputs, and drops any estimated
+results.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.stratify">
+<code class="descname">stratify</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.stratify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stratifies the sample based on propensity score.</p>
+<p>By default the sample is divided into five equal-sized bins.
+The number of bins can be set by modifying the object
+attribute named blocks. Alternatively, custom-sized bins can
+be created by setting blocks equal to a sorted list of numbers
+between 0 and 1 indicating the bin boundaries.</p>
+<p>This method should only be executed after the propensity score
+has been estimated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.stratify_s">
+<code class="descname">stratify_s</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.stratify_s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stratifies the sample based on propensity score using the
+bin selection procedure suggested by Imbens and Rubin (2015).</p>
+<p>The bin selection algorithm is based on a sequence of
+two-sample t tests performed on the log-odds ratio.</p>
+<p>This method should only be executed after the propensity score
+has been estimated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.trim">
+<code class="descname">trim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.trim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trims data based on propensity score to create a subsample with
+better covariate balance.</p>
+<p>The default cutoff value is set to 0.1. To set a custom cutoff
+value, modify the object attribute named cutoff directly.</p>
+<p>This method should only be executed after the propensity score
+has been estimated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="causalinference.causal.CausalModel.trim_s">
+<code class="descname">trim_s</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.trim_s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trims data based on propensity score using the cutoff
+selection algorithm suggested by Crump, Hotz, Imbens, and
+Mitnik (2009).</p>
+<p>This method should only be executed after the propensity score
+has been estimated.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.calc_sample_sizes">
+<code class="descclassname">causalinference.causal.</code><code class="descname">calc_sample_sizes</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.calc_sample_sizes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.calc_tstat">
+<code class="descclassname">causalinference.causal.</code><code class="descname">calc_tstat</code><span class="sig-paren">(</span><em>sample_c</em>, <em>sample_t</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.calc_tstat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.parse_lin_terms">
+<code class="descclassname">causalinference.causal.</code><code class="descname">parse_lin_terms</code><span class="sig-paren">(</span><em>K</em>, <em>lin</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.parse_lin_terms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.parse_qua_terms">
+<code class="descclassname">causalinference.causal.</code><code class="descname">parse_qua_terms</code><span class="sig-paren">(</span><em>K</em>, <em>qua</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.parse_qua_terms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.select_blocks">
+<code class="descclassname">causalinference.causal.</code><code class="descname">select_blocks</code><span class="sig-paren">(</span><em>pscore</em>, <em>logodds</em>, <em>D</em>, <em>K</em>, <em>p_low</em>, <em>p_high</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.select_blocks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.select_cutoff">
+<code class="descclassname">causalinference.causal.</code><code class="descname">select_cutoff</code><span class="sig-paren">(</span><em>g</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.select_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.split_equal_bins">
+<code class="descclassname">causalinference.causal.</code><code class="descname">split_equal_bins</code><span class="sig-paren">(</span><em>pscore</em>, <em>blocks</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.split_equal_bins" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="causalinference.causal.sumlessthan">
+<code class="descclassname">causalinference.causal.</code><code class="descname">sumlessthan</code><span class="sig-paren">(</span><em>g</em>, <em>sorted_g</em>, <em>cumsum</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.sumlessthan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-causalinference">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-causalinference" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">causalinference package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-causalinference.causal">causalinference.causal module</a></li>
+<li><a class="reference internal" href="#module-causalinference">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/causalinference.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Laurence Wong.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/causalinference.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
