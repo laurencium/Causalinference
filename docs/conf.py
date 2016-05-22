@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# CausalInference documentation build configuration file, created by
-# sphinx-quickstart on Fri May 20 18:53:32 2016.
+# Causalinference documentation build configuration file, created by
+# sphinx-quickstart on Sat May 21 18:45:25 2016.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -49,7 +49,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'CausalInference'
+project = u'Causalinference'
 copyright = u'2016, Laurence Wong'
 author = u'Laurence Wong'
 
@@ -124,7 +124,7 @@ html_theme = 'classic'
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
-#html_title = u'CausalInference v0.0.7'
+#html_title = u'Causalinference v0.0.7'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -206,7 +206,7 @@ html_show_sphinx = False
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'CausalInferencedoc'
+htmlhelp_basename = 'Causalinferencedoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -228,7 +228,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'CausalInference.tex', u'CausalInference Documentation',
+    (master_doc, 'Causalinference.tex', u'Causalinference Documentation',
      u'Laurence Wong', 'manual'),
 ]
 
@@ -258,7 +258,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'causalinference', u'CausalInference Documentation',
+    (master_doc, 'causalinference', u'Causalinference Documentation',
      [author], 1)
 ]
 
@@ -272,8 +272,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'CausalInference', u'CausalInference Documentation',
-     author, 'CausalInference', 'One line description of project.',
+    (master_doc, 'Causalinference', u'Causalinference Documentation',
+     author, 'Causalinference', 'One line description of project.',
      'Miscellaneous'),
 ]
 

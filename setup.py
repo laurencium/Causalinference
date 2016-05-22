@@ -4,9 +4,9 @@ except ImportError:
 	from distutils.core import setup
 
 config = {
-	'name': 'CausalInference',
+	'name': 'Causalinference',
 	'version': '0.0.7',
-	'url': 'https://github.com/laurencium/CausalInference',
+	'url': 'https://github.com/laurencium/causalinference',
 	'author': 'Laurence Wong',
 	'author_email': 'laurencium@gmail.com',
 	'packages': ['causalinference', 'causalinference.core',

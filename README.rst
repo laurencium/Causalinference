@@ -1,18 +1,21 @@
-CausalInference
+Causalinference
 ===============
 
-CausalInference is a Python implementation of statistical and econometric methods in the field variously known as Causal Inference, Program Evaluation, and Treatment Effect Analysis.
+*Causalinference* is a Python implementation of statistical and econometric methods in the field variously known as Causal Inference, Program Evaluation, and Treatment Effect Analysis.
 
-Work on CausalInference started in 2014 by Laurence Wong as a personal side project. It is distributed under the 3-Clause BSD license.
+Work on *Causalinference* started in 2014 by Laurence Wong as a personal side project. It is distributed under the 3-Clause BSD license.
+
+Important Links
+===============
 
 The most current development version is hosted on GitHub at:
 https://github.com/laurencium/causalinference
 
 Package source and binary distribution files are available from PyPi:
-https://pypi.python.org/pypi/CausalInference
+https://pypi.python.org/pypi/causalinference
 
-For an overview of the main features and uses of CausalInference, please refer to:
-https://github.com/laurencium/CausalInference/blob/master/docs/tex/vignette.pdf
+For an overview of the main features and uses of *Causalinference*, please refer to:
+https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf
 
 Main Features
 =============
@@ -32,7 +35,7 @@ Dependencies
 Installation
 ============
 
-CausalInference can be installed using ``pip``: ::
+*Causalinference* can be installed using ``pip``: ::
 
   $ pip install causalinference
 
@@ -48,5 +51,5 @@ The following illustrates how to create an instance of CausalModel: ::
   >>> Y, D, X = random_data()
   >>> causal = CausalModel(Y, D, X)
 
-Invoking ``help`` on ``causal`` at this point should return a comprehensive listing of all the causal analysis tools available in CausalInference.
+Invoking ``help`` on ``causal`` at this point should return a comprehensive listing of all the causal analysis tools available in *Causalinference*.
 
