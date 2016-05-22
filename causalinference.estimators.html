@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>causalinference.estimators package &mdash; Causalinference 0.0.7 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.7',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Causalinference 0.0.7 documentation" href="index.html" />
+    <link rel="up" title="causalinference package" href="causalinference.html" />
+    <link rel="next" title="causalinference.utils package" href="causalinference.utils.html" />
+    <link rel="prev" title="causalinference.core package" href="causalinference.core.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="causalinference.utils.html" title="causalinference.utils package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="causalinference.core.html" title="causalinference.core package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.0.7 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="causalinference.html" accesskey="U">causalinference package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="causalinference-estimators-package">
+<h1>causalinference.estimators package<a class="headerlink" href="#causalinference-estimators-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-causalinference.estimators.base">
+<span id="causalinference-estimators-base-module"></span><h2>causalinference.estimators.base module<a class="headerlink" href="#module-causalinference.estimators.base" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="causalinference.estimators.base.Estimator">
+<em class="property">class </em><code class="descclassname">causalinference.estimators.base.</code><code class="descname">Estimator</code><a class="headerlink" href="#causalinference.estimators.base.Estimator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="causalinference.core.html#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
+<p>Dictionary-like class containing treatment effect estimates.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="causalinference.estimators.base.Estimators">
+<em class="property">class </em><code class="descclassname">causalinference.estimators.base.</code><code class="descname">Estimators</code><a class="headerlink" href="#causalinference.estimators.base.Estimators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="causalinference.core.html#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
+<p>Dictionary-like class containing treatment effect estimates for each
+estimator used.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-causalinference.estimators.blocking">
+<span id="causalinference-estimators-blocking-module"></span><h2>causalinference.estimators.blocking module<a class="headerlink" href="#module-causalinference.estimators.blocking" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="causalinference.estimators.blocking.Blocking">
+<em class="property">class </em><code class="descclassname">causalinference.estimators.blocking.</code><code class="descname">Blocking</code><span class="sig-paren">(</span><em>strata</em>, <em>adj</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.blocking.Blocking" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
+<p>Dictionary-like class containing treatment effect estimates.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-causalinference.estimators.matching">
+<span id="causalinference-estimators-matching-module"></span><h2>causalinference.estimators.matching module<a class="headerlink" href="#module-causalinference.estimators.matching" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="causalinference.estimators.matching.Matching">
+<em class="property">class </em><code class="descclassname">causalinference.estimators.matching.</code><code class="descname">Matching</code><span class="sig-paren">(</span><em>data</em>, <em>W</em>, <em>m</em>, <em>bias_adj</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.matching.Matching" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
+<p>Dictionary-like class containing treatment effect estimates. Standard
+errors are only computed when needed.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-causalinference.estimators.ols">
+<span id="causalinference-estimators-ols-module"></span><h2>causalinference.estimators.ols module<a class="headerlink" href="#module-causalinference.estimators.ols" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="causalinference.estimators.ols.OLS">
+<em class="property">class </em><code class="descclassname">causalinference.estimators.ols.</code><code class="descname">OLS</code><span class="sig-paren">(</span><em>data</em>, <em>adj</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.ols.OLS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
+<p>Dictionary-like class containing treatment effect estimates.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-causalinference.estimators.weighting">
+<span id="causalinference-estimators-weighting-module"></span><h2>causalinference.estimators.weighting module<a class="headerlink" href="#module-causalinference.estimators.weighting" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="causalinference.estimators.weighting.Weighting">
+<em class="property">class </em><code class="descclassname">causalinference.estimators.weighting.</code><code class="descname">Weighting</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.estimators.weighting.Weighting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.estimators.base.Estimator" title="causalinference.estimators.base.Estimator"><code class="xref py py-class docutils literal"><span class="pre">causalinference.estimators.base.Estimator</span></code></a></p>
+<p>Dictionary-like class containing treatment effect estimates.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">causalinference.estimators package</a><ul>
+<li><a class="reference internal" href="#module-causalinference.estimators.base">causalinference.estimators.base module</a></li>
+<li><a class="reference internal" href="#module-causalinference.estimators.blocking">causalinference.estimators.blocking module</a></li>
+<li><a class="reference internal" href="#module-causalinference.estimators.matching">causalinference.estimators.matching module</a></li>
+<li><a class="reference internal" href="#module-causalinference.estimators.ols">causalinference.estimators.ols module</a></li>
+<li><a class="reference internal" href="#module-causalinference.estimators.weighting">causalinference.estimators.weighting module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="causalinference.core.html"
+                        title="previous chapter">causalinference.core package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="causalinference.utils.html"
+                        title="next chapter">causalinference.utils package</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="causalinference.utils.html" title="causalinference.utils package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="causalinference.core.html" title="causalinference.core package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.0.7 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="causalinference.html" >causalinference package</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Laurence Wong.
+    </div>
+  </body>
+</html>

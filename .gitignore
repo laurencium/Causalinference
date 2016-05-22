@@ -1,0 +1,14 @@
+*.DS_Store
+*.pyc
+*.swp
+*.log
+*.aux
+*.bbl
+*.blg
+*.bak
+dist
+*.egg-info
+ldw_exper.txt
+*example_data*
+interactive.py
+docs/_build
