@@ -66,7 +66,7 @@ def calc_ate(olscoef):
 
 def calc_atx(olscoef, meandiff):
 
-	K = (len(olscoef)-2) / 2
+	K = (len(olscoef)-2) // 2
 
 	return olscoef[1] + np.dot(meandiff, olscoef[2+K:])
 
@@ -81,7 +81,7 @@ def calc_cov(Z, u):
 
 def submatrix(cov):
 
-	K = (cov.shape[0]-2) / 2
+	K = (cov.shape[0]-2) // 2
 	submat = np.empty((1+K, 1+K))
 	submat[0,0] = cov[1,1]
 	submat[0,1:] = cov[1,2+K:]
