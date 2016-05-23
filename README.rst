@@ -1,21 +1,28 @@
-Causalinference
-===============
+Causal Inference in Python
+==========================
 
-*Causalinference* is a Python implementation of statistical and econometric methods in the field variously known as Causal Inference, Program Evaluation, and Treatment Effect Analysis.
+*Causal Inference in Python*, or *Causalinference* in short, is a Python implementation of the statistical and econometric methods in the field variously known as Causal Inference, Program Evaluation, and Treatment Effect Analysis.
 
 Work on *Causalinference* started in 2014 by Laurence Wong as a personal side project. It is distributed under the 3-Clause BSD license.
 
 Important Links
 ===============
 
-The most current development version is hosted on GitHub at:
-https://github.com/laurencium/causalinference
+The official website for *Causalinference* is
 
-Package source and binary distribution files are available from PyPi:
-https://pypi.python.org/pypi/causalinference
+  http://causalinferenceinpython.org
 
-For an overview of the main features and uses of *Causalinference*, please refer to:
-https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf
+The most current development version is hosted on GitHub at
+
+  https://github.com/laurencium/causalinference
+
+Package source and binary distribution files are available from PyPi at
+
+  https://pypi.python.org/pypi/causalinference
+
+For an overview of the main features and uses of *Causalinference*, please refer to
+
+  https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf
 
 Main Features
 =============
@@ -39,7 +46,7 @@ Installation
 
   $ pip install causalinference
 
-and will run provided the necessary dependencies are in place.
+For help on setting up Pip, NumPy, and SciPy on Macs, check out this excellent `guide <http://www.sourabhbajaj.com/mac-setup>`_.
 
 Minimal Example
 ===============
