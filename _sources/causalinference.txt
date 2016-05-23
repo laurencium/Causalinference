@@ -1,6 +1,8 @@
 causalinference package
 =======================
 
+This package contains the ``CausalModel`` class, the main interface for assessing the tools of *Causalinference*.
+
 CausalModel
 -----------
 
