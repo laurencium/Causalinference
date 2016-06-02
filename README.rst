@@ -1,7 +1,7 @@
 Causal Inference in Python
 ==========================
 
-*Causal Inference in Python*, or *Causalinference* in short, is a Python implementation of the statistical and econometric methods in the field variously known as Causal Inference, Program Evaluation, and Treatment Effect Analysis.
+*Causal Inference in Python*, or *Causalinference* in short, is a software package that implements various statistical and econometric methods used in the field variously known as Causal Inference, Program Evaluation, or Treatment Effect Analysis.
 
 Work on *Causalinference* started in 2014 by Laurence Wong as a personal side project. It is distributed under the 3-Clause BSD license.
 
