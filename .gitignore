@@ -6,9 +6,8 @@
 *.bbl
 *.blg
 *.bak
-dist
 *.egg-info
-ldw_exper.txt
-*example_data*
+*.R
+dist
 interactive.py
 docs/_build

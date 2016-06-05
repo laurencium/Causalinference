@@ -108,3 +108,23 @@ def random_data(N=5000, K=3, unobservables=False, **kwargs):
 	else:
 		return Y, D, X
 
+
+def read_tsv(filepath):
+
+	data = np.loadtxt(filepath, delimiter='\t', skiprows=1)
+	Y = data[:,0]
+	D = data[:,1]
+	X = data[:,2:]
+
+	return Y, D, X
+
+
+def vignette_data():
+
+	return read_tsv('causalinference/utils/vignette_data.txt')
+
+
+def lalonde_data():
+
+	return read_tsv('causalinference/utils/lalonde_data.txt')
+
