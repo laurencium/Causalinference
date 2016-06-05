@@ -104,7 +104,7 @@ The main object of interest in \textit{Causalinference} is the class \texttt{Cau
   >>> causal = CausalModel(Y, D, X)
 \end{verbatim}
 
-Once an instance of the class \texttt{CausalModel} has been created, it will contain a number of attributes and methods that are relevant for conducting a causal analysis. Tables \ref{tab.a} and \ref{tab.b} contain a brief description of these attributes and methods.
+Once an instance of the class \texttt{CausalModel} has been created, it will contain a number of attributes and methods that are relevant for conducting causal analyses. Tables \ref{tab.a} and \ref{tab.b} contain a brief description of these attributes and methods.
 
 \texttt{CausalModel} is \textit{stateful}. As we employ some of the methods to be discussed subsequently, the instance \texttt{causal} will mutate, with new data being added or existing data being modified or dropped. Running
 \begin{verbatim}
@@ -119,7 +119,7 @@ will return \texttt{causal} to its initial state.
 
 Once \texttt{CausalModel} has been instantiated, basic summary statistics will be computed and stored in the attribute \texttt{summary\_stats}. We can display it by running:
 \begin{verbatim}
-  >>> print causal.summary_stats
+  >>> print(causal.summary_stats)
 \end{verbatim}
 \begin{verbatim}
   Summary Statistics
@@ -168,7 +168,7 @@ By default, the method \texttt{est\_via\_ols} will run the following regression:
 To inspect any treatment effect estimates produced, we can simply invoke \texttt{print} on the attribute \texttt{estimates}, as in below:
 \begin{verbatim}
   >>> causal.est_via_ols()
-  >>> print causal.estimates
+  >>> print(causal.estimates)
 \end{verbatim}
 \begin{verbatim}
   Treatment Effect Estimates: OLS
@@ -198,7 +198,7 @@ In the following, we run \texttt{est\_propensity\_s} and display the estimation 
 
 \begin{verbatim}
   >>> causal.est_propensity_s()
-  >>> print causal.propensity
+  >>> print(causal.propensity)
 \end{verbatim}
 \begin{verbatim}
   Estimated Parameters of Propensity Score
@@ -244,7 +244,7 @@ The complexity of this cutoff selection algorithm is only $O(N \log N)$, so in p
 
 If we now print \texttt{summary\_stats} again to view the summary statistics of the trimmed sample, we see that the normalized differences in average covariates has fallen noticeably.
 \begin{verbatim}
-  >>> print causal.summary_stats
+  >>> print(causal.summary_stats)
 \end{verbatim}
 \begin{verbatim}
   Summary Statistics
@@ -273,7 +273,7 @@ With the propensity score estimated, one may wish to stratify the sample into bl
 To inspect the results of the stratification, we can invoke \texttt{print} on the attribute \texttt{strata} to display some summary statistics, as follows:
 \begin{verbatim}
   >>> causal.stratify_s()
-  >>> print causal.strata
+  >>> print(causal.strata)
 \end{verbatim}
 \begin{verbatim}
   Stratification Summary
@@ -321,7 +321,7 @@ In the following we invoke each of the four estimators (including least squares,
   >>> causal.est_via_weighting()
   >>> causal.est_via_blocking()
   >>> causal.est_via_matching(bias_adj=True)
-  >>> print causal.estimates
+  >>> print(causal.estimates)
 \end{verbatim}
 \begin{verbatim}
   Treatment Effect Estimates: OLS
