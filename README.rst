@@ -24,6 +24,10 @@ For an overview of the main features and uses of *Causalinference*, please refer
 
   https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf
 
+A blog dedicated to providing a more detailed walkthrough of *Causalinference* and the econometric theory behind it can be found at
+
+  http://laurencewong.co/software/
+
 Main Features
 =============
 
