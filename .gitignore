@@ -10,4 +10,4 @@
 dist
 *.egg-info
 interactive.py
-docs/_build
+docs
