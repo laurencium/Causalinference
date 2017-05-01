@@ -26,7 +26,7 @@ For an overview of the main features and uses of *Causalinference*, please refer
 
 A blog dedicated to providing a more detailed walkthrough of *Causalinference* and the econometric theory behind it can be found at
 
-  http://laurencewong.co/software/
+  http://laurence-wong.com/software/
 
 Main Features
 =============

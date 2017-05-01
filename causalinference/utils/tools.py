@@ -1,6 +1,10 @@
 import numpy as np
 from scipy.stats import norm, logistic
 
+from os import path
+lalonde_file = path.join(path.dirname(__file__), 'lalonde_data.txt')
+vignette_file = path.join(path.dirname(__file__), 'vignette_data.txt')
+
 
 def convert_to_formatting(entry_types):
 
@@ -121,10 +125,10 @@ def read_tsv(filepath):
 
 def vignette_data():
 
-	return read_tsv('causalinference/utils/vignette_data.txt')
+	return read_tsv(vignette_file)
 
 
 def lalonde_data():
 
-	return read_tsv('causalinference/utils/lalonde_data.txt')
+	return read_tsv(lalonde_file)
 
