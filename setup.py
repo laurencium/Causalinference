@@ -5,7 +5,7 @@ except ImportError:
 
 config = {
 	'name': 'CausalInference',
-	'version': '0.1.2',
+	'version': '0.1.3',
 	'url': 'https://github.com/laurencium/causalinference',
 	'author': 'Laurence Wong',
 	'author_email': 'laurencium@gmail.com',
@@ -15,7 +15,7 @@ config = {
 	'package_data': {'causalinference': ['utils/*.txt']},
 	'license': 'LICENSE.txt',
 	'description': 'Causal Inference in Python',
-	'long_description': open('README.rst').read()
+	'long_description': open('README.rst').read(),
 }
 
 setup(**config)

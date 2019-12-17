@@ -10,7 +10,7 @@ Important Links
 
 The official website for *Causalinference* is
 
-  http://causalinferenceinpython.org
+  https://causalinferenceinpython.org
 
 The most current development version is hosted on GitHub at
 
@@ -26,7 +26,7 @@ For an overview of the main features and uses of *Causalinference*, please refer
 
 A blog dedicated to providing a more detailed walkthrough of *Causalinference* and the econometric theory behind it can be found at
 
-  http://laurence-wong.com/software/
+  https://laurencewong.com/software/
 
 Main Features
 =============
