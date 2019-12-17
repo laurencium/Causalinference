@@ -1,32 +1,24 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Causal Inference in Python &mdash; Causalinference 0.1.2 documentation</title>
-    
+    <meta charset="utf-8" />
+    <title>Causal Inference in Python &#8212; Causalinference 0.1.3 documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.1.2',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Causalinference 0.1.2 documentation" href="#" />
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="causalinference package" href="causalinference.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -36,7 +28,7 @@
         <li class="right" >
           <a href="causalinference.html" title="causalinference package"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">Causalinference 0.1.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="#">Causalinference 0.1.3 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -53,41 +45,46 @@
 <h2>Important Links<a class="headerlink" href="#important-links" title="Permalink to this headline">¶</a></h2>
 <p>The official website for <em>Causalinference</em> is</p>
 <blockquote>
-<div><a class="reference external" href="http://causalinferenceinpython.org">http://causalinferenceinpython.org</a></div></blockquote>
+<div><p><a class="reference external" href="https://causalinferenceinpython.org">https://causalinferenceinpython.org</a></p>
+</div></blockquote>
 <p>The most current development version is hosted on GitHub at</p>
 <blockquote>
-<div><a class="reference external" href="https://github.com/laurencium/causalinference">https://github.com/laurencium/causalinference</a></div></blockquote>
+<div><p><a class="reference external" href="https://github.com/laurencium/causalinference">https://github.com/laurencium/causalinference</a></p>
+</div></blockquote>
 <p>Package source and binary distribution files are available from PyPi at</p>
 <blockquote>
-<div><a class="reference external" href="https://pypi.python.org/pypi/causalinference">https://pypi.python.org/pypi/causalinference</a></div></blockquote>
+<div><p><a class="reference external" href="https://pypi.python.org/pypi/causalinference">https://pypi.python.org/pypi/causalinference</a></p>
+</div></blockquote>
 <p>For an overview of the main features and uses of <em>Causalinference</em>, please refer to</p>
 <blockquote>
-<div><a class="reference external" href="https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf">https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf</a></div></blockquote>
+<div><p><a class="reference external" href="https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf">https://github.com/laurencium/causalinference/blob/master/docs/tex/vignette.pdf</a></p>
+</div></blockquote>
 <p>A blog dedicated to providing a more detailed walkthrough of <em>Causalinference</em> and the econometric theory behind it can be found at</p>
 <blockquote>
-<div><a class="reference external" href="http://laurence-wong.com/software/">http://laurence-wong.com/software/</a></div></blockquote>
+<div><p><a class="reference external" href="https://laurencewong.com/software/">https://laurencewong.com/software/</a></p>
+</div></blockquote>
 </div>
 <div class="section" id="main-features">
 <h2>Main Features<a class="headerlink" href="#main-features" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Assessment of overlap in covariate distributions</li>
-<li>Estimation of propensity score</li>
-<li>Improvement of covariate balance through trimming</li>
-<li>Subclassification on propensity score</li>
-<li>Estimation of treatment effects via matching, blocking, weighting, and least squares</li>
+<li><p>Assessment of overlap in covariate distributions</p></li>
+<li><p>Estimation of propensity score</p></li>
+<li><p>Improvement of covariate balance through trimming</p></li>
+<li><p>Subclassification on propensity score</p></li>
+<li><p>Estimation of treatment effects via matching, blocking, weighting, and least squares</p></li>
 </ul>
 </div>
 <div class="section" id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>NumPy: 1.8.2 or higher</li>
-<li>SciPy: 0.13.3 or higher</li>
+<li><p>NumPy: 1.8.2 or higher</p></li>
+<li><p>SciPy: 0.13.3 or higher</p></li>
 </ul>
 </div>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p><em>Causalinference</em> can be installed using <code class="docutils literal"><span class="pre">pip</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ pip install causalinference
+<p><em>Causalinference</em> can be installed using <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install causalinference
 </pre></div>
 </div>
 <p>For help on setting up Pip, NumPy, and SciPy on Macs, check out this excellent <a class="reference external" href="http://www.sourabhbajaj.com/mac-setup">guide</a>.</p>
@@ -95,13 +92,13 @@
 <div class="section" id="minimal-example">
 <h2>Minimal Example<a class="headerlink" href="#minimal-example" title="Permalink to this headline">¶</a></h2>
 <p>The following illustrates how to create an instance of CausalModel:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">causalinference</span> <span class="k">import</span> <span class="n">CausalModel</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">causalinference</span> <span class="k">import</span> <span class="n">CausalModel</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">causalinference.utils</span> <span class="k">import</span> <span class="n">random_data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Y</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">random_data</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">causal</span> <span class="o">=</span> <span class="n">CausalModel</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Invoking <code class="docutils literal"><span class="pre">help</span></code> on <code class="docutils literal"><span class="pre">causal</span></code> at this point should return a comprehensive listing of all the causal analysis tools available in <em>Causalinference</em>.</p>
+<p>Invoking <code class="docutils literal notranslate"><span class="pre">help</span></code> on <code class="docutils literal notranslate"><span class="pre">causal</span></code> at this point should return a comprehensive listing of all the causal analysis tools available in <em>Causalinference</em>.</p>
 </div>
 <div class="section" id="detailed-documentation">
 <h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline">¶</a></h2>
@@ -123,8 +120,8 @@
 <div class="section" id="site-navigation">
 <h2>Site Navigation<a class="headerlink" href="#site-navigation" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
 </div>
 </div>
@@ -135,7 +132,7 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table Of Contents</a></h3>
+  <h3><a href="#">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Causal Inference in Python</a><ul>
 <li><a class="reference internal" href="#important-links">Important Links</a></li>
@@ -153,13 +150,13 @@
   <p class="topless"><a href="causalinference.html"
                         title="next chapter">causalinference package</a></p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -175,12 +172,12 @@
         <li class="right" >
           <a href="causalinference.html" title="causalinference package"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">Causalinference 0.1.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="#">Causalinference 0.1.3 documentation</a> &#187;</li> 
       </ul>
     </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2016, Laurence Wong.
+        &#169; Copyright 2016, Laurence Wong.
     </div>
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
