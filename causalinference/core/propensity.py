@@ -104,8 +104,10 @@ def form_matrix(X, lin, qua):
 	mat[:, 0] = 1  # constant term
 
 	current_col = 1
+	if lin == 'all':
+		lin = list(range(len(X.columns)))
 	if lin:
-		mat[:, current_col:current_col+len(lin)] = X[:, lin]
+		mat[:, current_col:current_col+len(lin)] = X[X.columns[lin]]
 		current_col += len(lin)
 	for term in qua:  # qua is a list of tuples of column numbers
 		mat[:, current_col] = X[:, term[0]] * X[:, term[1]]
