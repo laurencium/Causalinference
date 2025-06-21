@@ -1,26 +1,25 @@
-
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>causalinference package &#8212; Causalinference 0.1.3 documentation</title>
-    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
     
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script src="_static/documentation_options.js?v=360bc84d"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     
-    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="icon" href="_static/favicon.png"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="causalinference.core package" href="causalinference.core.html" />
     <link rel="prev" title="Causal Inference in Python" href="index.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -32,7 +31,8 @@
         <li class="right" >
           <a href="index.html" title="Causal Inference in Python"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.1.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.1.3 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">causalinference package</a></li> 
       </ul>
     </div>  
 
@@ -41,33 +41,33 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="causalinference-package">
-<h1>causalinference package<a class="headerlink" href="#causalinference-package" title="Permalink to this headline">¶</a></h1>
+  <section id="causalinference-package">
+<h1>causalinference package<a class="headerlink" href="#causalinference-package" title="Link to this heading">¶</a></h1>
 <p>This package contains the <code class="docutils literal notranslate"><span class="pre">CausalModel</span></code> class, the main interface for assessing the tools of <em>Causalinference</em>.</p>
-<div class="section" id="module-causalinference.causal">
-<span id="causalmodel"></span><h2>CausalModel<a class="headerlink" href="#module-causalinference.causal" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="causalinference.causal.CausalModel">
-<em class="property">class </em><code class="sig-prename descclassname">causalinference.causal.</code><code class="sig-name descname">CausalModel</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">D</em>, <em class="sig-param">X</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel" title="Permalink to this definition">¶</a></dt>
+<section id="module-causalinference.causal">
+<span id="causalmodel"></span><h2>CausalModel<a class="headerlink" href="#module-causalinference.causal" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causalinference.causal.</span></span><span class="sig-name descname"><span class="pre">CausalModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that provides the main tools of Causal Inference.</p>
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.reset">
-<code class="sig-name descname">reset</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.reset" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.reset" title="Link to this definition">¶</a></dt>
 <dd><p>Reinitializes data to original inputs, and drops any estimated
 results.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.est_propensity">
-<code class="sig-name descname">est_propensity</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">lin='all'</em>, <em class="sig-param">qua=None</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_propensity" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.est_propensity">
+<span class="sig-name descname"><span class="pre">est_propensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qua</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_propensity" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates the propensity scores given list of covariates to
 include linearly or quadratically.</p>
 <p>The propensity score is the conditional probability of
 receiving the treatment given the observed covariates.
 Estimation is done via a logistic regression.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>lin: string or list, optional</strong></dt><dd><p>Column numbers (zero-based) of variables of
 the original covariate matrix X to include
@@ -86,9 +86,9 @@ quadratic terms.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.est_propensity_s">
-<code class="sig-name descname">est_propensity_s</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">lin_B=None</em>, <em class="sig-param">C_lin=1</em>, <em class="sig-param">C_qua=2.71</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_propensity_s" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.est_propensity_s">
+<span class="sig-name descname"><span class="pre">est_propensity_s</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lin_B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_lin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_qua</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.71</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_propensity_s" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates the propensity score with covariates selected using
 the algorithm suggested by <a class="reference internal" href="#r3e0c6e5d7cd4-1" id="id1">[1]</a>.</p>
 <p>The propensity score is the conditional probability of
@@ -97,7 +97,7 @@ Estimation is done via a logistic regression.</p>
 <p>The covariate selection algorithm is based on a sequence
 of likelihood ratio tests.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>lin_B: list, optional</strong></dt><dd><p>Column numbers (zero-based) of variables of
 the original covariate matrix X to include
@@ -118,18 +118,20 @@ should be included. Defaults to 2.71 as in
 </dd>
 </dl>
 <p class="rubric">References</p>
-<dl class="citation">
-<dt class="label" id="r3e0c6e5d7cd4-1"><span class="brackets">1</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id2">2</a>,<a href="#id3">3</a>)</span></dt>
-<dd><p>Imbens, G. &amp; Rubin, D. (2015). Causal Inference in
+<div role="list" class="citation-list">
+<div class="citation" id="r3e0c6e5d7cd4-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>,<a role="doc-backlink" href="#id3">3</a>)</span>
+<p>Imbens, G. &amp; Rubin, D. (2015). Causal Inference in
 Statistics, Social, and Biomedical Sciences: An
 Introduction.</p>
-</dd>
-</dl>
+</div>
+</div>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.trim">
-<code class="sig-name descname">trim</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.trim" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.trim">
+<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.trim" title="Link to this definition">¶</a></dt>
 <dd><p>Trims data based on propensity score to create a subsample with
 better covariate balance.</p>
 <p>The default cutoff value is set to 0.1. To set a custom cutoff
@@ -138,26 +140,27 @@ value, modify the object attribute named cutoff directly.</p>
 has been estimated.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.trim_s">
-<code class="sig-name descname">trim_s</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.trim_s" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.trim_s">
+<span class="sig-name descname"><span class="pre">trim_s</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.trim_s" title="Link to this definition">¶</a></dt>
 <dd><p>Trims data based on propensity score using the cutoff
 selection algorithm suggested by <a class="reference internal" href="#r7b07654b8f44-1" id="id5">[1]</a>.</p>
 <p>This method should only be executed after the propensity score
 has been estimated.</p>
 <p class="rubric">References</p>
-<dl class="citation">
-<dt class="label" id="r7b07654b8f44-1"><span class="brackets"><a class="fn-backref" href="#id5">1</a></span></dt>
-<dd><p>Crump, R., Hotz, V., Imbens, G., &amp; Mitnik, O. (2009).
+<div role="list" class="citation-list">
+<div class="citation" id="r7b07654b8f44-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id5">1</a><span class="fn-bracket">]</span></span>
+<p>Crump, R., Hotz, V., Imbens, G., &amp; Mitnik, O. (2009).
 Dealing with Limited Overlap in Estimation of
 Average Treatment Effects. Biometrika, 96, 187-199.</p>
-</dd>
-</dl>
+</div>
+</div>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.stratify">
-<code class="sig-name descname">stratify</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.stratify" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.stratify">
+<span class="sig-name descname"><span class="pre">stratify</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.stratify" title="Link to this definition">¶</a></dt>
 <dd><p>Stratifies the sample based on propensity score.</p>
 <p>By default the sample is divided into five equal-sized bins.
 The number of bins can be set by modifying the object
@@ -168,9 +171,9 @@ between 0 and 1 indicating the bin boundaries.</p>
 has been estimated.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.stratify_s">
-<code class="sig-name descname">stratify_s</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.stratify_s" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.stratify_s">
+<span class="sig-name descname"><span class="pre">stratify_s</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.stratify_s" title="Link to this definition">¶</a></dt>
 <dd><p>Stratifies the sample based on propensity score using the
 bin selection procedure suggested by <a class="reference internal" href="#r744aad7e8854-1" id="id7">[1]</a>.</p>
 <p>The bin selection algorithm is based on a sequence of
@@ -178,21 +181,22 @@ two-sample t tests performed on the log-odds ratio.</p>
 <p>This method should only be executed after the propensity score
 has been estimated.</p>
 <p class="rubric">References</p>
-<dl class="citation">
-<dt class="label" id="r744aad7e8854-1"><span class="brackets"><a class="fn-backref" href="#id7">1</a></span></dt>
-<dd><p>Imbens, G. &amp; Rubin, D. (2015). Causal Inference in
+<div role="list" class="citation-list">
+<div class="citation" id="r744aad7e8854-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id7">1</a><span class="fn-bracket">]</span></span>
+<p>Imbens, G. &amp; Rubin, D. (2015). Causal Inference in
 Statistics, Social, and Biomedical Sciences: An
 Introduction.</p>
-</dd>
-</dl>
+</div>
+</div>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.est_via_ols">
-<code class="sig-name descname">est_via_ols</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">adj=2</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_ols" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.est_via_ols">
+<span class="sig-name descname"><span class="pre">est_via_ols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_ols" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates average treatment effects using least squares.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>adj: int (0, 1, or 2)</strong></dt><dd><p>Indicates how covariate adjustments are to be
 performed. Set adj = 0 to not include any
@@ -206,15 +210,15 @@ terms between D and X. Defaults to 2.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.est_via_blocking">
-<code class="sig-name descname">est_via_blocking</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">adj=1</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_blocking" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.est_via_blocking">
+<span class="sig-name descname"><span class="pre">est_via_blocking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_blocking" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates average treatment effects using regression within
 blocks.</p>
 <p>This method should only be executed after the sample has been
 stratified.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>adj: int (0, 1, or 2)</strong></dt><dd><p>Indicates how covariate adjustments are to be
 performed for each within-bin regression.
@@ -229,23 +233,23 @@ D and X. Defaults to 1.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.est_via_weighting">
-<code class="sig-name descname">est_via_weighting</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_weighting" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.est_via_weighting">
+<span class="sig-name descname"><span class="pre">est_via_weighting</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_weighting" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates average treatment effects using doubly-robust
 version of the Horvitz-Thompson weighting estimator.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="causalinference.causal.CausalModel.est_via_matching">
-<code class="sig-name descname">est_via_matching</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">weights='inv'</em>, <em class="sig-param">matches=1</em>, <em class="sig-param">bias_adj=False</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_matching" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="causalinference.causal.CausalModel.est_via_matching">
+<span class="sig-name descname"><span class="pre">est_via_matching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_adj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.causal.CausalModel.est_via_matching" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates average treatment effects using nearest-
 neighborhood matching.</p>
 <p>Matching is done with replacement. Method supports multiple
 matching. Correcting bias that arise due to imperfect matches
 is also supported. For details on methodology, see <a class="reference internal" href="#rbbc819fcdab8-1" id="id9">[1]</a>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>weights: str or positive definite square matrix</strong></dt><dd><p>Specifies weighting matrix used in computing
 distance measures. Defaults to string ‘inv’,
@@ -262,20 +266,21 @@ attempted.</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
-<dl class="citation">
-<dt class="label" id="rbbc819fcdab8-1"><span class="brackets"><a class="fn-backref" href="#id9">1</a></span></dt>
-<dd><p>Imbens, G. &amp; Rubin, D. (2015). Causal Inference in
+<div role="list" class="citation-list">
+<div class="citation" id="rbbc819fcdab8-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id9">1</a><span class="fn-bracket">]</span></span>
+<p>Imbens, G. &amp; Rubin, D. (2015). Causal Inference in
 Statistics, Social, and Biomedical Sciences: An
 Introduction.</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
-<div class="section" id="subpackages">
-<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="causalinference.core.html">causalinference.core package</a></li>
@@ -283,45 +288,68 @@ Introduction.</p>
 <li class="toctree-l1"><a class="reference internal" href="causalinference.utils.html">causalinference.utils package</a></li>
 </ul>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">causalinference package</a><ul>
-<li><a class="reference internal" href="#module-causalinference.causal">CausalModel</a></li>
+<li><a class="reference internal" href="#module-causalinference.causal">CausalModel</a><ul>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel"><code class="docutils literal notranslate"><span class="pre">CausalModel</span></code></a><ul>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.reset"><code class="docutils literal notranslate"><span class="pre">CausalModel.reset()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.est_propensity"><code class="docutils literal notranslate"><span class="pre">CausalModel.est_propensity()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.est_propensity_s"><code class="docutils literal notranslate"><span class="pre">CausalModel.est_propensity_s()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.trim"><code class="docutils literal notranslate"><span class="pre">CausalModel.trim()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.trim_s"><code class="docutils literal notranslate"><span class="pre">CausalModel.trim_s()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.stratify"><code class="docutils literal notranslate"><span class="pre">CausalModel.stratify()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.stratify_s"><code class="docutils literal notranslate"><span class="pre">CausalModel.stratify_s()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.est_via_ols"><code class="docutils literal notranslate"><span class="pre">CausalModel.est_via_ols()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.est_via_blocking"><code class="docutils literal notranslate"><span class="pre">CausalModel.est_via_blocking()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.est_via_weighting"><code class="docutils literal notranslate"><span class="pre">CausalModel.est_via_weighting()</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.causal.CausalModel.est_via_matching"><code class="docutils literal notranslate"><span class="pre">CausalModel.est_via_matching()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 </ul>
 </li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">Causal Inference in Python</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="causalinference.core.html"
-                        title="next chapter">causalinference.core package</a></p>
-<div id="searchbox" style="display: none" role="search">
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">Causal Inference in Python</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="causalinference.core.html"
+                          title="next chapter">causalinference.core package</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -333,12 +361,13 @@ Introduction.</p>
         <li class="right" >
           <a href="index.html" title="Causal Inference in Python"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.1.3 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.1.3 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">causalinference package</a></li> 
       </ul>
     </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016, Laurence Wong.
+    &#169; Copyright 2016, Laurence Wong.
     </div>
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");

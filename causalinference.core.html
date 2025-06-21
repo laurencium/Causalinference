@@ -1,26 +1,25 @@
-
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>causalinference.core package &#8212; Causalinference 0.1.3 documentation</title>
-    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
     
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script src="_static/documentation_options.js?v=360bc84d"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     
-    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="icon" href="_static/favicon.png"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="causalinference.estimators package" href="causalinference.estimators.html" />
     <link rel="prev" title="causalinference package" href="causalinference.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -33,7 +32,8 @@
           <a href="causalinference.html" title="causalinference package"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.1.3 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="causalinference.html" accesskey="U">causalinference package</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="causalinference.html" accesskey="U">causalinference package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">causalinference.core package</a></li> 
       </ul>
     </div>  
 
@@ -42,31 +42,31 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="causalinference-core-package">
-<h1>causalinference.core package<a class="headerlink" href="#causalinference-core-package" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-causalinference.core.data">
-<span id="causalinference-core-data-module"></span><h2>causalinference.core.data module<a class="headerlink" href="#module-causalinference.core.data" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="causalinference.core.data.Dict">
-<em class="property">class </em><code class="sig-prename descclassname">causalinference.core.data.</code><code class="sig-name descname">Dict</code><a class="headerlink" href="#causalinference.core.data.Dict" title="Permalink to this definition">¶</a></dt>
+  <section id="causalinference-core-package">
+<h1>causalinference.core package<a class="headerlink" href="#causalinference-core-package" title="Link to this heading">¶</a></h1>
+<section id="module-causalinference.core.data">
+<span id="causalinference-core-data-module"></span><h2>causalinference.core.data module<a class="headerlink" href="#module-causalinference.core.data" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causalinference.core.data.Dict">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causalinference.core.data.</span></span><span class="sig-name descname"><span class="pre">Dict</span></span><a class="headerlink" href="#causalinference.core.data.Dict" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Dictionary-mimicking class.</p>
 </dd></dl>
 
-<dl class="class">
-<dt id="causalinference.core.data.Data">
-<em class="property">class </em><code class="sig-prename descclassname">causalinference.core.data.</code><code class="sig-name descname">Data</code><span class="sig-paren">(</span><em class="sig-param">outcome</em>, <em class="sig-param">treatment</em>, <em class="sig-param">covariates</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.Data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal notranslate"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="causalinference.core.data.Data">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causalinference.core.data.</span></span><span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outcome</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariates</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.data.Data" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a></p>
 <p>Dictionary-like class containing basic data.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="module-causalinference.core.propensity">
-<span id="causalinference-core-propensity-module"></span><h2>causalinference.core.propensity module<a class="headerlink" href="#module-causalinference.core.propensity" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="causalinference.core.propensity.Propensity">
-<em class="property">class </em><code class="sig-prename descclassname">causalinference.core.propensity.</code><code class="sig-name descname">Propensity</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">lin</em>, <em class="sig-param">qua</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.Propensity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal notranslate"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
+</section>
+<section id="module-causalinference.core.propensity">
+<span id="causalinference-core-propensity-module"></span><h2>causalinference.core.propensity module<a class="headerlink" href="#module-causalinference.core.propensity" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causalinference.core.propensity.Propensity">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causalinference.core.propensity.</span></span><span class="sig-name descname"><span class="pre">Propensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qua</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.Propensity" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a></p>
 <p>Dictionary-like class containing propensity score data.</p>
 <p>Propensity score related data includes estimated logistic regression
 coefficients, maximized log-likelihood, predicted propensity scores,
@@ -74,10 +74,10 @@ and lists of the linear and quadratic terms that are included in the
 logistic regression.</p>
 </dd></dl>
 
-<dl class="class">
-<dt id="causalinference.core.propensity.PropensitySelect">
-<em class="property">class </em><code class="sig-prename descclassname">causalinference.core.propensity.</code><code class="sig-name descname">PropensitySelect</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">lin_B</em>, <em class="sig-param">C_lin</em>, <em class="sig-param">C_qua</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.PropensitySelect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#causalinference.core.propensity.Propensity" title="causalinference.core.propensity.Propensity"><code class="xref py py-class docutils literal notranslate"><span class="pre">causalinference.core.propensity.Propensity</span></code></a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="causalinference.core.propensity.PropensitySelect">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causalinference.core.propensity.</span></span><span class="sig-name descname"><span class="pre">PropensitySelect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lin_B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_lin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_qua</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.propensity.PropensitySelect" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.core.propensity.Propensity" title="causalinference.core.propensity.Propensity"><code class="xref py py-class docutils literal notranslate"><span class="pre">Propensity</span></code></a></p>
 <p>Dictionary-like class containing propensity score data.</p>
 <p>Propensity score related data includes estimated logistic regression
 coefficients, maximized log-likelihood, predicted propensity scores,
@@ -85,23 +85,23 @@ and lists of the linear and quadratic terms that are included in the
 logistic regression.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="module-causalinference.core.strata">
-<span id="causalinference-core-strata-module"></span><h2>causalinference.core.strata module<a class="headerlink" href="#module-causalinference.core.strata" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="causalinference.core.strata.Strata">
-<em class="property">class </em><code class="sig-prename descclassname">causalinference.core.strata.</code><code class="sig-name descname">Strata</code><span class="sig-paren">(</span><em class="sig-param">strata</em>, <em class="sig-param">subsets</em>, <em class="sig-param">pscore</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.strata.Strata" title="Permalink to this definition">¶</a></dt>
+</section>
+<section id="module-causalinference.core.strata">
+<span id="causalinference-core-strata-module"></span><h2>causalinference.core.strata module<a class="headerlink" href="#module-causalinference.core.strata" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causalinference.core.strata.Strata">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causalinference.core.strata.</span></span><span class="sig-name descname"><span class="pre">Strata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pscore</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.strata.Strata" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>List-like object containing the stratified propensity bins.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="module-causalinference.core.summary">
-<span id="causalinference-core-summary-module"></span><h2>causalinference.core.summary module<a class="headerlink" href="#module-causalinference.core.summary" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="causalinference.core.summary.Summary">
-<em class="property">class </em><code class="sig-prename descclassname">causalinference.core.summary.</code><code class="sig-name descname">Summary</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.summary.Summary" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal notranslate"><span class="pre">causalinference.core.data.Dict</span></code></a></p>
+</section>
+<section id="module-causalinference.core.summary">
+<span id="causalinference-core-summary-module"></span><h2>causalinference.core.summary module<a class="headerlink" href="#module-causalinference.core.summary" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causalinference.core.summary.Summary">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causalinference.core.summary.</span></span><span class="sig-name descname"><span class="pre">Summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#causalinference.core.summary.Summary" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causalinference.core.data.Dict" title="causalinference.core.data.Dict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a></p>
 <p>Dictionary-like class containing summary statistics for input data.</p>
 <p>One of the summary statistics is the normalized difference between
 covariates. Large values indicate that simple linear adjustment methods
@@ -109,47 +109,68 @@ may not be adequate for removing biases that are associated with
 differences in covariates.</p>
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">causalinference.core package</a><ul>
-<li><a class="reference internal" href="#module-causalinference.core.data">causalinference.core.data module</a></li>
-<li><a class="reference internal" href="#module-causalinference.core.propensity">causalinference.core.propensity module</a></li>
-<li><a class="reference internal" href="#module-causalinference.core.strata">causalinference.core.strata module</a></li>
-<li><a class="reference internal" href="#module-causalinference.core.summary">causalinference.core.summary module</a></li>
+<li><a class="reference internal" href="#module-causalinference.core.data">causalinference.core.data module</a><ul>
+<li><a class="reference internal" href="#causalinference.core.data.Dict"><code class="docutils literal notranslate"><span class="pre">Dict</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.core.data.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causalinference.core.propensity">causalinference.core.propensity module</a><ul>
+<li><a class="reference internal" href="#causalinference.core.propensity.Propensity"><code class="docutils literal notranslate"><span class="pre">Propensity</span></code></a></li>
+<li><a class="reference internal" href="#causalinference.core.propensity.PropensitySelect"><code class="docutils literal notranslate"><span class="pre">PropensitySelect</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causalinference.core.strata">causalinference.core.strata module</a><ul>
+<li><a class="reference internal" href="#causalinference.core.strata.Strata"><code class="docutils literal notranslate"><span class="pre">Strata</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causalinference.core.summary">causalinference.core.summary module</a><ul>
+<li><a class="reference internal" href="#causalinference.core.summary.Summary"><code class="docutils literal notranslate"><span class="pre">Summary</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="causalinference.html"
-                        title="previous chapter">causalinference package</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="causalinference.estimators.html"
-                        title="next chapter">causalinference.estimators package</a></p>
-<div id="searchbox" style="display: none" role="search">
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="causalinference.html"
+                          title="previous chapter">causalinference package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="causalinference.estimators.html"
+                          title="next chapter">causalinference.estimators package</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -162,12 +183,13 @@ differences in covariates.</p>
           <a href="causalinference.html" title="causalinference package"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Causalinference 0.1.3 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="causalinference.html" >causalinference package</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="causalinference.html" >causalinference package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">causalinference.core package</a></li> 
       </ul>
     </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016, Laurence Wong.
+    &#169; Copyright 2016, Laurence Wong.
     </div>
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");

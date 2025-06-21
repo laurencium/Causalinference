@@ -1,12 +1,5 @@
 /*
- * classic.css_t
- * ~~~~~~~~~~~~~
- *
  * Sphinx stylesheet -- classic theme.
- *
- * :copyright: Copyright 2007-2019 by the Sphinx team, see AUTHORS.
- * :license: BSD, see LICENSE for details.
- *
  */
 
 @import url("basic.css");
@@ -28,6 +21,7 @@ body {
 }
 
 div.document {
+    display: flex;
     background-color: #1c4e63;
 }
 
@@ -128,7 +122,7 @@ a {
 }
 
 a:visited {
-    color: #355f7c;
+    color: #551a8b;
     text-decoration: none;
 }
 
@@ -205,6 +199,8 @@ div.seealso {
     border: 1px solid #ff6;
 }
 
+nav.contents,
+aside.topic,
 div.topic {
     background-color: #eee;
 }
@@ -224,8 +220,8 @@ p.admonition-title:after {
 
 pre {
     padding: 5px;
-    background-color: #eeffcc;
-    color: #333333;
+    background-color: unset;
+    color: unset;
     line-height: 120%;
     border: 1px solid #ac9;
     border-left: none;
